@@ -31,6 +31,86 @@ export interface SpriteAtlas {
   getIcon(key: string): HTMLCanvasElement;
 }
 
+// --- custom art overrides (see SPRITES.md) ----------------------------------------
+// PNGs under public/sprites/ replace procedural art per def id; anything not
+// provided falls back to the code-drawn sprite. manifest.json declares what
+// exists so we never fire hundreds of speculative 404s.
+
+export interface UnitOverride {
+  imgs: Map<string, HTMLImageElement>; // key: `${dir}_${frame}`, dir in e,se,s,sw,w,nw,n,ne
+}
+
+export interface SpriteOverrides {
+  units: Map<string, UnitOverride>;
+  buildings: Map<string, HTMLImageElement>;
+}
+
+interface SpriteManifest {
+  units?: Record<string, { facings: string[]; frames?: number }>;
+  buildings?: string[];
+}
+
+function loadImage(url: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      console.warn(`[sprites] missing override image: ${url}`);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
+/** Fetch public/sprites/manifest.json and every image it declares. */
+export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOverrides | null> {
+  let manifest: SpriteManifest;
+  try {
+    const res = await fetch(`${base}/manifest.json`, { cache: 'no-cache' });
+    if (!res.ok) return null;
+    manifest = (await res.json()) as SpriteManifest;
+  } catch {
+    return null;
+  }
+  const out: SpriteOverrides = { units: new Map(), buildings: new Map() };
+  const jobs: Promise<void>[] = [];
+  for (const [id, spec] of Object.entries(manifest.units ?? {})) {
+    const ov: UnitOverride = { imgs: new Map() };
+    out.units.set(id, ov);
+    const frames = Math.max(1, Math.min(2, spec.frames ?? 1));
+    for (const dir of spec.facings) {
+      for (let f = 0; f < frames; f++) {
+        jobs.push(
+          loadImage(`${base}/units/${id}_${dir}_${f}.png`).then((img) => {
+            if (img) ov.imgs.set(`${dir}_${f}`, img);
+          }),
+        );
+      }
+    }
+  }
+  for (const id of manifest.buildings ?? []) {
+    jobs.push(
+      loadImage(`${base}/buildings/${id}.png`).then((img) => {
+        if (img) out.buildings.set(id, img);
+      }),
+    );
+  }
+  await Promise.all(jobs);
+  const total = [...out.units.values()].reduce((s, u) => s + u.imgs.size, 0) + out.buildings.size;
+  if (total === 0) return null;
+  console.info(`[sprites] loaded ${total} custom sprite images`);
+  return out;
+}
+
+const DIR_NAMES = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'] as const;
+const MIRROR_DIR: Record<string, string> = { e: 'w', se: 'sw', ne: 'nw' };
+
+/** Expected building override canvas box for a footprint (see SPRITES.md). */
+export function buildingSpriteBox(fw: number, fh: number, kind: string): { w: number; h: number } {
+  const bodyH = kind === 'wall' ? 26 : kind === 'sw' || kind === 'conyard' ? 84 : 64;
+  return { w: (fw + fh) * TILE_HALF_W + 8, h: (fw + fh) * TILE_HALF_H + bodyH };
+}
+
 type Ctx = CanvasRenderingContext2D;
 
 function canvas(w: number, h: number): [HTMLCanvasElement, Ctx] {
@@ -155,14 +235,16 @@ const THEMES: Record<string, Theme> = {
 
 class Atlas implements SpriteAtlas {
   private data: GameData;
+  private ov: SpriteOverrides | null;
   private unitCache = new Map<string, HTMLCanvasElement>();
   private buildingCache = new Map<string, HTMLCanvasElement>();
   private terrainCache = new Map<string, HTMLCanvasElement>();
   private projCache = new Map<string, HTMLCanvasElement>();
   private iconCache = new Map<string, HTMLCanvasElement>();
 
-  constructor(data: GameData) {
+  constructor(data: GameData, overrides: SpriteOverrides | null = null) {
     this.data = data;
+    this.ov = overrides;
   }
 
   // --- units ----------------------------------------------------------------------
@@ -173,6 +255,41 @@ class Atlas implements SpriteAtlas {
     const ck = `${key}|${f}|${fr}|${colorIdx}`;
     let c = this.unitCache.get(ck);
     if (c) return c;
+
+    // custom art override: use the player's PNG when provided for this facing
+    const ovUnit = this.ov?.units.get(key);
+    if (ovUnit) {
+      const dir = DIR_NAMES[f];
+      let img = ovUnit.imgs.get(`${dir}_${fr}`) ?? ovUnit.imgs.get(`${dir}_0`);
+      let mirrored = false;
+      if (!img && MIRROR_DIR[dir]) {
+        const m = MIRROR_DIR[dir];
+        img = ovUnit.imgs.get(`${m}_${fr}`) ?? ovUnit.imgs.get(`${m}_0`);
+        mirrored = true;
+      }
+      if (!img) {
+        // Partial art packs: a lone front view beats mixing in procedural art —
+        // reuse 's' (or anything available) for the missing facings.
+        img = ovUnit.imgs.get(`s_${fr}`) ?? ovUnit.imgs.get('s_0') ?? ovUnit.imgs.values().next().value;
+        mirrored = false;
+      }
+      if (img) {
+        const [cv, ctx] = canvas(64, 64);
+        const scale = Math.min(64 / img.width, 64 / img.height);
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        ctx.save();
+        if (mirrored) {
+          ctx.translate(64, 0);
+          ctx.scale(-1, 1);
+        }
+        ctx.drawImage(img, (64 - dw) / 2, 64 - dh - 6, dw, dh); // feet land near y=52
+        ctx.restore();
+        drawPlayerBand(ctx, 32, 48, 10, PLAYER_COLORS[colorIdx]?.hex ?? '#ffffff');
+        this.unitCache.set(ck, cv);
+        return cv;
+      }
+    }
 
     // canonical dirs: 2(S) 3(SW) 4(W) 5(NW) 6(N); mirror 0<-4, 1<-3, 7<-5
     const mirrorOf: Record<number, number> = { 0: 4, 1: 3, 7: 5 };
@@ -205,14 +322,26 @@ class Atlas implements SpriteAtlas {
     const faction = key.split('_')[0];
     const kind = key.slice(faction.length + 1);
     const theme = THEMES[faction] ?? THEMES.scorch;
-    const W = (fw + fh) * TILE_HALF_W + 8;
-    const bodyH = kind === 'wall' ? 26 : kind === 'sw' || kind === 'conyard' ? 84 : 64;
-    const H = (fw + fh) * TILE_HALF_H + bodyH;
+    const { w: W, h: H } = buildingSpriteBox(fw, fh, kind);
     const [cv, ctx] = canvas(W, H);
     const bvx = W / 2 + ((fw - fh) / 2) * TILE_HALF_W; // bottom vertex x
     const bvy = H - 2;
+    const hex = PLAYER_COLORS[colorIdx]?.hex ?? '#fff';
+
+    // custom art override (constructed state only; the scaffold/egg stays procedural)
+    const ovImg = constructed ? this.ov?.buildings.get(key) : undefined;
+    if (ovImg) {
+      const scale = Math.min(W / ovImg.width, H / ovImg.height);
+      const dw = ovImg.width * scale;
+      const dh = ovImg.height * scale;
+      ctx.drawImage(ovImg, (W - dw) / 2, H - dh, dw, dh); // bottom-anchored
+      banner(ctx, bvx, bvy - 3, hex);
+      this.buildingCache.set(ck, cv);
+      return cv;
+    }
+
     if (constructed) {
-      drawBuilding(ctx, kind, theme, fw, fh, bvx, bvy, PLAYER_COLORS[colorIdx]?.hex ?? '#fff', key);
+      drawBuilding(ctx, kind, theme, fw, fh, bvx, bvy, hex, key);
     } else {
       drawConstructionSite(ctx, theme, fw, fh, bvx, bvy, key);
     }
@@ -293,8 +422,8 @@ class Atlas implements SpriteAtlas {
   }
 }
 
-export function buildSpriteAtlas(data: GameData): SpriteAtlas {
-  const atlas = new Atlas(data);
+export function buildSpriteAtlas(data: GameData, overrides: SpriteOverrides | null = null): SpriteAtlas {
+  const atlas = new Atlas(data, overrides);
   // Warm the caches that gate first paint (terrain + icons are demanded in bulk).
   for (const t of [Terrain.GRASS, Terrain.DIRT, Terrain.SAND, Terrain.WATER, Terrain.ROCK, Terrain.TREE, Terrain.CRYSTAL]) {
     for (let v = 0; v < 3; v++) atlas.getTerrainTile(t, v);

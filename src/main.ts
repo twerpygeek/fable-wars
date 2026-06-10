@@ -11,7 +11,13 @@ import { TICK_MS, AI_THINK_INTERVAL } from './core/constants';
 import { DATA } from './data/index';
 import { createGame, tickGame } from './sim/game';
 import { aiThink } from './ai/ai';
-import { buildSpriteAtlas, type SpriteAtlas } from './render/sprites';
+import {
+  buildSpriteAtlas,
+  loadSpriteOverrides,
+  type SpriteAtlas,
+  type SpriteOverrides,
+} from './render/sprites';
+import { showSpriteLab } from './render/spritelab';
 import { Renderer } from './render/renderer';
 import { Minimap } from './render/minimap';
 import { clampCamera, tileToScreen } from './render/camera';
@@ -39,9 +45,14 @@ interface Match {
 }
 
 let current: Match | null = null;
+let overrides: SpriteOverrides | null = null;
 
 const menus = new MenuManager(app, (cfg) => startMatch(cfg));
-menus.showMainMenu();
+if (new URLSearchParams(location.search).has('spritelab')) {
+  void loadSpriteOverrides().then((ov) => showSpriteLab(app, DATA, ov));
+} else {
+  menus.showMainMenu();
+}
 
 function freshUIState(): UIState {
   return {
@@ -64,11 +75,12 @@ function freshUIState(): UIState {
 function startMatch(cfg: GameConfig): void {
   menus.showLoading('Generating battlefield…');
   // Yield to let the loading screen paint before heavy work.
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
       if (!sprites) {
         menus.showLoading('Hatching creatures…');
-        sprites = buildSpriteAtlas(DATA);
+        overrides = await loadSpriteOverrides();
+        sprites = buildSpriteAtlas(DATA, overrides);
       }
       const state = createGame(cfg, DATA);
       runMatch(state);

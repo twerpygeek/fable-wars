@@ -1,0 +1,20 @@
+{
+  "_readme": "Declare your custom sprite PNGs here \u2014 see SPRITES.md at the repo root. Files go in public/sprites/units/ and public/sprites/buildings/. Anything not listed (or missing) falls back to the built-in procedural art.",
+  "_example_units": {
+    "scorch_peekachoo": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 2
+    }
+  },
+  "_example_buildings": [
+    "scorch_conyard"
+  ],
+  "units": {},
+  "buildings": []
+}
