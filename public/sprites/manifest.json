@@ -1,5 +1,5 @@
 {
-  "_readme": "Declare your custom sprite PNGs here \u2014 see SPRITES.md at the repo root. Files go in public/sprites/units/ and public/sprites/buildings/. Anything not listed (or missing) falls back to the built-in procedural art.",
+  "_readme": "Declare your custom sprite PNGs here — see SPRITES.md at the repo root. Files go in public/sprites/units/ and public/sprites/buildings/. Anything not listed (or missing) falls back to the built-in procedural art.",
   "_example_units": {
     "scorch_peekachoo": {
       "facings": [
@@ -15,6 +15,463 @@
   "_example_buildings": [
     "scorch_conyard"
   ],
-  "units": {},
-  "buildings": []
+  "units": {
+    "scorch_peekachoo": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_bulbasore": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_charmandar": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_squirtul": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_krabber": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_ryhorrn": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_prof_cinder": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_arcanyne": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_torkoala": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_magmarr": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_magnetonn": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_groudonn": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_moltrez": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_magcarggo": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_horsean": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_slugmariner": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_polywrath": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "scorch_zubattler": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_prof_brine": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_vaporeonix": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_blastoyse": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_starmiez": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_wingullet": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_pelipperator": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_tentacrush": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_gyarrados": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_kyogrre": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_beedrillz": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_oddishooter": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_scytherr": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "tide_sharpeedo": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_prof_oakley": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_sceptilash": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_torterrar": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_tanglevine": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_venosore": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_pidgeottoh": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_snorlux": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_lotadder": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_butterfrei": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    },
+    "verdant_ludicolossus": {
+      "facings": [
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
+      ],
+      "frames": 1
+    }
+  },
+  "buildings": [
+    "scorch_airpad",
+    "scorch_barracks",
+    "scorch_conyard",
+    "scorch_def_aa",
+    "scorch_def_adv",
+    "scorch_def_basic",
+    "scorch_factory",
+    "scorch_navalyard",
+    "scorch_power",
+    "scorch_radar",
+    "scorch_refinery",
+    "scorch_repair",
+    "scorch_sw",
+    "scorch_techlab",
+    "scorch_wall",
+    "tide_airpad",
+    "tide_barracks",
+    "tide_conyard",
+    "tide_def_aa",
+    "tide_def_adv",
+    "tide_def_basic",
+    "tide_factory",
+    "tide_navalyard",
+    "tide_power",
+    "tide_radar",
+    "tide_refinery",
+    "tide_repair",
+    "tide_sw",
+    "tide_techlab",
+    "tide_wall",
+    "verdant_airpad",
+    "verdant_barracks",
+    "verdant_conyard",
+    "verdant_def_aa",
+    "verdant_def_adv",
+    "verdant_def_basic",
+    "verdant_factory",
+    "verdant_navalyard",
+    "verdant_power",
+    "verdant_radar",
+    "verdant_refinery",
+    "verdant_repair",
+    "verdant_sw",
+    "verdant_techlab",
+    "verdant_wall"
+  ]
 }
