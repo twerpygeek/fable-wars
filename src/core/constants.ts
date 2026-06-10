@@ -24,9 +24,9 @@ export const MAP_SIZES: Record<'S' | 'M' | 'L', number> = { S: 56, M: 72, L: 96 
 // --- Economy --------------------------------------------------------------------
 
 export const STARTING_CREDITS = 10000;
-export const CRYSTAL_PER_TILE = 1200; // total value of a fresh crystal tile
+export const CRYSTAL_PER_TILE = 5000; // total value of a fresh crystal tile
 export const HARVEST_PER_TICK = 25; // crystal mined per tick while harvesting
-export const UNLOAD_PER_TICK = 50; // credits banked per tick at refinery
+export const UNLOAD_PER_TICK = 80; // credits banked per tick at refinery
 export const LOW_POWER_BUILD_FACTOR = 0.4; // production speed when power is low
 export const SELL_REFUND = 0.5; // fraction of cost refunded
 export const REPAIR_HP_PER_TICK = 2; // building repair speed

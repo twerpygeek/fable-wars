@@ -310,10 +310,14 @@ export function advanceProduction(state: GameState, data: GameData, events: Game
       }
 
       if (q.progress < def.buildTicks) {
-        const costPerTick = (def.cost / def.buildTicks) * factor;
+        // RA2 rule: extra operational producers of this tab speed it up
+        // (+50% each, capped at 2x overall).
+        const producers = countOperationalProducers(state, data, p.id, tab);
+        const speed = factor * Math.min(2, 1 + 0.5 * Math.max(0, producers - 1));
+        const costPerTick = (def.cost / def.buildTicks) * speed;
         if (p.credits >= costPerTick) {
           p.credits -= costPerTick;
-          q.progress += factor;
+          q.progress += speed;
           q.onHold = false;
         } else {
           q.onHold = true;
@@ -341,12 +345,22 @@ function hasOperationalProducer(
   player: PlayerId,
   tab: ProductionTab,
 ): boolean {
+  return countOperationalProducers(state, data, player, tab) > 0;
+}
+
+function countOperationalProducers(
+  state: GameState,
+  data: GameData,
+  player: PlayerId,
+  tab: ProductionTab,
+): number {
+  let n = 0;
   for (const b of buildingsOf(state, player)) {
     if (b.buildProgress < 1) continue;
     const bd = data.buildings[b.defId];
-    if (bd.producesTabs && bd.producesTabs.indexOf(tab) >= 0) return true;
+    if (bd.producesTabs && bd.producesTabs.indexOf(tab) >= 0) n++;
   }
-  return false;
+  return n;
 }
 
 function pickProducer(

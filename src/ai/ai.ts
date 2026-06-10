@@ -178,9 +178,9 @@ const PARAMS: Record<AIDifficulty, DiffParams> = {
   },
   hard: {
     harvTarget: 6,
-    waveIntervalTicks: secondsToTicks(40),
-    waveMin: 14,
-    creditReserve: 800,
+    waveIntervalTicks: secondsToTicks(95),
+    waveMin: 16,
+    creditReserve: 400,
     scout: true,
     navalAir: true,
     airCap: 5,
@@ -286,6 +286,7 @@ function structureOrder(diff: AIDifficulty, faction: FactionId): BuildEntry[] {
           { key: 'power', count: 2 },
           { key: 'radar', count: 1 },
           { key: 'factory', count: 2 },
+          { key: 'barracks', count: 2 },
           { key: 'airpad', count: 1 },
           { key: 'navalyard', count: 1, cond: navalViable },
           { key: 'techlab', count: 1 },
@@ -1059,14 +1060,14 @@ function runMicro(c: Ctx): void {
     for (const id of mem.retreating) {
       const u = alive(id);
       if (u === undefined) continue;
-      if (u.hp >= u.maxHp * 0.55 || dist(u.pos, c.baseCenter) <= 7) continue; // released
+      if (u.hp >= u.maxHp * 0.45 || dist(u.pos, c.baseCenter) <= 7) continue; // released
       keep.push(id);
     }
     mem.retreating = keep;
     if (state.tick >= mem.defendUntil) {
       const fresh: EntityId[] = [];
       for (const u of c.military) {
-        if (u.hp >= u.maxHp * 0.3) continue;
+        if (u.hp >= u.maxHp * 0.2) continue;
         if (retreatSet.has(u.id) || u.id === mem.scoutId || u.id === mem.engineerId) continue;
         if (dist(u.pos, c.baseCenter) <= 10) continue;
         fresh.push(u.id);
@@ -1263,7 +1264,7 @@ function runWaves(c: Ctx): void {
       // launch! hard splits off a fast flank squad when it can spare one
       let flankIds: EntityId[] = [];
       const ft = params.flank ? flankTargetFor(c) : null;
-      if (ft !== null && pool.length >= params.waveMin + 3) {
+      if (ft !== null && pool.length >= params.waveMin + 6) {
         const fast = pool
           .filter((u) => {
             const d = c.data.units[u.defId];

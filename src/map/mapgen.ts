@@ -676,6 +676,73 @@ function fillCrystalValues(map: GameMap): void {
   }
 }
 
+/**
+ * Fairness pass: every start position gets (near-)equal harvestable value in
+ * its opening radius. Whoever spawns where should not decide the match — the
+ * poorest starts get their fields grown until they match the richest.
+ */
+function equalizeStartCrystals(rng: Rng, map: GameMap, starts: Vec2[]): void {
+  const R = 14;
+  const R2 = R * R;
+  const valueNear = (s: Vec2): number => {
+    let v = 0;
+    for (let y = Math.max(0, s.y - R); y <= Math.min(map.h - 1, s.y + R); y++) {
+      for (let x = Math.max(0, s.x - R); x <= Math.min(map.w - 1, s.x + R); x++) {
+        if (dist2(x, y, s.x, s.y) <= R2) v += map.crystal[y * map.w + x];
+      }
+    }
+    return v;
+  };
+  const target = Math.max(...starts.map(valueNear));
+  for (const s of starts) {
+    let v = valueNear(s);
+    let guard = 0;
+    while (v + CRYSTAL_PER_TILE / 2 < target && guard++ < 200) {
+      // frontier: land tiles adjacent to an existing crystal tile, in radius,
+      // outside the clear build zone around the start
+      let best = -1;
+      let bestD = Infinity;
+      for (let y = Math.max(1, s.y - R); y <= Math.min(map.h - 2, s.y + R); y++) {
+        for (let x = Math.max(1, s.x - R); x <= Math.min(map.w - 2, s.x + R); x++) {
+          const i = y * map.w + x;
+          const t = map.terrain[i];
+          if (t !== Terrain.GRASS && t !== Terrain.DIRT && t !== Terrain.SAND) continue;
+          const d2 = dist2(x, y, s.x, s.y);
+          if (d2 > R2 || d2 < 36) continue; // keep the 6-tile build area clear
+          const adj =
+            map.terrain[i - 1] === Terrain.CRYSTAL ||
+            map.terrain[i + 1] === Terrain.CRYSTAL ||
+            map.terrain[i - map.w] === Terrain.CRYSTAL ||
+            map.terrain[i + map.w] === Terrain.CRYSTAL;
+          if (!adj) continue;
+          const score = d2 + rng() * 8;
+          if (score < bestD) {
+            bestD = score;
+            best = i;
+          }
+        }
+      }
+      if (best < 0) {
+        // no frontier (field walled in) — seed a fresh tile on open land near the start
+        for (let attempt = 0; attempt < 60 && best < 0; attempt++) {
+          const ang = rng() * Math.PI * 2;
+          const rad = 7 + rng() * 4;
+          const x = Math.round(s.x + Math.cos(ang) * rad);
+          const y = Math.round(s.y + Math.sin(ang) * rad);
+          if (x < 1 || y < 1 || x >= map.w - 1 || y >= map.h - 1) continue;
+          const i = y * map.w + x;
+          const t = map.terrain[i];
+          if (t === Terrain.GRASS || t === Terrain.DIRT || t === Terrain.SAND) best = i;
+        }
+        if (best < 0) break;
+      }
+      map.terrain[best] = Terrain.CRYSTAL;
+      map.crystal[best] = CRYSTAL_PER_TILE;
+      v += CRYSTAL_PER_TILE;
+    }
+  }
+}
+
 /** Debug helper: total remaining crystal value on the map. */
 export function crystalTotal(map: GameMap): number {
   let sum = 0;
@@ -725,6 +792,7 @@ export function generateMap(
     paintShoreline(map, masks); // re-ring any late-carved lakes with sand
   }
   fillCrystalValues(map);
+  equalizeStartCrystals(rng, map, starts);
 
   return map;
 }
