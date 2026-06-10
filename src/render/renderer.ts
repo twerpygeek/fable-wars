@@ -17,11 +17,12 @@
 // Reads GameState, never writes it. Cosmetic timers/randomness allowed here.
 // =============================================================================
 
-import { TILE_H, TILE_HALF_H, TILE_HALF_W, TILE_W } from '../core/constants';
-import { ArmorClass, MoveDomain, PLAYER_COLORS, Terrain, tileIndex } from '../core/types';
+import { HEALTH_RED, HEALTH_YELLOW, TILE_H, TILE_HALF_H, TILE_HALF_W, TILE_W } from '../core/constants';
+import { ArmorClass, Element, MoveDomain, PLAYER_COLORS, Terrain, tileIndex } from '../core/types';
 import type {
   BuildingDef,
   Camera,
+  Crate,
   Entity,
   EntityId,
   GameData,
@@ -49,18 +50,34 @@ interface SmoothRec {
   x: number;
   y: number;
   lastMoveMs: number;
+  traveled: number; // accumulated drawn travel distance in tiles (walk-bob phase)
 }
 
-type DrawItem = Entity | Projectile;
+type DrawItem = Entity | Projectile | Crate;
 
 function isEntityItem(it: DrawItem): it is Entity {
   const k = (it as Entity).kind;
   return k === 'unit' || k === 'building';
 }
 
-function healthColor(ratio: number): string {
-  return ratio > 0.6 ? '#3ce86e' : ratio > 0.3 ? '#e8c63c' : '#e8453c';
+function isCrateItem(it: DrawItem): it is Crate {
+  return (it as Crate).spawnedTick !== undefined;
 }
+
+// rules.ini ConditionYellow / ConditionRed thresholds
+function healthColor(ratio: number): string {
+  return ratio > HEALTH_YELLOW ? '#3ce86e' : ratio > HEALTH_RED ? '#e8c63c' : '#e8453c';
+}
+
+/** Cheap deterministic hash -> [0,1) for ambient critters (stable per seed/lane). */
+function hash01(seed: number, lane: number): number {
+  let x = (seed + Math.imul(lane | 0, 0x9e3779b9)) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b) >>> 0;
+  return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+}
+
+const CRITTER_COLORS = ['#ffe9a8', '#ffc9e8', '#d6f0ff']; // butterfly wing tints
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return {
@@ -83,6 +100,7 @@ export class Renderer {
   private terrainOX = 0; // canvas px of world-x origin in the terrain cache
   private pendingPatches: number[] = []; // packed tile indices to repaint (crystal depletion)
   private waterTiles: Int32Array = new Int32Array(0);
+  private shoreMask: Uint8Array = new Uint8Array(0); // per waterTiles entry: 4-bit land-adjacency
   private shimmer: HTMLCanvasElement;
 
   // fog (1 px per tile)
@@ -104,6 +122,19 @@ export class Renderer {
 
   // smooth unit motion: entity id -> last drawn tile pos
   private smooth = new Map<EntityId, SmoothRec>();
+
+  // combat hit-flicker: entity id -> ms until which its sprite flashes white
+  private flicker = new Map<EntityId, number>();
+  private flickerScratch: HTMLCanvasElement | null = null;
+  private flickerScratchCtx: CanvasRenderingContext2D | null = null;
+
+  // build-up animation: building id -> buildProgress at the last dust puff
+  private buildDustLast = new Map<EntityId, number>();
+
+  // ambient / crate pre-rendered sprites
+  private crateSprite: HTMLCanvasElement;
+  private crateGlow: HTMLCanvasElement;
+  private cloudShadow: HTMLCanvasElement;
 
   // reused draw lists (no per-frame allocation)
   private groundList: DrawItem[] = [];
@@ -128,6 +159,9 @@ export class Renderer {
       this.playerFill.push(`rgba(${r},${g},${b},0.28)`);
     }
     this.shimmer = this.renderShimmerSprite();
+    this.crateSprite = this.renderCrateSprite();
+    this.crateGlow = this.renderCrateGlow();
+    this.cloudShadow = this.renderCloudShadow();
   }
 
   addEffect(fx: VisualEffect): void {
@@ -139,6 +173,25 @@ export class Renderer {
     for (const ev of events) {
       if (ev.type === 'crystalDepleted') {
         this.pendingPatches.push(tileIndex(state.map, ev.pos.x, ev.pos.y));
+      } else if (ev.type === 'impact') {
+        // 80ms white hit-flicker on everything near the impact point
+        const until = now + 80;
+        for (const e of state.entities.values()) {
+          let cx = e.pos.x;
+          let cy = e.pos.y;
+          let reach = 1.2;
+          if (e.kind === 'building') {
+            const bd = this.data.buildings[e.defId];
+            if (bd) {
+              cx += bd.footprint.w / 2;
+              cy += bd.footprint.h / 2;
+              reach += Math.max(bd.footprint.w, bd.footprint.h) / 2;
+            }
+          }
+          const dx = cx - ev.pos.x;
+          const dy = cy - ev.pos.y;
+          if (dx * dx + dy * dy <= reach * reach) this.flicker.set(e.id, until);
+        }
       }
     }
     this.effects.spawnFromEvents(events, state, this.data, humanPlayer, now);
@@ -192,18 +245,26 @@ export class Renderer {
 
     this.drawTerrain(vw, vh);
     this.drawWater(state, humanPlayer, nowMs, vw, vh);
+    this.effects.drawGroundDecals(ctx, nowMs, this.camX, this.camY, this.zoom, vw, vh);
     this.buildDrawLists(state, ui, humanPlayer, nowMs, vw, vh);
     this.drawGroundLayer(state, nowMs);
     this.drawAirLayer(state, nowMs);
     this.effects.drawWorld(ctx, nowMs, this.camX, this.camY, this.zoom, vw, vh);
+    this.drawAmbient(state, humanPlayer, nowMs, vw, vh);
     this.drawFog(state, humanPlayer);
     this.drawOverlays(state, ui, humanPlayer, nowMs, vw, vh);
     this.effects.drawScreenFlashes(ctx, nowMs, vw, vh);
 
-    // periodic cleanup of smooth-motion records for dead entities
+    // periodic cleanup of per-entity records for dead entities / stale flickers
     if (this.frameCount % 150 === 0) {
       for (const id of this.smooth.keys()) {
         if (!state.entities.has(id)) this.smooth.delete(id);
+      }
+      for (const [id, until] of this.flicker) {
+        if (nowMs >= until || !state.entities.has(id)) this.flicker.delete(id);
+      }
+      for (const id of this.buildDustLast.keys()) {
+        if (!state.entities.has(id)) this.buildDustLast.delete(id);
       }
     }
   }
@@ -263,6 +324,24 @@ export class Renderer {
     let k = 0;
     for (let i = 0; i < m.terrain.length; i++) {
       if (m.terrain[i] === Terrain.WATER) this.waterTiles[k++] = i;
+    }
+
+    // shoreline mask per water tile: which diamond edges border land
+    // (bit0 = N neighbor (x,y-1) -> top-right edge, bit1 = E -> bottom-right,
+    //  bit2 = S -> bottom-left, bit3 = W -> top-left)
+    this.shoreMask = new Uint8Array(count);
+    const isLand = (xx: number, yy: number): boolean =>
+      xx >= 0 && yy >= 0 && xx < m.w && yy < m.h && m.terrain[yy * m.w + xx] !== Terrain.WATER;
+    for (let s = 0; s < this.waterTiles.length; s++) {
+      const idx = this.waterTiles[s];
+      const x = idx % m.w;
+      const y = (idx / m.w) | 0;
+      let mask = 0;
+      if (isLand(x, y - 1)) mask |= 1;
+      if (isLand(x + 1, y)) mask |= 2;
+      if (isLand(x, y + 1)) mask |= 4;
+      if (isLand(x - 1, y)) mask |= 8;
+      this.shoreMask[s] = mask;
     }
 
     // fog buffer: 1 px per tile
@@ -403,6 +482,103 @@ export class Renderer {
     return c;
   }
 
+  /** Gift crate sprite at 2x (drawn at 0.5 scale): gold iso cube + ribbon + bow. */
+  private renderCrateSprite(): HTMLCanvasElement {
+    const c = document.createElement('canvas');
+    c.width = 40;
+    c.height = 40;
+    const g = c.getContext('2d');
+    if (!g) throw new Error('renderer: 2d context unavailable');
+    // iso cube: top diamond T(20,8) R(33,15) B(20,22) L(7,15); body 13px tall
+    g.fillStyle = '#ffe892'; // top face
+    g.beginPath();
+    g.moveTo(20, 8);
+    g.lineTo(33, 15);
+    g.lineTo(20, 22);
+    g.lineTo(7, 15);
+    g.closePath();
+    g.fill();
+    g.fillStyle = '#d9a92e'; // left face
+    g.beginPath();
+    g.moveTo(7, 15);
+    g.lineTo(20, 22);
+    g.lineTo(20, 35);
+    g.lineTo(7, 28);
+    g.closePath();
+    g.fill();
+    g.fillStyle = '#b9851a'; // right face
+    g.beginPath();
+    g.moveTo(33, 15);
+    g.lineTo(20, 22);
+    g.lineTo(20, 35);
+    g.lineTo(33, 28);
+    g.closePath();
+    g.fill();
+    // ribbon: bands across the top + down both visible faces
+    g.strokeStyle = '#ff4a6e';
+    g.lineWidth = 3.5;
+    g.beginPath();
+    g.moveTo(13.5, 11.5); // across top, NW-SE
+    g.lineTo(26.5, 18.5);
+    g.moveTo(26.5, 11.5); // across top, NE-SW
+    g.lineTo(13.5, 18.5);
+    g.moveTo(13.5, 18.5); // down the left face
+    g.lineTo(13.5, 31.5);
+    g.moveTo(26.5, 18.5); // down the right face
+    g.lineTo(26.5, 31.5);
+    g.stroke();
+    // bow knot on the top center
+    g.fillStyle = '#ff7a96';
+    g.beginPath();
+    g.ellipse(20, 15, 3, 2.2, 0, 0, TAU);
+    g.fill();
+    // subtle silhouette outline
+    g.strokeStyle = 'rgba(90,64,12,0.65)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(20, 8);
+    g.lineTo(33, 15);
+    g.lineTo(33, 28);
+    g.lineTo(20, 35);
+    g.lineTo(7, 28);
+    g.lineTo(7, 15);
+    g.closePath();
+    g.stroke();
+    return c;
+  }
+
+  /** Soft golden ground glow drawn under crates (alpha pulsed at draw time). */
+  private renderCrateGlow(): HTMLCanvasElement {
+    const c = document.createElement('canvas');
+    c.width = 64;
+    c.height = 64;
+    const g = c.getContext('2d');
+    if (!g) throw new Error('renderer: 2d context unavailable');
+    const grad = g.createRadialGradient(32, 32, 1, 32, 32, 31);
+    grad.addColorStop(0, 'rgba(255,210,74,0.9)');
+    grad.addColorStop(0.45, 'rgba(255,210,74,0.4)');
+    grad.addColorStop(1, 'rgba(255,210,74,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    return c;
+  }
+
+  /** Large soft black blob for drifting cloud shadows (drawn at ~0.05 alpha). */
+  private renderCloudShadow(): HTMLCanvasElement {
+    const c = document.createElement('canvas');
+    c.width = 256;
+    c.height = 256;
+    const g = c.getContext('2d');
+    if (!g) throw new Error('renderer: 2d context unavailable');
+    const grad = g.createRadialGradient(128, 128, 8, 128, 128, 127);
+    grad.addColorStop(0, 'rgba(0,0,0,1)');
+    grad.addColorStop(0.5, 'rgba(0,0,0,0.7)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 256, 256);
+    return c;
+  }
+
   private drawWater(
     state: GameState,
     humanPlayer: PlayerId,
@@ -425,16 +601,49 @@ export class Renderer {
       const y = (idx / m.w) | 0;
       if (x < x0 || x > x1 || y < y0 || y > y1) continue;
       if (explored && explored[idx] === 0) continue; // hidden under opaque shroud anyway
-      const phase = nowMs * 0.0016 + ((x * 97 + y * 57) % 31) * 0.41;
-      const a = 0.05 + 0.07 * Math.sin(phase);
-      if (a <= 0.015) continue;
       // cell center of water tile (x, y)
       const sx = ((x - y) * TILE_HALF_W - this.camX) * z;
       const sy = ((x + y + 1) * TILE_HALF_H - this.camY) * z;
       if (sx < -60 || sx > vw + 60 || sy < -40 || sy > vh + 40) continue;
-      const wob = Math.sin(nowMs * 0.0007 + (x * 13 + y * 29) * 0.77) * 7 * z;
-      ctx.globalAlpha = a;
-      ctx.drawImage(this.shimmer, sx - 24 * z + wob, sy - 6 * z, 48 * z, 12 * z);
+      const phase = nowMs * 0.0016 + ((x * 97 + y * 57) % 31) * 0.41;
+      const a = 0.05 + 0.07 * Math.sin(phase);
+      if (a > 0.015) {
+        const wob = Math.sin(nowMs * 0.0007 + (x * 13 + y * 29) * 0.77) * 7 * z;
+        ctx.globalAlpha = a;
+        ctx.drawImage(this.shimmer, sx - 24 * z + wob, sy - 6 * z, 48 * z, 12 * z);
+      }
+      // shoreline foam: faint pulsing highlight on edges that border land
+      const mask = this.shoreMask[k];
+      if (mask !== 0) {
+        const fa = 0.09 + 0.09 * Math.sin(nowMs * 0.0021 + ((x * 31 + y * 17) % 13) * 0.53);
+        if (fa > 0.02) {
+          const tY = sy - TILE_HALF_H * z; // top vertex
+          const bY = sy + TILE_HALF_H * z; // bottom vertex
+          const rX = sx + TILE_HALF_W * z; // right vertex
+          const lX = sx - TILE_HALF_W * z; // left vertex
+          ctx.globalAlpha = fa;
+          ctx.strokeStyle = '#e6f9ff';
+          ctx.lineWidth = Math.max(1, 1.4 * z);
+          ctx.beginPath();
+          if (mask & 1) {
+            ctx.moveTo(sx, tY);
+            ctx.lineTo(rX, sy);
+          }
+          if (mask & 2) {
+            ctx.moveTo(rX, sy);
+            ctx.lineTo(sx, bY);
+          }
+          if (mask & 4) {
+            ctx.moveTo(sx, bY);
+            ctx.lineTo(lX, sy);
+          }
+          if (mask & 8) {
+            ctx.moveTo(lX, sy);
+            ctx.lineTo(sx, tY);
+          }
+          ctx.stroke();
+        }
+      }
     }
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
@@ -453,6 +662,7 @@ export class Renderer {
       }
       return it.pos.x + it.pos.y;
     }
+    if (isCrateItem(it)) return it.pos.x + it.pos.y + 1; // crate sits at tile center
     return it.pos.x + it.pos.y + 0.0005;
   }
 
@@ -464,7 +674,6 @@ export class Renderer {
     vw: number,
     vh: number
   ): void {
-    void humanPlayer;
     this.groundList.length = 0;
     this.airList.length = 0;
     this.selectedSet.clear();
@@ -491,7 +700,7 @@ export class Renderer {
       // units don't slide across the screen
       let rec = this.smooth.get(e.id);
       if (!rec) {
-        rec = { x: e.pos.x, y: e.pos.y, lastMoveMs: 0 };
+        rec = { x: e.pos.x, y: e.pos.y, lastMoveMs: 0, traveled: 0 };
         this.smooth.set(e.id, rec);
       }
       const dx = e.pos.x - rec.x;
@@ -504,6 +713,7 @@ export class Renderer {
         const k = 1 - Math.exp(-dt / 55);
         rec.x += dx * k;
         rec.y += dy * k;
+        rec.traveled += Math.sqrt(d2) * k; // walk-bob phase: tiles of drawn travel
       }
       if (d2 > 1e-6) rec.lastMoveMs = nowMs;
 
@@ -524,6 +734,17 @@ export class Renderer {
       else this.groundList.push(p);
     }
 
+    // crates: depth-sorted with ground entities, only on explored tiles
+    const exploredH = state.players[humanPlayer]?.explored;
+    for (let i = 0; i < state.crates.length; i++) {
+      const c = state.crates[i];
+      if (exploredH && exploredH[tileIndex(state.map, c.pos.x, c.pos.y)] === 0) continue;
+      const sx = this.projX(c.pos.x + 0.5, c.pos.y + 0.5);
+      const sy = this.projY(c.pos.x + 0.5, c.pos.y + 0.5);
+      if (sx < -60 * z || sx > vw + 60 * z || sy < -60 * z || sy > vh + 60 * z) continue;
+      this.groundList.push(c);
+    }
+
     this.groundList.sort(this.depthCompare);
     this.airList.sort(this.depthCompare);
   }
@@ -531,12 +752,13 @@ export class Renderer {
   private drawGroundLayer(state: GameState, nowMs: number): void {
     for (let i = 0; i < this.groundList.length; i++) {
       const it = this.groundList[i];
-      if (!isEntityItem(it)) {
-        this.drawProjectile(it, nowMs, false);
-      } else if (it.kind === 'building') {
-        this.drawBuilding(it, state, nowMs);
+      if (isEntityItem(it)) {
+        if (it.kind === 'building') this.drawBuilding(it, state, nowMs);
+        else this.drawUnit(it, state, nowMs, false);
+      } else if (isCrateItem(it)) {
+        this.drawCrate(it, nowMs);
       } else {
-        this.drawUnit(it, state, nowMs, false);
+        this.drawProjectile(it, nowMs, false);
       }
     }
   }
@@ -544,8 +766,8 @@ export class Renderer {
   private drawAirLayer(state: GameState, nowMs: number): void {
     for (let i = 0; i < this.airList.length; i++) {
       const it = this.airList[i];
-      if (!isEntityItem(it)) this.drawProjectile(it, nowMs, true);
-      else this.drawUnit(it, state, nowMs, true);
+      if (isEntityItem(it)) this.drawUnit(it, state, nowMs, true);
+      else if (!isCrateItem(it)) this.drawProjectile(it, nowMs, true); // crates never fly
     }
   }
 
@@ -592,8 +814,22 @@ export class Renderer {
     const dw = spr.width * z;
     const dh = spr.height * z;
     const bob = air ? Math.sin(nowMs * 0.004 + e.id * 1.3) * 2.5 * z : 0;
-    const cyc = air ? sy - 26 * z + bob : sy - 4 * z;
-    ctx.drawImage(spr, sx - dw / 2, cyc - dh / 2, dw, dh);
+    // ground walk-bob: two footfalls per tile of travel, per-entity phase offset
+    const walkBob =
+      !air && moving && rec
+        ? Math.abs(Math.sin(rec.traveled * TAU + e.id * 0.7)) * 2 * z
+        : 0;
+    const cyc = air ? sy - 26 * z + bob : sy - 4 * z - walkBob;
+    const dxp = sx - dw / 2;
+    const dyp = cyc - dh / 2;
+    ctx.drawImage(spr, dxp, dyp, dw, dh);
+
+    // combat hit-flicker: brief white flash composited over the sprite
+    const until = this.flicker.get(e.id);
+    if (until !== undefined) {
+      if (nowMs < until) this.drawSpriteFlash(spr, dxp, dyp, dw, dh);
+      else this.flicker.delete(e.id);
+    }
   }
 
   private drawBuilding(e: Entity, state: GameState, nowMs: number): void {
@@ -627,12 +863,58 @@ export class Renderer {
     const spr = this.atlas.getBuildingSprite(def.spriteKey, colorIdx, constructed);
     const dw = spr.width * z;
     const dh = spr.height * z;
-    ctx.drawImage(spr, sx - dw / 2, syBottom - dh, dw, dh);
+    if (constructed || e.buildProgress < 0.25) {
+      // operational building, or early build-up: the construction-site scaffold
+      ctx.drawImage(spr, sx - dw / 2, syBottom - dh, dw, dh);
+    } else {
+      // build-up animation: the finished structure rises out of the ground —
+      // draw the final sprite cropped from the bottom by eased progress
+      const fin = this.atlas.getBuildingSprite(def.spriteKey, colorIdx, true);
+      const u = (e.buildProgress - 0.25) / 0.75;
+      const eased = u * u * (3 - 2 * u); // smoothstep
+      const visH = Math.max(1, Math.round(fin.height * eased));
+      ctx.drawImage(
+        fin,
+        0,
+        fin.height - visH,
+        fin.width,
+        visH,
+        sx - (fin.width * z) / 2,
+        syBottom - visH * z,
+        fin.width * z,
+        visH * z
+      );
+    }
 
     if (!constructed) {
-      // thin construction progress bar above the scaffold
+      // dust puffs every ~15% of progress while the structure rises
+      const last = this.buildDustLast.get(e.id);
+      if (last === undefined) {
+        this.buildDustLast.set(e.id, e.buildProgress);
+      } else if (e.buildProgress - last >= 0.15) {
+        this.buildDustLast.set(e.id, e.buildProgress);
+        for (let d = 0; d < 2; d++) {
+          this.effects.add({
+            kind: 'dust',
+            pos: { x: e.pos.x + Math.random() * fw, y: e.pos.y + Math.random() * fh },
+            startedAt: nowMs + d * 90,
+            duration: 650,
+            scale: 0.8 + Math.random() * 0.5,
+            element: Element.NEUTRAL,
+          });
+        }
+      }
+      // thin construction progress bar above the rising structure
       const bw = Math.max(26 * z, fw * TILE_W * 0.42 * z);
       this.drawBar(sx - bw / 2, syBottom - dh - 7 * z, bw, 3 * z, e.buildProgress, '#e8c63c');
+    } else {
+      if (this.buildDustLast.size > 0) this.buildDustLast.delete(e.id);
+      // combat hit-flicker (completed buildings only; the rising crop skips it)
+      const until = this.flicker.get(e.id);
+      if (until !== undefined) {
+        if (nowMs < until) this.drawSpriteFlash(spr, sx - dw / 2, syBottom - dh, dw, dh);
+        else this.flicker.delete(e.id);
+      }
     }
 
     if (e.repairing && constructed) {
@@ -737,6 +1019,165 @@ export class Renderer {
     ctx.drawImage(spr, sx - dw / 2, sy - dh / 2, dw, dh);
   }
 
+  /** Bobbing gift crate with a soft pulsing gold glow (pos = integer tile). */
+  private drawCrate(c: Crate, nowMs: number): void {
+    const ctx = this.ctx;
+    const z = this.zoom;
+    const sx = this.projX(c.pos.x + 0.5, c.pos.y + 0.5);
+    const sy = this.projY(c.pos.x + 0.5, c.pos.y + 0.5);
+    const bob = Math.sin(nowMs * 0.0032 + c.id * 1.7) * 2.2 * z;
+    const pulse = 0.22 + 0.12 * Math.sin(nowMs * 0.005 + c.id);
+
+    // pulsing gold glow on the ground
+    const gr = 16 * z;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = pulse;
+    ctx.drawImage(this.crateGlow, sx - gr, sy - gr * 0.55, gr * 2, gr * 1.1);
+    ctx.globalCompositeOperation = 'source-over';
+
+    // small contact shadow
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy + 3 * z, 7 * z, 3 * z, 0, 0, TAU);
+    ctx.fill();
+
+    // the crate itself (pre-rendered at 2x: 40px canvas -> ~20px on screen)
+    ctx.globalAlpha = 1;
+    const dw = this.crateSprite.width * 0.5 * z;
+    const dh = this.crateSprite.height * 0.5 * z;
+    ctx.drawImage(this.crateSprite, sx - dw / 2, sy - dh + 2 * z - bob, dw, dh);
+  }
+
+  /**
+   * Composite a brief white flash over a sprite that was just drawn at the
+   * given dest rect (combat hit-flicker). Uses one reused scratch canvas.
+   */
+  private drawSpriteFlash(
+    spr: HTMLCanvasElement,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number
+  ): void {
+    let fc = this.flickerScratch;
+    let g = this.flickerScratchCtx;
+    if (!fc || !g) {
+      fc = document.createElement('canvas');
+      fc.width = 256;
+      fc.height = 256;
+      g = fc.getContext('2d');
+      if (!g) return;
+      this.flickerScratch = fc;
+      this.flickerScratchCtx = g;
+    }
+    if (fc.width < spr.width || fc.height < spr.height) {
+      fc.width = Math.max(fc.width, spr.width);
+      fc.height = Math.max(fc.height, spr.height); // resizing also clears
+    }
+    g.clearRect(0, 0, fc.width, fc.height);
+    g.drawImage(spr, 0, 0);
+    // source-in keeps white only where the sprite has alpha
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, fc.width, fc.height);
+    g.globalCompositeOperation = 'source-over';
+    const ctx = this.ctx;
+    ctx.globalAlpha = 0.6;
+    ctx.drawImage(fc, 0, 0, spr.width, spr.height, dx, dy, dw, dh);
+    ctx.globalAlpha = 1;
+  }
+
+  // --- ambient layer (clouds + critters; foam lives in drawWater) -------------------
+
+  private drawAmbient(
+    state: GameState,
+    humanPlayer: PlayerId,
+    nowMs: number,
+    vw: number,
+    vh: number
+  ): void {
+    const ctx = this.ctx;
+    const z = this.zoom;
+
+    // (1) cloud shadows: 3 soft dark ellipses drifting ~4 px/s, world-anchored
+    // and wrapped into the viewport (+margin) so one is always nearby.
+    const margin = 480; // world px; >= cloud half-width so wraps happen off-screen
+    const spanX = vw / z + margin * 2;
+    const spanY = vh / z + margin * 2;
+    const originX = this.camX - margin;
+    const originY = this.camY - margin;
+    for (let i = 0; i < 3; i++) {
+      const speed = 4 * (0.7 + i * 0.3); // px/s
+      const dirx = i === 1 ? -0.8 : 1;
+      const diry = 0.35 + i * 0.18;
+      const wx0 = i * 1733.7 + nowMs * 0.001 * speed * dirx;
+      const wy0 = i * 911.3 + nowMs * 0.001 * speed * diry;
+      const wx = originX + ((((wx0 - originX) % spanX) + spanX) % spanX);
+      const wy = originY + ((((wy0 - originY) % spanY) + spanY) % spanY);
+      const sx = (wx - this.camX) * z;
+      const sy = (wy - this.camY) * z;
+      const rw = (320 + i * 110) * z; // half-width
+      ctx.globalAlpha = 0.05;
+      ctx.drawImage(this.cloudShadow, sx - rw, sy - rw * 0.5, rw * 2, rw);
+    }
+    ctx.globalAlpha = 1;
+
+    // (3) critters: up to 8 butterfly/bird dots over explored grass in view.
+    // Skipped entirely on heavy frames.
+    if (this.groundList.length + this.airList.length > 250) return;
+    const m = state.map;
+    const explored = state.players[humanPlayer]?.explored;
+    if (!explored) return;
+    const CELL = 16; // one or two critters per 16x16-tile cell
+    const cx0 = Math.max(0, Math.floor(this.vx0 / CELL));
+    const cy0 = Math.max(0, Math.floor(this.vy0 / CELL));
+    const cx1 = Math.min(Math.floor((m.w - 1) / CELL), Math.floor(this.vx1 / CELL));
+    const cy1 = Math.min(Math.floor((m.h - 1) / CELL), Math.floor(this.vy1 / CELL));
+    let drawn = 0;
+    for (let cy = cy0; cy <= cy1 && drawn < 8; cy++) {
+      for (let cx = cx0; cx <= cx1 && drawn < 8; cx++) {
+        const seed = ((cx * 73856093) ^ (cy * 19349663)) >>> 0;
+        const nCr = hash01(seed, 0) > 0.55 ? 2 : 1;
+        for (let j = 0; j < nCr && drawn < 8; j++) {
+          const s2 = (seed + j * 977) >>> 0;
+          const bird = hash01(s2, 3) > 0.65;
+          // slow wandering loop around a fixed anchor in the cell
+          const ax = cx * CELL + CELL * (0.2 + 0.6 * hash01(s2, 1));
+          const ay = cy * CELL + CELL * (0.2 + 0.6 * hash01(s2, 2));
+          const t = nowMs * 0.001;
+          const w1 = (0.04 + 0.05 * hash01(s2, 4)) * TAU;
+          const w2 = (0.03 + 0.05 * hash01(s2, 5)) * TAU;
+          const wr = bird ? 5 : 3;
+          const tx = ax + Math.sin(t * w1 + (s2 % 13)) * wr;
+          const ty = ay + Math.cos(t * w2 + (s2 % 7)) * wr;
+          const txi = tx | 0;
+          const tyi = ty | 0;
+          if (txi < 0 || tyi < 0 || txi >= m.w || tyi >= m.h) continue;
+          const ti = tyi * m.w + txi;
+          if (explored[ti] === 0) continue;
+          if (m.terrain[ti] !== Terrain.GRASS) continue;
+          const sx = this.projX(tx, ty);
+          const sy = this.projY(tx, ty);
+          if (sx < -20 || sx > vw + 20 || sy < -20 || sy > vh + 20) continue;
+          const flut = Math.sin(nowMs * (bird ? 0.006 : 0.018) + s2);
+          const alt =
+            (bird ? 26 : 10) * z +
+            (bird ? flut * 2 : Math.sin(nowMs * 0.005 + s2) * 3) * z;
+          const size = (bird ? 2.6 : 2) * z;
+          ctx.globalAlpha = 0.8;
+          ctx.fillStyle = bird ? '#1c2030' : CRITTER_COLORS[s2 % 3];
+          ctx.fillRect(sx - size / 2, sy - alt - size / 2, size, size);
+          // wing flick: thin oscillating bar
+          const ww = size * (0.8 + Math.abs(flut) * 1.2);
+          ctx.fillRect(sx - ww, sy - alt - size * 0.2, ww * 2, Math.max(1, 0.8 * z));
+          drawn++;
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
   // --- fog of war -------------------------------------------------------------------
 
   private drawFog(state: GameState, humanPlayer: PlayerId): void {
@@ -838,8 +1279,9 @@ export class Renderer {
     this.drawEntityBadges(this.groundList, state, ui, humanPlayer, nowMs);
     this.drawEntityBadges(this.airList, state, ui, humanPlayer, nowMs);
 
-    // placement ghost
+    // placement ghost (+ weapon range preview for defenses)
     if (ui.placingDefId && ui.hoverTile) {
+      this.drawPlacementRange(ui);
       this.drawPlacementGhost(state, ui, humanPlayer);
     }
 
@@ -968,6 +1410,20 @@ export class Renderer {
         }
       }
 
+      // hold-fire stance: small amber pause glyph above the health-bar spot
+      if (e.kind === 'unit' && e.stance === 'holdfire') {
+        const a = this.anchorOf(e);
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = '#ffb340';
+        const gbw = 2 * z;
+        const gbh = 5 * z;
+        const gap = 2 * z;
+        const gy = a.top - 11 * z; // just above the health bar at top-7z
+        ctx.fillRect(a.sx - gap / 2 - gbw, gy - gbh, gbw, gbh);
+        ctx.fillRect(a.sx + gap / 2, gy - gbh, gbw, gbh);
+        ctx.globalAlpha = 1;
+      }
+
       // rally flag + dashed line for selected own production buildings
       if (
         e.kind === 'building' &&
@@ -1038,6 +1494,42 @@ export class Renderer {
     }
     const occ = state.occupancy.get(i);
     return !occ || occ.length === 0;
+  }
+
+  /**
+   * Range preview while placing a defense: the weapon-range circle in tile
+   * space, pushed through the iso projection by sampling 32 points (a cheap,
+   * exact ellipse).
+   */
+  private drawPlacementRange(ui: UIState): void {
+    const defId = ui.placingDefId;
+    const hover = ui.hoverTile;
+    if (!defId || !hover) return;
+    const def = this.data.buildings[defId];
+    if (!def || !def.weapon) return;
+    const r = def.weapon.range;
+    const cx = Math.floor(hover.x) + def.footprint.w / 2;
+    const cy = Math.floor(hover.y) + def.footprint.h / 2;
+    const ctx = this.ctx;
+    const z = this.zoom;
+    ctx.beginPath();
+    for (let k = 0; k <= 32; k++) {
+      const ang = (k / 32) * TAU;
+      const tx = cx + Math.cos(ang) * r;
+      const ty = cy + Math.sin(ang) * r;
+      const px = this.projX(tx, ty);
+      const py = this.projY(tx, ty);
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(56,224,255,0.08)';
+    ctx.fill();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = '#38e0ff';
+    ctx.lineWidth = Math.max(1, 1.5 * z);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 
   private drawPlacementGhost(state: GameState, ui: UIState, humanPlayer: PlayerId): void {

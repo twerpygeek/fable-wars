@@ -15,7 +15,7 @@ import type {
   UIState,
   UnitDef,
 } from '../core/types';
-import { TICK_RATE } from '../core/constants';
+import { MAX_QUEUE_LENGTH, SELL_REFUND, TICK_RATE } from '../core/constants';
 import { canQueue } from '../sim/production';
 import type { SpriteAtlas } from '../render/sprites';
 
@@ -27,6 +27,11 @@ const TABS: { tab: ProductionTab; label: string; key: string }[] = [
   { tab: 'air', label: 'AIR', key: 'T' },
   { tab: 'naval', label: 'NAV', key: 'Y' },
 ];
+
+const UNIT_TABS: ProductionTab[] = ['infantry', 'vehicle', 'air', 'naval'];
+
+const TIP_DELAY_MS = 250; // hover dwell before the sidebar tooltip panel shows
+const BATCH_QUEUE_COUNT = 5; // Shift+click queues this many at once (units)
 
 const STYLE_ID = 'pa-style-sidebar';
 const CSS = `
@@ -84,6 +89,20 @@ const CSS = `
 .pa-sw .pa-sw-time { font-size: 13px; font-weight: bold; color: #fff; }
 .pa-sw.ready { border-color: #ff5ad9; animation: pa-ready-pulse 700ms infinite alternate; }
 .pa-sw.ready .pa-sw-time { color: #ff9af0; }
+.pa-item .pa-inf { position: absolute; top: -1px; left: 3px; font-size: 14px; font-weight: bold; color: #ffd95e;
+  text-shadow: 0 1px 3px #000, 0 0 6px rgba(255,217,94,0.55); display: none; pointer-events: none; }
+.pa-tip { position: absolute; z-index: 60; width: 212px; display: none; pointer-events: none; user-select: none;
+  background: linear-gradient(180deg, #181b33 0%, #0e1020 100%);
+  border: 1px solid #4a7dff; border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,0.65);
+  padding: 8px 10px; font-family: Verdana, Geneva, sans-serif; color: #cfd6ff; }
+.pa-tip .pa-tip-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pa-tip .pa-tip-name { font-size: 12px; font-weight: bold; color: #fff; letter-spacing: 0.5px; }
+.pa-tip .pa-tip-cost { font-size: 11px; font-weight: bold; color: #ffd95e; white-space: nowrap; }
+.pa-tip .pa-tip-stats { margin-top: 4px; display: flex; gap: 10px; font-size: 9px; color: #8d96c8; }
+.pa-tip .pa-tip-pw.pos { color: #5ee887; }
+.pa-tip .pa-tip-pw.neg { color: #ff6b5e; }
+.pa-tip .pa-tip-blurb { margin-top: 5px; font-size: 9px; line-height: 1.45; color: #aeb6e2; }
+.pa-tip .pa-tip-req { margin-top: 5px; font-size: 9px; font-weight: bold; color: #ff6b5e; }
 `;
 
 type DefAny = UnitDef | BuildingDef;
@@ -107,7 +126,7 @@ export class Sidebar {
   private pwText!: HTMLElement;
   private tabEls = new Map<ProductionTab, { btn: HTMLElement; badge: HTMLElement }>();
   private grid!: HTMLElement;
-  private itemEls = new Map<string, { el: HTMLElement; prog: HTMLElement }>();
+  private itemEls = new Map<string, { el: HTMLElement; prog: HTMLElement; inf: HTMLElement }>();
   private repairBtn!: HTMLElement;
   private sellBtn!: HTMLElement;
   private swPanel!: HTMLElement;
@@ -118,6 +137,17 @@ export class Sidebar {
 
   private shownCredits = 0;
   private gridHash = '';
+
+  // tooltip panel (shared by build items, mode buttons, superweapon panel)
+  private tipEl!: HTMLElement;
+  private tipTimer: number | null = null;
+
+  // infinite repeat-build (OpenRA-style): unit defIds toggled via Ctrl+click.
+  // lastRepeatTick dedupes the auto-requeue dispatch while a command is in
+  // flight (the sim only consumes pending commands on the next tick).
+  private repeatDefs = new Set<string>();
+  private lastRepeatTick = new Map<ProductionTab, number>();
+
   private onKey = (e: KeyboardEvent) => {
     const tag = (e.target as HTMLElement | null)?.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
@@ -156,8 +186,11 @@ export class Sidebar {
     this.minimapCanvas.width = 184;
     this.minimapCanvas.height = 184;
     this.el.appendChild(this.minimapCanvas);
+    this.tipEl = document.createElement('div');
+    this.tipEl.className = 'pa-tip';
     this.buildStatic();
     root.appendChild(this.el);
+    root.appendChild(this.tipEl);
     window.addEventListener('keydown', this.onKey);
     this.shownCredits = getState().players[humanPlayer].credits;
     this.crVal.textContent = String(this.shownCredits);
@@ -165,6 +198,8 @@ export class Sidebar {
 
   destroy(): void {
     window.removeEventListener('keydown', this.onKey);
+    this.hideTip();
+    this.tipEl.remove();
     this.el.remove();
   }
 
@@ -216,6 +251,18 @@ export class Sidebar {
     });
     modes.append(this.repairBtn, this.sellBtn);
     this.el.appendChild(modes);
+    this.bindTip(
+      this.repairBtn,
+      () =>
+        `<div class="pa-tip-head"><span class="pa-tip-name">Repair</span></div>` +
+        `<div class="pa-tip-blurb">Toggle, then click a damaged structure to repair it over time for credits.</div>`,
+    );
+    this.bindTip(
+      this.sellBtn,
+      () =>
+        `<div class="pa-tip-head"><span class="pa-tip-name">Sell</span></div>` +
+        `<div class="pa-tip-blurb">Toggle, then click one of your structures to sell it for a ${Math.round(SELL_REFUND * 100)}% refund.</div>`,
+    );
 
     this.swPanel = document.createElement('div');
     this.swPanel.className = 'pa-sw';
@@ -231,7 +278,87 @@ export class Sidebar {
       const p = this.getState().players[this.me];
       if (p.superweapon && !p.superweapon.charging) this.ui.targetingSuperweapon = true;
     });
+    this.bindTip(this.swPanel, () => {
+      const p = this.getState().players[this.me];
+      if (!p.superweapon) return null;
+      const swDef = this.data.superweapons[p.superweapon.defId];
+      if (!swDef) return null;
+      return (
+        `<div class="pa-tip-head"><span class="pa-tip-name">${esc(swDef.name)}</span></div>` +
+        `<div class="pa-tip-stats"><span>⏱ ${fmt(swDef.chargeTicks / TICK_RATE)} charge</span></div>` +
+        `<div class="pa-tip-blurb">When READY, click this panel and choose a target anywhere on the battlefield.</div>`
+      );
+    });
     this.el.appendChild(this.swPanel);
+  }
+
+  // --- tooltip panel ---------------------------------------------------------
+
+  /** Show `content()` in the tooltip panel after a short hover dwell on `el`;
+   *  hide on mouseleave or any click. A null content suppresses the tip. */
+  private bindTip(el: HTMLElement, content: () => string | null): void {
+    el.addEventListener('mouseenter', () => {
+      this.cancelTipTimer();
+      this.tipTimer = window.setTimeout(() => {
+        this.tipTimer = null;
+        const html = content();
+        if (html !== null && el.isConnected) this.showTip(el, html);
+      }, TIP_DELAY_MS);
+    });
+    el.addEventListener('mouseleave', () => this.hideTip());
+    el.addEventListener('mousedown', () => this.hideTip());
+  }
+
+  /** Position the panel just left of the sidebar, top-aligned with the anchor
+   *  (clamped to the viewport). Content is set before measuring. */
+  private showTip(anchor: HTMLElement, html: string): void {
+    const tip = this.tipEl;
+    tip.innerHTML = html;
+    tip.style.display = 'block';
+    tip.style.visibility = 'hidden';
+    const rootRect = this.root.getBoundingClientRect();
+    const sideRect = this.el.getBoundingClientRect();
+    const aRect = anchor.getBoundingClientRect();
+    const left = sideRect.left - rootRect.left - tip.offsetWidth - 8;
+    const maxTop = window.innerHeight - rootRect.top - tip.offsetHeight - 8;
+    tip.style.left = `${Math.max(4, left)}px`;
+    tip.style.top = `${Math.max(8, Math.min(aRect.top - rootRect.top, maxTop))}px`;
+    tip.style.visibility = 'visible';
+  }
+
+  private hideTip(): void {
+    this.cancelTipTimer();
+    this.tipEl.style.display = 'none';
+  }
+
+  private cancelTipTimer(): void {
+    if (this.tipTimer !== null) {
+      window.clearTimeout(this.tipTimer);
+      this.tipTimer = null;
+    }
+  }
+
+  /** Build-item tooltip: name / cost / build seconds / power delta / role line,
+   *  plus a red requirement line when locked (canQueue reason). */
+  private defTipHtml(def: DefAny): string {
+    const chk = canQueue(this.getState(), this.data, this.me, def.id);
+    const bld = this.data.buildings[def.id] as BuildingDef | undefined;
+    const secs = Math.max(1, Math.round(def.buildTicks / TICK_RATE));
+    let stats = `<span>⏱ ${secs}s</span>`;
+    if (bld && bld.power !== 0) {
+      const cls = bld.power > 0 ? 'pos' : 'neg';
+      stats += `<span class="pa-tip-pw ${cls}">⚡ ${bld.power > 0 ? '+' : ''}${bld.power}</span>`;
+    }
+    let html =
+      `<div class="pa-tip-head"><span class="pa-tip-name">${esc(def.name)}</span>` +
+      `<span class="pa-tip-cost">$${def.cost}</span></div>` +
+      `<div class="pa-tip-stats">${stats}</div>` +
+      `<div class="pa-tip-blurb">${esc(def.blurb)}</div>`;
+    if (!chk.ok) {
+      const reason = (chk.reason ?? 'Unavailable').replace(/^Requires\s+/i, '');
+      html += `<div class="pa-tip-req">Requires: ${esc(reason)}</div>`;
+    }
+    return html;
   }
 
   private setTab(tab: ProductionTab): void {
@@ -310,6 +437,25 @@ export class Sidebar {
       if (it && def) it.prog.style.width = `${Math.min(100, (q.progress / Math.max(1, def.buildTicks)) * 100)}%`;
     }
 
+    // infinite repeat-build: when a unit tab's queue runs dry, re-queue every
+    // toggled def of that tab (UNITS ONLY — structures are never auto-requeued).
+    if (this.repeatDefs.size > 0) {
+      for (const tab of UNIT_TABS) {
+        const queue = p.queues[tab];
+        if (queue.items.length > 0) continue;
+        if (this.lastRepeatTick.get(tab) === state.tick) continue; // dispatch still pending
+        let sent = false;
+        for (const defId of this.repeatDefs) {
+          const ud = this.data.units[defId];
+          if (!ud || ud.tab !== tab) continue;
+          if (!canQueue(state, this.data, this.me, defId).ok) continue;
+          this.dispatch({ type: 'queueProduction', player: this.me, tab, defId });
+          sent = true;
+        }
+        if (sent) this.lastRepeatTick.set(tab, state.tick);
+      }
+    }
+
     // superweapon panel
     if (p.superweapon) {
       const swDef = this.data.superweapons[p.superweapon.defId];
@@ -334,7 +480,16 @@ export class Sidebar {
     this.sellBtn.classList.toggle('active', this.ui.sellMode);
   }
 
+  /** Ctrl+click repeat toggle: flip the defId and refresh its ∞ badge. */
+  private toggleRepeat(defId: string): void {
+    if (this.repeatDefs.has(defId)) this.repeatDefs.delete(defId);
+    else this.repeatDefs.add(defId);
+    const it = this.itemEls.get(defId);
+    if (it) it.inf.style.display = this.repeatDefs.has(defId) ? 'block' : 'none';
+  }
+
   private rebuildGrid(defs: DefAny[], state: GameState): void {
+    this.hideTip(); // anchors are about to be replaced
     this.grid.innerHTML = '';
     this.itemEls.clear();
     const p = state.players[this.me];
@@ -345,7 +500,6 @@ export class Sidebar {
       const isReady = q.readyBuilding === def.id;
       const el = document.createElement('div');
       el.className = 'pa-item' + (chk.ok || isReady ? '' : ' locked') + (isReady ? ' ready' : '');
-      el.title = `${def.name} — $${def.cost}\n${def.blurb}` + (chk.ok ? '' : `\n🔒 ${chk.reason ?? 'unavailable'}`);
       el.appendChild(this.icons.getIcon(def.id));
       const cost = document.createElement('span');
       cost.className = 'pa-item-cost';
@@ -358,9 +512,15 @@ export class Sidebar {
       const readyTag = document.createElement('div');
       readyTag.className = 'pa-ready-tag';
       readyTag.textContent = 'READY';
-      el.append(cost, name, prog, readyTag);
+      const inf = document.createElement('div');
+      inf.className = 'pa-inf';
+      inf.textContent = '∞';
+      inf.style.display = this.repeatDefs.has(def.id) ? 'block' : 'none';
+      el.append(cost, name, prog, readyTag, inf);
+      this.bindTip(el, () => this.defTipHtml(def));
 
-      el.addEventListener('click', () => {
+      const isUnit = def.id in this.data.units;
+      el.addEventListener('click', (ev) => {
         const st = this.getState();
         const pl = st.players[this.me];
         const queue = pl.queues[this.currentTab];
@@ -368,12 +528,39 @@ export class Sidebar {
           this.ui.placingDefId = def.id;
           return;
         }
-        if (canQueue(st, this.data, this.me, def.id).ok) {
+        // Ctrl+click (Cmd on macOS): toggle infinite repeat — units only.
+        // Toggling OFF is always allowed, even if the item locked meanwhile.
+        if ((ev.ctrlKey || ev.metaKey) && isUnit) {
+          if (this.repeatDefs.has(def.id) || canQueue(st, this.data, this.me, def.id).ok) {
+            this.toggleRepeat(def.id);
+          }
+          return;
+        }
+        if (!canQueue(st, this.data, this.me, def.id).ok) return;
+        // Shift+click queues a batch (units only); the sim re-validates each
+        // command, so MAX_QUEUE_LENGTH is respected even with stale state.
+        const room = MAX_QUEUE_LENGTH - queue.items.length;
+        const count = ev.shiftKey && isUnit ? Math.max(1, Math.min(BATCH_QUEUE_COUNT, room)) : 1;
+        for (let i = 0; i < count; i++) {
           this.dispatch({ type: 'queueProduction', player: this.me, tab: this.currentTab, defId: def.id });
         }
       });
       el.addEventListener('contextmenu', (ev) => {
         ev.preventDefault();
+        // macOS reports Ctrl+LMB as a context click — treat it as the toggle.
+        if (ev.ctrlKey && isUnit) {
+          const st = this.getState();
+          if (this.repeatDefs.has(def.id) || canQueue(st, this.data, this.me, def.id).ok) {
+            this.toggleRepeat(def.id);
+          }
+          return;
+        }
+        // Plain right-click on a repeating item switches repeat off first;
+        // the queue itself is left intact (OpenRA behavior).
+        if (this.repeatDefs.has(def.id)) {
+          this.toggleRepeat(def.id);
+          return;
+        }
         const st = this.getState();
         const queue = st.players[this.me].queues[this.currentTab];
         if (queue.readyBuilding === def.id) {
@@ -386,7 +573,7 @@ export class Sidebar {
       });
 
       this.grid.appendChild(el);
-      this.itemEls.set(def.id, { el, prog });
+      this.itemEls.set(def.id, { el, prog, inf });
     }
   }
 }
@@ -394,4 +581,8 @@ export class Sidebar {
 function fmt(totalSec: number): string {
   const s = Math.ceil(totalSec);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

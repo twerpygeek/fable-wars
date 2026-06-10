@@ -9,8 +9,17 @@
 import type { Camera, GameEvent, GameState, PlayerId, Vec2 } from '../core/types';
 import { Element, WeaponClass } from '../core/types';
 import { TILE_HALF_H, TILE_HALF_W } from '../core/constants';
+import { DATA } from '../data';
 import type { SfxName } from './sfx';
-import { playSfx, resumeContext, setSfxEnabled } from './sfx';
+import {
+  playBark,
+  playCheer,
+  playCrateChime,
+  playSfx,
+  playTauntBlip,
+  resumeContext,
+  setSfxEnabled,
+} from './sfx';
 import {
   setMusicEnabled,
   setMusicIntensity,
@@ -52,8 +61,26 @@ export class AudioSystem {
 
   /** Call on the first user gesture to unlock the AudioContext. */
   resume(): void {
+    // Also kicks off the recorded-sample fetch + ZzFX adoption (both lazy,
+    // idempotent, and silently degrade to the synth recipes on failure).
     resumeContext();
     primeAnnouncer();
+  }
+
+  /**
+   * Creature acknowledgement bark for the lead unit of a selection/order
+   * (RA2's "lead unit responds" rule). Species voice is derived from the def
+   * id; timbre from its element. Internally throttled to 1 per 250 ms, so
+   * call freely on every select/command.
+   */
+  bark(defId: string): void {
+    const def = DATA.units[defId];
+    playBark(defId, def !== undefined ? def.element : Element.NEUTRAL);
+  }
+
+  /** Celebration note for the cheer command (C key) and victory auto-cheer. */
+  cheer(): void {
+    playCheer();
   }
 
   setEnabled(sfx: boolean, music: boolean, voice: boolean): void {
@@ -240,6 +267,22 @@ export class AudioSystem {
             this.musicRunning = false;
             musicStop();
           }
+          break;
+        }
+
+        case 'cratePickup': {
+          if (ev.player !== humanPlayer) break; // enemy crates pop silently
+          const s = this.spatial(ev.pos, cam, viewW, viewH);
+          playCrateChime(
+            ev.kind === 'money',
+            s ? { pan: s.pan, gain: Math.max(0.6, s.gain) } : { gain: 0.8 },
+          );
+          break;
+        }
+
+        case 'aiTaunt': {
+          if (ev.player === humanPlayer) break; // only enemy commanders taunt
+          playTauntBlip();
           break;
         }
 

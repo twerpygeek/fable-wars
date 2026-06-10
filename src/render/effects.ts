@@ -6,8 +6,8 @@
 // Cosmetic randomness / performance.now() are allowed here (render side only).
 // =============================================================================
 
-import { TICK_MS, TILE_HALF_H, TILE_HALF_W } from '../core/constants';
-import { Element } from '../core/types';
+import { SHAKE_MIN_HP, TICK_MS, TILE_HALF_H, TILE_HALF_W } from '../core/constants';
+import { ArmorClass, Element } from '../core/types';
 import type {
   GameData,
   GameEvent,
@@ -98,6 +98,18 @@ function renderSmoke(rgb: string): HTMLCanvasElement {
   return c;
 }
 
+function renderScorch(): HTMLCanvasElement {
+  // soft charred-ground blob; drawn squashed 2:1 as an iso ground decal
+  const { c, g } = makeCanvas(96);
+  const grad = g.createRadialGradient(48, 48, 4, 48, 48, 47);
+  grad.addColorStop(0, 'rgba(10,9,8,0.95)');
+  grad.addColorStop(0.55, 'rgba(14,12,10,0.7)');
+  grad.addColorStop(1, 'rgba(14,12,10,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 96, 96);
+  return c;
+}
+
 export class EffectsSystem {
   private effects: ActiveEffect[] = [];
   private flashes: Flash[] = [];
@@ -106,6 +118,9 @@ export class EffectsSystem {
   private glows: HTMLCanvasElement[] = [];
   private smoke: HTMLCanvasElement;
   private darkSmoke: HTMLCanvasElement;
+  private dust: HTMLCanvasElement;
+  private scorch: HTMLCanvasElement;
+  private spiritGlow: HTMLCanvasElement;
   private shakeOut = { x: 0, y: 0 };
 
   constructor() {
@@ -115,6 +130,9 @@ export class EffectsSystem {
     }
     this.smoke = renderSmoke('120,118,116');
     this.darkSmoke = renderSmoke('34,38,52');
+    this.dust = renderSmoke('150,140,118'); // tan construction dust
+    this.scorch = renderScorch();
+    this.spiritGlow = renderGlow('#cfe4ff'); // pale ghost-blue wisp
   }
 
   /** Soft glow sprite per element — also used by the renderer for projectile trails. */
@@ -168,11 +186,11 @@ export class EffectsSystem {
         case 'shotFired': {
           if (this.effects.length > MAX_EFFECTS - 40) break; // muzzle flashes are lowest priority
           this.add({
-            kind: 'spark',
+            kind: 'muzzle',
             pos: ev.pos,
             startedAt: now,
-            duration: 140,
-            scale: 0.6,
+            duration: 120,
+            scale: 0.7,
             element: ev.element,
           });
           break;
@@ -195,25 +213,71 @@ export class EffectsSystem {
             const bd = data.buildings[ev.defId];
             const fw = bd ? bd.footprint.w : 2;
             const fh = bd ? bd.footprint.h : 2;
+            const cx = ev.pos.x + fw / 2;
+            const cy = ev.pos.y + fh / 2;
             this.add({
               kind: 'explosion',
-              pos: { x: ev.pos.x + fw / 2, y: ev.pos.y + fh / 2 },
+              pos: { x: cx, y: cy },
               startedAt: now,
               duration: 950,
               scale: 2.2 + (fw + fh) * 0.3,
               element: Element.FIRE,
             });
-            this.shake(5, 480, now);
+            // structural debris arcing out + a lingering scorch under the rubble
+            this.add({
+              kind: 'debris',
+              pos: { x: cx, y: cy },
+              startedAt: now,
+              duration: 8000,
+              scale: 1 + (fw + fh) * 0.18,
+              element: Element.NEUTRAL,
+            });
+            // collapse feel: 2-3 dust plumes around the footprint
+            const puffs = 2 + (Math.random() < 0.5 ? 1 : 0);
+            for (let i = 0; i < puffs; i++) {
+              this.add({
+                kind: 'dust',
+                pos: { x: ev.pos.x + Math.random() * fw, y: ev.pos.y + Math.random() * fh },
+                startedAt: now + i * 110,
+                duration: 700,
+                scale: 1 + (fw + fh) * 0.12,
+                element: Element.NEUTRAL,
+              });
+            }
+            // rules.ini ShakeScreen: only deaths of beefy things rattle the camera
+            if ((bd ? bd.hp : 0) >= SHAKE_MIN_HP) this.shake(5, 480, now);
           } else {
             const ud = data.units[ev.defId];
-            this.add({
-              kind: 'explosion',
-              pos: ev.pos,
-              startedAt: now,
-              duration: 420,
-              scale: 0.95,
-              element: ud ? ud.element : Element.NEUTRAL,
-            });
+            if (ud && ud.armor === ArmorClass.LIGHT) {
+              // creature faint: ground poof + rising spirit wisp (no fireball)
+              this.add({
+                kind: 'spirit',
+                pos: ev.pos,
+                startedAt: now,
+                duration: 900,
+                scale: 1,
+                element: ud.element,
+              });
+            } else {
+              this.add({
+                kind: 'explosion',
+                pos: ev.pos,
+                startedAt: now,
+                duration: 420,
+                scale: 0.95,
+                element: ud ? ud.element : Element.NEUTRAL,
+              });
+              // vehicle-tier wrecks: dark fragments + slow-fading scorch mark
+              this.add({
+                kind: 'debris',
+                pos: ev.pos,
+                startedAt: now,
+                duration: 8000,
+                scale: ud && ud.armor === ArmorClass.HEAVY ? 1 : 0.7,
+                element: Element.NEUTRAL,
+              });
+            }
+            if (ud && ud.hp >= SHAKE_MIN_HP) this.shake(4, 380, now);
           }
           break;
         }
@@ -315,6 +379,17 @@ export class EffectsSystem {
           });
           break;
         }
+        case 'cratePickup': {
+          this.add({
+            kind: 'crate',
+            pos: { x: ev.pos.x + 0.5, y: ev.pos.y + 0.5 },
+            startedAt: now,
+            duration: 750,
+            scale: 1,
+            element: Element.NEUTRAL,
+          });
+          break;
+        }
         default:
           break;
       }
@@ -410,10 +485,59 @@ export class EffectsSystem {
         case 'promote':
           this.drawPromote(ctx, fx, t, sx, sy, z);
           break;
+        case 'muzzle':
+          this.drawMuzzle(ctx, fx, t, sx, sy, z);
+          break;
+        case 'spirit':
+          this.drawSpirit(ctx, fx, t, sx, sy, z);
+          break;
+        case 'debris':
+          this.drawDebrisFragments(ctx, fx, sx, sy, z, now);
+          break;
+        case 'dust':
+          this.drawDust(ctx, fx, t, sx, sy, z);
+          break;
+        case 'cheer':
+          this.drawCheer(ctx, fx, t, sx, sy, z);
+          break;
+        case 'crate':
+          this.drawCratePickup(ctx, fx, t, sx, sy, z);
+          break;
+        // 'moveFlash' + the debris scorch render in drawGroundDecals (under entities);
+        // 'flicker' is a renderer-side sprite overlay; 'taunt' is a UI toast.
       }
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /**
+   * Ground decals drawn UNDER the entity layers (between terrain/water and
+   * units): green move-flash rings and the slow-fading debris scorch marks.
+   */
+  drawGroundDecals(
+    ctx: CanvasRenderingContext2D,
+    now: number,
+    camX: number,
+    camY: number,
+    z: number,
+    viewW: number,
+    viewH: number
+  ): void {
+    const pad = 120 * z;
+    for (let i = 0; i < this.effects.length; i++) {
+      const fx = this.effects[i];
+      if (fx.kind !== 'moveFlash' && fx.kind !== 'debris') continue;
+      const age = now - fx.startedAt;
+      if (age < 0 || age >= fx.duration) continue;
+      const t = age / fx.duration;
+      const sx = ((fx.pos.x - fx.pos.y) * TILE_HALF_W - camX) * z;
+      const sy = ((fx.pos.x + fx.pos.y) * TILE_HALF_H - camY) * z;
+      if (sx < -pad || sx > viewW + pad || sy < -pad || sy > viewH + pad) continue;
+      if (fx.kind === 'moveFlash') this.drawMoveFlash(ctx, fx, t, sx, sy, z);
+      else this.drawScorch(ctx, fx, t, sx, sy, z);
+    }
+    ctx.globalAlpha = 1;
   }
 
   /** Full-screen flashes (superweapon warnings / nuke arrival). Draw last. */
@@ -850,6 +974,246 @@ export class EffectsSystem {
     ctx.globalAlpha *= 0.9;
     const gs = Math.max(1, 1.8 * z);
     ctx.fillRect(sx + w + 2 * z, sy - rise - 2 * z, gs, gs);
+    ctx.globalAlpha = 1;
+  }
+
+  /** RA2 MoveFlash=RING: green ground ring expanding at the ordered destination. */
+  private drawMoveFlash(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    t: number,
+    sx: number,
+    sy: number,
+    z: number
+  ): void {
+    const ease = 1 - (1 - t) * (1 - t);
+    const r = (5 + 20 * ease) * z * fx.scale;
+    ctx.strokeStyle = MAIN[Element.GRASS];
+    ctx.globalAlpha = (1 - t) * 0.85;
+    ctx.lineWidth = Math.max(1, 2.2 * z * (1 - t * 0.5));
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, r, r * 0.5, 0, 0, TAU);
+    ctx.stroke();
+    // trailing inner ring
+    const r2 = r * 0.55;
+    ctx.globalAlpha = (1 - t) * 0.4;
+    ctx.lineWidth = Math.max(1, 1.4 * z);
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, r2, r2 * 0.5, 0, 0, TAU);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  /** Debris ground decal: charred ellipse that fades over the full ~8s. */
+  private drawScorch(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    t: number,
+    sx: number,
+    sy: number,
+    z: number
+  ): void {
+    const a = 0.4 * (1 - t);
+    if (a <= 0.01) return;
+    const grow = Math.min(1, (t * fx.duration) / 450); // quick spread, then static
+    const r = (14 + 12 * grow) * z * fx.scale;
+    ctx.globalAlpha = a;
+    ctx.drawImage(this.scorch, sx - r, sy - r * 0.5, r * 2, r);
+  }
+
+  /** Debris airborne phase: 3-5 dark fragments arcing out, gone by ~0.9s. */
+  private drawDebrisFragments(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    sx: number,
+    sy: number,
+    z: number,
+    now: number
+  ): void {
+    const age = now - fx.startedAt;
+    if (age >= 900) return; // only the scorch decal remains after this
+    const fly = Math.min(1, age / 700);
+    const fade = age < 700 ? 1 : 1 - (age - 700) / 200;
+    const s = fx.scale;
+    const n = 3 + ((h(fx.seed, 9) * 2.99) | 0);
+    ctx.globalAlpha = fade;
+    for (let i = 0; i < n; i++) {
+      const ang = h(fx.seed, i) * TAU;
+      const sp = 0.55 + h(fx.seed, i + 40) * 0.9;
+      const d = fly * (12 + 30 * sp) * z * s;
+      const peakH = (10 + 18 * sp) * z * s;
+      const px = sx + Math.cos(ang) * d;
+      const py = sy + Math.sin(ang) * d * 0.5 - peakH * 4 * fly * (1 - fly);
+      const sz = Math.max(1, (1.8 + h(fx.seed, i + 80) * 2) * z);
+      ctx.fillStyle = i % 2 === 0 ? '#2b2d36' : '#3d3428';
+      ctx.fillRect(px - sz / 2, py - sz / 2, sz, sz);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Creature death: ground poof + pale wisp rising ~20px while fading. */
+  private drawSpirit(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    t: number,
+    sx: number,
+    sy: number,
+    z: number
+  ): void {
+    if (t < 0.4) {
+      const u = t / 0.4;
+      const sr = (6 + 13 * u) * z;
+      ctx.globalAlpha = (1 - u) * 0.35;
+      ctx.drawImage(this.smoke, sx - sr, sy - sr, sr * 2, sr * 2);
+    }
+    const rise = t * 20 * z;
+    const sway = Math.sin(t * 8 + h(fx.seed, 3) * TAU) * 2.5 * z;
+    const a = (t < 0.18 ? t / 0.18 : 1 - (t - 0.18) / 0.82) * 0.8;
+    const wx = sx + sway;
+    const wy = sy - 7 * z - rise;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = a;
+    const wr = (5.5 - t * 1.8) * z * fx.scale;
+    ctx.drawImage(this.spiritGlow, wx - wr, wy - wr, wr * 2, wr * 2);
+    // little tail trailing the wisp
+    ctx.globalAlpha = a * 0.45;
+    const tr = wr * 0.55;
+    ctx.drawImage(this.spiritGlow, wx - sway * 0.8 - tr, wy + 4 * z - tr, tr * 2, tr * 2);
+    // two sparkle motes orbiting up with it
+    ctx.fillStyle = '#eef7ff';
+    for (let i = 0; i < 2; i++) {
+      const ma = h(fx.seed, i + 10) * TAU + t * 5;
+      const mx = wx + Math.cos(ma) * 6 * z;
+      const my = wy + Math.sin(ma) * 3 * z - i * 3 * z;
+      ctx.globalAlpha = a * 0.8;
+      const ms = Math.max(1, 1.4 * z);
+      ctx.fillRect(mx - ms / 2, my - ms / 2, ms, ms);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+
+  /** Construction / collapse dust: tan puffs drifting out and up. */
+  private drawDust(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    t: number,
+    sx: number,
+    sy: number,
+    z: number
+  ): void {
+    const s = fx.scale;
+    for (let i = 0; i < 3; i++) {
+      const ang = h(fx.seed, i) * TAU;
+      const drift = (4 + 11 * t) * z * s * (0.5 + h(fx.seed, i + 20));
+      const px = sx + Math.cos(ang) * drift;
+      const py = sy + Math.sin(ang) * drift * 0.4 - t * (5 + 7 * h(fx.seed, i + 40)) * z;
+      const sr = (5 + 14 * t) * z * s * (0.6 + 0.4 * h(fx.seed, i + 60));
+      ctx.globalAlpha = (1 - t) * 0.38;
+      ctx.drawImage(this.dust, px - sr, py - sr, sr * 2, sr * 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Brief weapon muzzle flash at the firing tile. */
+  private drawMuzzle(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    t: number,
+    sx: number,
+    sy: number,
+    z: number
+  ): void {
+    ctx.globalCompositeOperation = 'lighter';
+    const a = 1 - t;
+    const r = (5 + 4 * t) * z * fx.scale * 1.6;
+    const my = sy - 9 * z; // roughly weapon height
+    ctx.globalAlpha = a * 0.9;
+    ctx.drawImage(this.glows[fx.element] ?? this.glows[0], sx - r, my - r, r * 2, r * 2);
+    // hot core
+    ctx.fillStyle = CORE[fx.element] ?? CORE[0];
+    const cs = Math.max(1, 2.2 * z * a);
+    ctx.fillRect(sx - cs / 2, my - cs / 2, cs, cs);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+
+  /** Celebration: gold music note bouncing above the unit (~1.2s). */
+  private drawCheer(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    t: number,
+    sx: number,
+    sy: number,
+    z: number
+  ): void {
+    const bounce = Math.abs(Math.sin(t * Math.PI * 3)) * (1 - t * 0.5) * 8 * z;
+    const a = t > 0.78 ? (1 - t) / 0.22 : 1;
+    const nx = sx + (h(fx.seed, 1) - 0.5) * 10 * z;
+    const ny = sy - 30 * z - t * 8 * z - bounce;
+    ctx.globalAlpha = a;
+    // music note: head + stem + flag
+    ctx.fillStyle = GOLD;
+    ctx.beginPath();
+    ctx.ellipse(nx, ny, 3 * z, 2.2 * z, -0.45, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = Math.max(1, 1.5 * z);
+    ctx.beginPath();
+    ctx.moveTo(nx + 2.6 * z, ny - 0.8 * z);
+    ctx.lineTo(nx + 2.6 * z, ny - 10 * z);
+    ctx.lineTo(nx + 6 * z, ny - 8.4 * z);
+    ctx.stroke();
+    // sparkle star beside the note
+    const px2 = nx + 9 * z;
+    const py2 = ny - 5 * z + Math.sin(t * 14) * 1.5 * z;
+    ctx.globalAlpha = a * 0.85;
+    ctx.strokeStyle = '#fff6cf';
+    ctx.lineWidth = Math.max(1, 1.2 * z);
+    const st = 2.4 * z;
+    ctx.beginPath();
+    ctx.moveTo(px2 - st, py2);
+    ctx.lineTo(px2 + st, py2);
+    ctx.moveTo(px2, py2 - st);
+    ctx.lineTo(px2, py2 + st);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  /** Crate pickup: gold ray burst + rising glints. */
+  private drawCratePickup(
+    ctx: CanvasRenderingContext2D,
+    fx: ActiveEffect,
+    t: number,
+    sx: number,
+    sy: number,
+    z: number
+  ): void {
+    const grow = Math.sqrt(t);
+    ctx.globalCompositeOperation = 'lighter';
+    // gold ray burst
+    ctx.strokeStyle = GOLD;
+    ctx.globalAlpha = (1 - t) * 0.9;
+    ctx.lineWidth = Math.max(1, 1.5 * z);
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = h(fx.seed, i) * TAU;
+      const r0 = 3 * z;
+      const r1 = (6 + 16 * grow) * z * fx.scale;
+      ctx.moveTo(sx + Math.cos(a) * r0, sy - 6 * z + Math.sin(a) * r0 * 0.55);
+      ctx.lineTo(sx + Math.cos(a) * r1, sy - 6 * z + Math.sin(a) * r1 * 0.55);
+    }
+    ctx.stroke();
+    // rising glints
+    ctx.fillStyle = '#fff6cf';
+    for (let i = 0; i < 5; i++) {
+      const px = sx + (h(fx.seed, i + 30) - 0.5) * 24 * z;
+      const py = sy - 4 * z - t * (16 + 16 * h(fx.seed, i + 60)) * z;
+      ctx.globalAlpha = (1 - t) * (0.6 + 0.4 * h(fx.seed, i + 90));
+      const gs = Math.max(1, (2.4 - 1.4 * t) * z);
+      ctx.fillRect(px - gs / 2, py - gs / 2, gs, gs);
+    }
+    ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
   }
 }

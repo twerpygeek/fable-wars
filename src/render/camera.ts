@@ -12,7 +12,9 @@
 import { TILE_HALF_H, TILE_HALF_W, TILE_W } from '../core/constants';
 import type { Camera, GameMap, Vec2 } from '../core/types';
 
-export const MIN_ZOOM = 0.5;
+// 0.65 floor matches the C&C Remastered authenticity clamp (was 0.5; full
+// zoom-out flattened the iso art and broke sprite readability).
+export const MIN_ZOOM = 0.65;
 export const MAX_ZOOM = 1.5;
 
 /** Project a tile-space point to screen pixels. */
@@ -41,7 +43,7 @@ function clampAxis(v: number, min: number, max: number, view: number): number {
 /**
  * Keep the viewport inside (the bounding box of) the map diamond, with a
  * little margin so the player can see the map edge breathe. Also sanitizes
- * zoom into the supported 0.5–1.5 range.
+ * zoom into the supported 0.65–1.5 range.
  */
 export function clampCamera(cam: Camera, map: GameMap, viewW: number, viewH: number): void {
   if (!Number.isFinite(cam.zoom) || cam.zoom <= 0) cam.zoom = 1;

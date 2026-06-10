@@ -6,14 +6,22 @@
 //   repair-depot free healing of nearby ground units,
 //   harvester order state machine (harvest -> full -> returnCargo -> unload ->
 //   auto-repeat to last field; idle harvesters near crystal auto-start).
+//
+// Harvester claim system (clean-room reimplementation of OpenRA's resource
+// claim mechanism from a prose description — no GPL source consulted):
+// harvesters of the SAME owner never target the same crystal tile (enemy
+// contention stays — it's FFA gameplay); target picks are scored toward the
+// refinery side of a field; a 2s backoff stops failed searches from thrashing.
 // =============================================================================
 
 import type {
   Entity,
+  EntityId,
   GameData,
   GameEvent,
   GameMap,
   GameState,
+  PlayerId,
   PlayerState,
   UnitDef,
   Vec2,
@@ -26,11 +34,164 @@ import {
   REPAIR_DEPOT_RANGE,
   REPAIR_HP_PER_TICK,
   UNLOAD_PER_TICK,
+  secondsToTicks,
 } from '../core/constants';
 import { isGroundPassable } from '../map/terrain';
-import { findNearestTile } from './pathfinding';
 import { orderMove } from './movement';
 import { buildingsOf, entitiesOf } from './entity';
+
+// --- harvester claim registry (derived cache, not part of serialized state) ----
+
+/** Ticks a harvester waits after a failed crystal search before retrying. */
+const SEARCH_BACKOFF_TICKS = secondsToTicks(2);
+/** Chebyshev search radius for the throttled idle scan. */
+const IDLE_SCAN_RADIUS = 10;
+/** Chebyshev search radius for an active harvest retarget. */
+const RETARGET_RADIUS = 64;
+/** Weight of the refinery-distance term in target scoring: prefers tiles on
+ *  the refinery side of a field, so harvesters stop marching ever-outward. */
+const REFINERY_BIAS = 0.5;
+
+interface ClaimRegistry {
+  /** tile index -> claiming harvester id. */
+  byTile: Map<number, EntityId>;
+  /** harvester id -> claimed tile index. */
+  byUnit: Map<EntityId, number>;
+  /** harvester id -> earliest tick it may search for crystal again. */
+  nextSearchTick: Map<EntityId, number>;
+}
+
+const claimStore = new WeakMap<GameState, ClaimRegistry>();
+
+function claimsOf(state: GameState): ClaimRegistry {
+  let reg = claimStore.get(state);
+  if (!reg) {
+    reg = { byTile: new Map(), byUnit: new Map(), nextSearchTick: new Map() };
+    claimStore.set(state, reg);
+  }
+  return reg;
+}
+
+/** A claim is live while its harvester is alive and still on harvest duty
+ *  (a harvest or returnCargo order anywhere in its queue) for that tile. */
+function claimantActive(
+  state: GameState,
+  data: GameData,
+  reg: ClaimRegistry,
+  id: EntityId,
+  idx: number,
+): boolean {
+  if (reg.byUnit.get(id) !== idx) return false;
+  const e = state.entities.get(id);
+  if (e === undefined || e.hp <= 0 || e.kind !== 'unit') return false;
+  const def = data.units[e.defId];
+  if (def === undefined || def.harvester === undefined) return false;
+  for (let i = 0; i < e.orders.length; i++) {
+    const k = e.orders[i].kind;
+    if (k === 'harvest' || k === 'returnCargo') return true;
+  }
+  return false;
+}
+
+function releaseClaim(reg: ClaimRegistry, u: Entity): void {
+  const idx = reg.byUnit.get(u.id);
+  if (idx === undefined) return;
+  reg.byUnit.delete(u.id);
+  if (reg.byTile.get(idx) === u.id) reg.byTile.delete(idx);
+}
+
+function claimTile(reg: ClaimRegistry, u: Entity, idx: number): void {
+  if (reg.byUnit.get(u.id) === idx) return; // already ours
+  releaseClaim(reg, u);
+  reg.byTile.set(idx, u.id);
+  reg.byUnit.set(u.id, idx);
+}
+
+/** True when the tile is claimed by ANOTHER live harvester of the same owner.
+ *  Stale claims (dead / repurposed claimants) are lazily purged here. Enemy
+ *  claims never block — crystal contention between players is gameplay. */
+function claimedByOwnOther(
+  state: GameState,
+  data: GameData,
+  reg: ClaimRegistry,
+  owner: PlayerId,
+  selfId: EntityId,
+  idx: number,
+): boolean {
+  const cid = reg.byTile.get(idx);
+  if (cid === undefined || cid === selfId) return false;
+  const claimant = state.entities.get(cid);
+  if (claimant === undefined || !claimantActive(state, data, reg, cid, idx)) {
+    reg.byTile.delete(idx);
+    if (reg.byUnit.get(cid) === idx) reg.byUnit.delete(cid);
+    return false;
+  }
+  return claimant.owner === owner;
+}
+
+/**
+ * Claim-aware crystal target pick within Chebyshev radius `maxR` of the
+ * harvester. Candidates skip tiles claimed by another of the same owner's
+ * live harvesters; the best tile minimizes
+ *   distToUnit + REFINERY_BIAS * distToNearestOwnRefinery.
+ * On success the tile is claimed; on failure a 2s search backoff is armed.
+ * Returns null while the backoff is active.
+ */
+function pickCrystalTarget(
+  state: GameState,
+  data: GameData,
+  p: PlayerState,
+  u: Entity,
+  maxR: number,
+): Vec2 | null {
+  const reg = claimsOf(state);
+  const backoff = reg.nextSearchTick.get(u.id);
+  if (backoff !== undefined && state.tick < backoff) return null;
+
+  const map = state.map;
+  const cx = Math.round(u.pos.x);
+  const cy = Math.round(u.pos.y);
+  const refinery = nearestRefinery(state, data, p, u.pos);
+  const rc = refinery !== null ? entityCenter(refinery, data) : null;
+  const x0 = Math.max(0, cx - maxR);
+  const x1 = Math.min(map.w - 1, cx + maxR);
+  const y0 = Math.max(0, cy - maxR);
+  const y1 = Math.min(map.h - 1, cy + maxR);
+
+  let bestX = -1;
+  let bestY = -1;
+  let bestScore = Infinity;
+  for (let y = y0; y <= y1; y++) {
+    const row = y * map.w;
+    for (let x = x0; x <= x1; x++) {
+      const idx = row + x;
+      if (map.terrain[idx] !== Terrain.CRYSTAL || map.crystal[idx] <= 0) continue;
+      if (claimedByOwnOther(state, data, reg, p.id, u.id, idx)) continue;
+      const dux = x - u.pos.x;
+      const duy = y - u.pos.y;
+      let score = Math.sqrt(dux * dux + duy * duy);
+      if (score >= bestScore) continue; // refinery term only adds
+      if (rc !== null) {
+        const drx = x - rc.x;
+        const dry = y - rc.y;
+        score += REFINERY_BIAS * Math.sqrt(drx * drx + dry * dry);
+      }
+      if (score < bestScore) {
+        bestScore = score;
+        bestX = x;
+        bestY = y;
+      }
+    }
+  }
+
+  if (bestX < 0) {
+    reg.nextSearchTick.set(u.id, state.tick + SEARCH_BACKOFF_TICKS);
+    return null;
+  }
+  reg.nextSearchTick.delete(u.id);
+  claimTile(reg, u, tileIndex(map, bestX, bestY));
+  return { x: bestX, y: bestY };
+}
 
 /** Recompute a player's produced/consumed power from operational buildings.
  *  Also used by game.ts to seed sensible values at game creation. */
@@ -139,9 +300,8 @@ function updateHarvester(
     if (u.cargo >= cap) {
       u.orders.unshift({ kind: 'returnCargo' });
     } else if ((state.tick + u.id) % 15 === 0) {
-      // Throttled, deterministic idle scan.
-      const from = { x: Math.round(u.pos.x), y: Math.round(u.pos.y) };
-      const tile = findNearestTile(map, from, (x, y) => isLiveCrystal(map, x, y), 10);
+      // Throttled, deterministic idle scan (claim-aware, backoff-gated).
+      const tile = pickCrystalTarget(state, data, p, u, IDLE_SCAN_RADIUS);
       if (tile) u.orders.unshift({ kind: 'harvest', tile });
       else if (u.cargo > 0) u.orders.unshift({ kind: 'returnCargo' });
     }
@@ -155,11 +315,21 @@ function updateHarvester(
       u.orders.unshift({ kind: 'returnCargo' });
       return;
     }
+    const reg = claimsOf(state);
     let tile = ord.tile;
-    if (!tile || !isLiveCrystal(map, tile.x, tile.y)) {
-      // Auto-retarget the nearest live crystal tile.
-      const from = { x: Math.round(u.pos.x), y: Math.round(u.pos.y) };
-      const next = findNearestTile(map, from, (x, y) => isLiveCrystal(map, x, y), 64);
+    if (tile && isLiveCrystal(map, tile.x, tile.y)) {
+      const idx = tileIndex(map, tile.x, tile.y);
+      if (claimedByOwnOther(state, data, reg, p.id, u.id, idx)) {
+        tile = undefined; // a sibling harvester beat us to it — retarget
+      } else {
+        claimTile(reg, u, idx); // claim (or keep claiming) our working tile
+      }
+    } else {
+      tile = undefined;
+    }
+    if (!tile) {
+      // Auto-retarget the best unclaimed live crystal tile.
+      const next = pickCrystalTarget(state, data, p, u, RETARGET_RADIUS);
       if (!next) {
         u.orders.shift();
         if (u.cargo > 0) u.orders.unshift({ kind: 'returnCargo' });
@@ -211,13 +381,15 @@ function updateHarvester(
     const rx = Math.round(u.pos.x);
     const ry = Math.round(u.pos.y);
     if (chebyshevToRect(rx, ry, bx, by, rdef.footprint.w, rdef.footprint.h) <= 1) {
-      // Docked: unload.
+      // Docked: unload. Release our field claim so a sibling can take the tile.
       stopMoving(u);
+      releaseClaim(claimsOf(state), u);
       const center = entityCenter(refinery, data);
       u.facing = Math.atan2(center.y - u.pos.y, center.x - u.pos.x);
       const amt = Math.min(UNLOAD_PER_TICK, u.cargo);
       u.cargo -= amt;
       p.credits += amt;
+      p.stats.creditsHarvested += amt;
       if (u.cargo <= 0) {
         u.cargo = 0;
         u.orders.shift();

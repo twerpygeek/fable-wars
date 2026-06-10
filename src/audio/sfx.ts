@@ -1,12 +1,19 @@
 // =============================================================================
-// POCKET ALERT — procedural sound effects (Owner F).
-// One lazy AudioContext shared by the whole audio stack. Everything here is
-// synthesized at play time from oscillators + a shared noise buffer; there are
-// zero audio assets. Cosmetic randomness (Math.random) is allowed in audio code.
+// POCKET ALERT — sound effects (Owner F).
+// One lazy AudioContext shared by the whole audio stack. Three sources feed the
+// same positional voice chain, in priority order per sound:
+//   1. recorded samples (CC0 Kenney recordings via samples.ts) when decoded,
+//   2. ZzFX parameter arrays (crate chimes, cheers, taunt blips, MIT lib),
+//   3. the original oscillator+noise synth recipes — always-available fallback.
+// Cosmetic randomness (Math.random) is allowed in audio code.
 //
 // Signal chain:  voiceGain -> stereoPanner -> sfxBus ─┐
 //                                  musicBus (≈ -14dB) ┤-> masterGain -> compressor -> destination
 // =============================================================================
+
+import { Element } from '../core/types';
+import { getSample, loadSamples } from './samples';
+import type { ZzfxApi } from 'zzfx';
 
 export type SfxName =
   | 'fire_claw'
@@ -97,7 +104,52 @@ export function getContext(): AudioContext | null {
 /** Unlock the AudioContext after a user gesture. Safe to call repeatedly. */
 export function resumeContext(): void {
   const c = getContext();
-  if (c && c.state !== 'running') void c.resume();
+  if (!c) return;
+  if (c.state !== 'running') void c.resume();
+  // Post-gesture side-loads: recorded samples + the ZzFX synth. Both are
+  // idempotent and both fail silently (the oscillator recipes cover for them).
+  void loadSamples(c);
+  adoptZzfx(c);
+}
+
+// --- ZzFX (MIT) — tiny param-array synth for the small "juice" sounds ------------
+
+let zzfxApi: ZzfxApi | null = null;
+let zzfxRequested = false;
+const zzfxBufCache = new Map<string, AudioBuffer>();
+
+/**
+ * Lazily import zzfx after the unlock gesture (its module creates an
+ * AudioContext at import time) and point it at our shared context.
+ */
+function adoptZzfx(c: AudioContext): void {
+  if (zzfxRequested) return;
+  zzfxRequested = true;
+  import('zzfx')
+    .then((m) => {
+      const old = m.ZZFX.audioContext;
+      if (old && old !== c && typeof old.close === 'function') {
+        void old.close().catch(() => undefined);
+      }
+      m.ZZFX.audioContext = c;
+      zzfxApi = m.ZZFX;
+    })
+    .catch(() => {
+      zzfxApi = null; // synth fallbacks take over
+    });
+}
+
+/** Render a ZzFX param array to an AudioBuffer once, then cache by key. */
+function zzfxBuffer(c: AudioContext, key: string, params: (number | undefined)[]): AudioBuffer | null {
+  const cached = zzfxBufCache.get(key);
+  if (cached) return cached;
+  if (!zzfxApi) return null;
+  const samples = zzfxApi.buildSamples(...params);
+  if (samples.length === 0) return null;
+  const buf = c.createBuffer(1, samples.length, zzfxApi.sampleRate);
+  buf.getChannelData(0).set(samples);
+  zzfxBufCache.set(key, buf);
+  return buf;
 }
 
 /** Music module taps in here so both stacks share the master compressor. */
@@ -182,6 +234,7 @@ const THROTTLES: Record<string, { max: number; windowMs: number }> = {
   big: { max: 2, windowMs: 400 },
   ui: { max: 8, windowMs: 120 },
   voicefx: { max: 4, windowMs: 250 },
+  bark: { max: 1, windowMs: 250 }, // creature acknowledgement chirps
 };
 
 const GROUP_OF: Record<SfxName, string> = {
@@ -850,21 +903,81 @@ const BASE_GAIN: Record<SfxName, number> = {
   radio_blip: 0.7,
 };
 
-// --- Public play API ------------------------------------------------------------------
+// --- Recorded-sample mapping ------------------------------------------------------------
+// When samples.ts has a decoded buffer for a sound it plays through the exact
+// same voice chain (gain -> pan -> sfxBus) the synth uses — the recipe above is
+// the always-available fallback. `names` are variants picked at random per play.
 
-export function playSfx(name: SfxName, opts: PlaySfxOpts = {}): void {
-  if (!sfxEnabled) return;
-  const c = getContext();
-  if (!c || !sfxBus || !noiseBuf) return;
-  if (c.state !== 'running') return; // wait for user-gesture unlock
-  if (throttled(GROUP_OF[name])) return;
+interface SampleChoice {
+  names: readonly string[];
+  trim: number; // loudness match vs the synth recipe, applied on top of BASE_GAIN
+}
 
+const SAMPLE_MAP: Partial<Record<SfxName, SampleChoice>> = {
+  fire_claw: { names: ['claw'], trim: 0.85 },
+  fire_cannon: { names: ['shot_heavy'], trim: 0.8 },
+  fire_pierce: { names: ['shot_small'], trim: 0.8 },
+  fire_electric: { names: ['shot_zap'], trim: 0.75 },
+  impact_thud: { names: ['hit_thud', 'hit_crunch'], trim: 0.9 },
+  impact_clank: { names: ['hit_metal'], trim: 0.85 },
+  explosion: { names: ['boom_small', 'boom_med'], trim: 0.9 },
+  explosion_big: { names: ['collapse'], trim: 1.0 },
+  click: { names: ['ui_click'], trim: 0.9 },
+  error: { names: ['ui_error'], trim: 0.9 },
+  place: { names: ['ui_confirm'], trim: 0.9 },
+  radio_blip: { names: ['ui_notify'], trim: 0.85 },
+};
+
+// Recorded layers added on top of whatever played (sample or synth recipe).
+const SAMPLE_LAYERS: Partial<Record<SfxName, readonly { name: string; gain: number }[]>> = {
+  alarm: [{ name: 'forcefield', gain: 0.8 }], // superweapon charge shimmer under the siren
+  explosion_big: [{ name: 'boom_big', gain: 0.9 }], // sub-rumble beneath the collapse crunch
+};
+
+/** Schedule a decoded buffer into a voice; returns its duration in seconds. */
+function playSampleBuf(b: Build, buf: AudioBuffer, gainMul: number): number {
+  const src = b.c.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = b.pitch;
+  let dst: AudioNode = b.out;
+  if (gainMul !== 1) {
+    const g = mkGain(b);
+    g.gain.value = gainMul;
+    g.connect(b.out);
+    dst = g;
+  }
+  src.connect(dst);
+  src.start(b.t0);
+  src.stop(b.t0 + buf.duration / b.pitch + 0.05);
+  b.srcs.push(src);
+  return buf.duration / b.pitch;
+}
+
+function pickSample(choice: SampleChoice): AudioBuffer | null {
+  const avail: AudioBuffer[] = [];
+  for (const n of choice.names) {
+    const buf = getSample(n);
+    if (buf) avail.push(buf);
+  }
+  if (avail.length === 0) return null;
+  return avail[(Math.random() * avail.length) | 0];
+}
+
+// --- Voice plumbing shared by every play path ---------------------------------------------
+
+interface OpenedVoice {
+  b: Build;
+  /** Register the voice for polyphony tracking once its duration is known. */
+  commit: (dur: number) => void;
+}
+
+function openVoice(c: AudioContext, bus: GainNode, baseGain: number, opts: PlaySfxOpts): OpenedVoice {
   const now = c.currentTime;
   pruneVoices(now);
   while (voices.length >= MAX_VOICES) stealVoice(now);
 
   const vGain = c.createGain();
-  const g = (opts.gain ?? 1) * BASE_GAIN[name];
+  const g = (opts.gain ?? 1) * baseGain;
   vGain.gain.value = Math.max(0, Math.min(1.5, g));
 
   let pan: StereoPannerNode | null = null;
@@ -873,9 +986,9 @@ export function playSfx(name: SfxName, opts: PlaySfxOpts = {}): void {
     pan = c.createStereoPanner();
     pan.pan.value = panVal;
     vGain.connect(pan);
-    pan.connect(sfxBus);
+    pan.connect(bus);
   } else {
-    vGain.connect(sfxBus);
+    vGain.connect(bus);
   }
 
   const b: Build = {
@@ -885,8 +998,187 @@ export function playSfx(name: SfxName, opts: PlaySfxOpts = {}): void {
     pitch: Math.max(0.25, opts.pitch ?? 1),
     srcs: [],
   };
-  const dur = RECIPES[name](b);
-  voices.push({ gain: vGain, pan, sources: b.srcs, startTime: now, endTime: now + dur + 0.15 });
+  return {
+    b,
+    commit(dur: number): void {
+      voices.push({ gain: vGain, pan, sources: b.srcs, startTime: now, endTime: now + dur + 0.15 });
+    },
+  };
+}
+
+// --- Public play API ------------------------------------------------------------------
+
+export function playSfx(name: SfxName, opts: PlaySfxOpts = {}): void {
+  if (!sfxEnabled) return;
+  const c = getContext();
+  if (!c || !sfxBus || !noiseBuf) return;
+  if (c.state !== 'running') return; // wait for user-gesture unlock
+  if (throttled(GROUP_OF[name])) return;
+
+  const { b, commit } = openVoice(c, sfxBus, BASE_GAIN[name], opts);
+
+  // Recorded sample when decoded, synth recipe otherwise (fallback intact).
+  const choice = SAMPLE_MAP[name];
+  const buf = choice ? pickSample(choice) : null;
+  let dur = buf !== null && choice !== undefined ? playSampleBuf(b, buf, choice.trim) : RECIPES[name](b);
+
+  // Recorded layers (e.g. forcefield charge under the synth alarm siren).
+  const layers = SAMPLE_LAYERS[name];
+  if (layers) {
+    for (const layer of layers) {
+      const lb = getSample(layer.name);
+      if (lb) dur = Math.max(dur, playSampleBuf(b, lb, layer.gain));
+    }
+  }
+  commit(dur);
+}
+
+// --- ZzFX-backed juice sounds ---------------------------------------------------------
+// Parameter arrays for the NEW small sounds only; each has a synth fallback in
+// case the zzfx import failed. Played through the shared voice chain so they
+// honor pan/gain opts, the sfx toggle, polyphony and the master compressor.
+
+const ZZ_PARAMS: Record<'crate' | 'coin' | 'cheer' | 'taunt', (number | undefined)[]> = {
+  // bright power-up chime (crate pickup)
+  crate: [, , 539, 0, 0.04, 0.29, 1, 1.92, , , 567, 0.02, 0.02, , , , 0.04],
+  // coin pip, replayed as a rising arpeggio for money crates
+  coin: [, , 1675, , 0.06, 0.24, 1, 1.82, , , 837, 0.06],
+  // single happy fifth-jump note (C key / victory celebration)
+  cheer: [1.1, 0.05, 392, 0.01, 0.08, 0.25, 1, 1.6, , , 196, 0.08],
+  // low saw radio-blip for AI taunt toasts
+  taunt: [1.2, 0.05, 110, 0.01, 0.08, 0.15, 2, 1.2, -2, , , , , , , , , 0.8, 0.05],
+};
+
+/** Common guard + voice for the zzfx plays. Returns null when not playable. */
+function openZzfxVoice(group: string, baseGain: number, opts: PlaySfxOpts): OpenedVoice | null {
+  if (!sfxEnabled) return null;
+  const c = getContext();
+  if (!c || !sfxBus || c.state !== 'running') return null;
+  if (throttled(group)) return null;
+  return openVoice(c, sfxBus, baseGain, opts);
+}
+
+/**
+ * Crate pickup chime; money crates get a rising cash arpeggio instead.
+ * Falls back to the nearest synth recipe if zzfx never loaded.
+ */
+export function playCrateChime(money: boolean, opts: PlaySfxOpts = {}): void {
+  const c = getContext();
+  const buf = c ? zzfxBuffer(c, money ? 'coin' : 'crate', ZZ_PARAMS[money ? 'coin' : 'crate']) : null;
+  if (!buf) {
+    playSfx(money ? 'sell' : 'promote', opts); // cash register / sparkle fallback
+    return;
+  }
+  const v = openZzfxVoice('voicefx', 0.9, opts);
+  if (!v) return;
+  if (money) {
+    // Three coin pips stepping up a major arpeggio.
+    const rates = [1, 1.26, 1.5];
+    let end = 0;
+    for (let i = 0; i < rates.length; i++) {
+      const src = v.b.c.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = rates[i] * v.b.pitch;
+      src.connect(v.b.out);
+      src.start(v.b.t0 + i * 0.09);
+      v.b.srcs.push(src);
+      end = Math.max(end, i * 0.09 + buf.duration / (rates[i] * v.b.pitch));
+    }
+    v.commit(end);
+  } else {
+    v.commit(playSampleBuf(v.b, buf, 1));
+  }
+}
+
+/** Single celebratory note (cheer command / victory); pitch jitters per call. */
+export function playCheer(opts: PlaySfxOpts = {}): void {
+  const c = getContext();
+  const buf = c ? zzfxBuffer(c, 'cheer', ZZ_PARAMS.cheer) : null;
+  if (!buf) {
+    playSfx('promote', { ...opts, pitch: 1.1 + Math.random() * 0.2 });
+    return;
+  }
+  const v = openZzfxVoice('voicefx', 0.8, { pitch: 0.95 + Math.random() * 0.18, ...opts });
+  if (!v) return;
+  v.commit(playSampleBuf(v.b, buf, 1));
+}
+
+/** Low radio blip accompanying an AI taunt toast. */
+export function playTauntBlip(opts: PlaySfxOpts = {}): void {
+  const c = getContext();
+  const buf = c ? zzfxBuffer(c, 'taunt', ZZ_PARAMS.taunt) : null;
+  if (!buf) {
+    playSfx('radio_blip', { gain: 0.7, ...opts });
+    return;
+  }
+  const v = openZzfxVoice('ui', 0.75, opts);
+  if (!v) return;
+  v.commit(playSampleBuf(v.b, buf, 1));
+}
+
+// --- Creature barks ----------------------------------------------------------------------
+// ~150 ms two-note acknowledgement chirp. Pitch and interval derive
+// deterministically from a hash of the def id so each species has a stable
+// voice; timbre comes from the creature's element. Throttled to 1 per 250 ms.
+
+function hashStr(s: string): number {
+  let h = 0x811c9dc5; // FNV-1a
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+export function playBark(defId: string, element: Element, opts: PlaySfxOpts = {}): void {
+  if (!sfxEnabled) return;
+  const c = getContext();
+  if (!c || !sfxBus || !noiseBuf) return;
+  if (c.state !== 'running') return;
+  if (throttled('bark')) return;
+
+  const { b, commit } = openVoice(c, sfxBus, 0.55, opts);
+  const h = hashStr(defId);
+  const base = (300 + ((h % 1024) / 1023) * 420) * b.pitch; // 300–720 Hz species pitch
+  const ratio = Math.pow(2, (3 + ((h >>> 10) % 5)) / 12); // 3–7 semitone interval
+  const t = b.t0;
+
+  // Shared timbre filter; every note routes osc -> noteGain -> lp -> voice.
+  const lp = mkFilter(b, 'lowpass', element === Element.ELECTRIC ? 3800 : element === Element.NEUTRAL ? 1800 : 2600, 0.8);
+  lp.connect(b.out);
+  const note = (type: OscillatorType, f0: number, f1: number, at: number, len: number, peak: number): void => {
+    const o = mkOsc(b, type, f0, at, len);
+    if (f1 !== f0) sweep(o.frequency, at, f0, f1, len);
+    const g = mkGain(b);
+    env(g.gain, at, 0.006, peak, len * 0.45);
+    chain(o, g, lp);
+  };
+
+  switch (element) {
+    case Element.FIRE: // sawtooth, falling
+      note('sawtooth', base * ratio, base * ratio * 0.85, t, 0.07, 0.3);
+      note('sawtooth', base, base * 0.78, t + 0.08, 0.08, 0.28);
+      break;
+    case Element.WATER: // sine, rising
+      note('sine', base, base * 1.08, t, 0.07, 0.34);
+      note('sine', base * ratio, base * ratio * 1.1, t + 0.075, 0.085, 0.32);
+      break;
+    case Element.GRASS: // triangle trill
+      note('triangle', base, base, t, 0.05, 0.32);
+      note('triangle', base * ratio, base * ratio, t + 0.05, 0.05, 0.3);
+      note('triangle', base, base, t + 0.1, 0.06, 0.28);
+      break;
+    case Element.ELECTRIC: // square zap
+      note('square', base * ratio * 1.5, base, t, 0.06, 0.22);
+      note('square', base * ratio, base * ratio, t + 0.085, 0.05, 0.2);
+      tick(b, t + 0.02, 3200, 0.12, 0.006, 'highpass');
+      break;
+    default: // neutral: soft sine
+      note('sine', base, base, t, 0.07, 0.24);
+      note('sine', base * ratio, base * ratio, t + 0.08, 0.07, 0.22);
+      break;
+  }
+  commit(0.18);
 }
 
 // Convenience wrappers for UI wiring (selection acknowledge varies pitch per call).

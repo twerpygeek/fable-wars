@@ -2,7 +2,8 @@
 // POCKET ALERT — sim/game.ts (Owner A)
 // createGame + tickGame: the ONLY mutators of GameState. Tick order per
 // ARCHITECTURE.md: commands → production → economy → unit brains (combat,
-// movement) → projectiles → superweapons → fog → cleanup → occupancy.
+// movement) → unit pushing → projectiles → superweapons → crates → fog →
+// cleanup → occupancy.
 // =============================================================================
 
 import type {
@@ -41,18 +42,20 @@ import {
   findSpawnTileNear,
   isValidPlacement,
 } from './production';
-import { orderMove, updateUnitMovement } from './movement';
+import { applyUnitPushing, orderMove, updateUnitMovement } from './movement';
 import { updateProjectiles, updateUnitCombat } from './combat';
+import { updateCrates } from './crates';
 import { updateFog } from './fog';
 import { launchSuperweapon, updateSuperweapons } from './superweapons';
 
 const ALL_TABS: ProductionTab[] = ['structure', 'defense', 'infantry', 'vehicle', 'air', 'naval'];
 
-// Per-state announcer dedupe + kill accounting (sim-internal, not part of state).
+// Per-state announcer dedupe (sim-internal, not part of state). Kill/loss
+// stats are event-driven and monotonic — credited in combat.ts dealDamage
+// (kills) and cleanupDeaths/eliminatePlayer below (losses).
 interface TickMemo {
   lastUnderAttack: number[]; // per player, tick of last underAttack event let through
   lastNoFunds: number[]; // per player, tick of last insufficientFunds let through
-  deadUnitKills: number[]; // per player, kills accumulated by units that died
   gameOverEmitted: boolean;
 }
 const memos = new WeakMap<GameState, TickMemo>();
@@ -64,7 +67,6 @@ function memoOf(state: GameState): TickMemo {
     m = {
       lastUnderAttack: new Array(n).fill(-1e9),
       lastNoFunds: new Array(n).fill(-1e9),
-      deadUnitKills: new Array(n).fill(0),
       gameOverEmitted: false,
     };
     memos.set(state, m);
@@ -274,6 +276,38 @@ function applyCommand(state: GameState, data: GameData, c: Command, events: Game
       launchSuperweapon(state, data, c.player, c.target, events);
       return;
     }
+    case 'setStance': {
+      for (const id of c.unitIds) {
+        const u = state.entities.get(id);
+        if (!u || u.owner !== c.player || u.kind !== 'unit' || u.hp <= 0) continue;
+        u.stance = c.stance;
+      }
+      return;
+    }
+    case 'setPrimary': {
+      const b = state.entities.get(c.buildingId);
+      if (!b || b.owner !== c.player || b.kind !== 'building' || b.hp <= 0) return;
+      if (b.buildProgress < 1) return;
+      const def = data.buildings[b.defId];
+      const tabs = def ? def.producesTabs : undefined;
+      if (!tabs || tabs.length === 0) return;
+      // One primary per production tab: clear rivals sharing any of its tabs.
+      for (const other of buildingsOf(state, c.player)) {
+        if (other.id === b.id || !other.isPrimary || other.buildProgress < 1) continue;
+        const od = data.buildings[other.defId];
+        if (!od || !od.producesTabs) continue;
+        let shares = false;
+        for (const t of od.producesTabs) {
+          if (tabs.indexOf(t) >= 0) {
+            shares = true;
+            break;
+          }
+        }
+        if (shares) other.isPrimary = false;
+      }
+      b.isPrimary = true;
+      return;
+    }
     case 'surrender': {
       eliminatePlayer(state, data, c.player, events);
       return;
@@ -288,12 +322,9 @@ function eliminatePlayer(state: GameState, data: GameData, id: PlayerId, events:
   if (!p || p.eliminated) return;
   p.eliminated = true;
   // RA2 short-game style: everything they own goes down with them.
-  const memo = memoOf(state);
   for (const e of [...entitiesOf(state, id)]) {
-    if (e.kind === 'unit') {
-      memo.deadUnitKills[id] += e.kills;
-      p.stats.unitsLost++;
-    }
+    if (e.kind === 'unit') p.stats.unitsLost++;
+    else p.stats.buildingsLost++;
     const def = e.kind === 'building' ? data.buildings[e.defId] : data.units[e.defId];
     events.push({
       type: 'entityDied',
@@ -333,14 +364,13 @@ function checkVictory(state: GameState, data: GameData, events: GameEvent[]): vo
 // --- death cleanup -------------------------------------------------------------------
 
 function cleanupDeaths(state: GameState, data: GameData, events: GameEvent[]): void {
-  const memo = memoOf(state);
   const dead: Entity[] = [];
   for (const e of state.entities.values()) if (e.hp <= 0) dead.push(e);
   for (const e of dead) {
     const p = state.players[e.owner];
-    if (e.kind === 'unit') {
-      memo.deadUnitKills[e.owner] += e.kills;
-      if (p) p.stats.unitsLost++;
+    if (p) {
+      if (e.kind === 'unit') p.stats.unitsLost++;
+      else p.stats.buildingsLost++;
     }
     const def = e.kind === 'building' ? data.buildings[e.defId] : data.units[e.defId];
     events.push({
@@ -355,12 +385,6 @@ function cleanupDeaths(state: GameState, data: GameData, events: GameEvent[]): v
       owner: e.owner,
     });
     removeEntity(state, e.id);
-  }
-  // Refresh kill stats (live units' kills + kills banked by fallen units).
-  for (const p of state.players) {
-    let live = 0;
-    for (const e of entitiesOf(state, p.id)) if (e.kind === 'unit') live += e.kills;
-    p.stats.unitsKilled = live + memo.deadUnitKills[p.id];
   }
 }
 
@@ -403,9 +427,12 @@ export function tickGame(state: GameState, data: GameData, commands: Command[]):
     updateUnitCombat(state, data, e, events);
     if (e.kind === 'unit') updateUnitMovement(state, data, e, events);
   }
+  // Soft unit pushing: moving units slide around each other instead of jamming.
+  applyUnitPushing(state, data);
 
   updateProjectiles(state, data, events);
   updateSuperweapons(state, data, events);
+  updateCrates(state, data, events);
   updateFog(state, data);
 
   cleanupDeaths(state, data, events);

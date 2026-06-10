@@ -25,7 +25,11 @@ import { Sidebar } from './ui/sidebar';
 import { HUD } from './ui/hud';
 import { InputController } from './ui/input';
 import { MenuManager } from './ui/menu';
+import { WorldTooltip } from './ui/tooltip';
+import { recordMatch, type MatchResult } from './ui/history';
 import { AudioSystem } from './audio/audio';
+import { Element } from './core/types';
+import { TICK_RATE } from './core/constants';
 
 const app = document.getElementById('app')!;
 
@@ -46,6 +50,7 @@ interface Match {
 
 let current: Match | null = null;
 let overrides: SpriteOverrides | null = null;
+const audioState = { sfx: true, music: true, voice: true };
 
 const menus = new MenuManager(app, (cfg) => startMatch(cfg));
 if (new URLSearchParams(location.search).has('spritelab')) {
@@ -118,6 +123,20 @@ function runMatch(state: GameState): void {
   const pending: Command[] = [];
   const dispatch = (c: Command) => {
     pending.push(c);
+    // RA2 move-flash: green ring where the player just ordered units to go.
+    if (c.type === 'issueOrder' && c.player === humanPlayer) {
+      const o = c.order;
+      if (o.kind === 'move' || o.kind === 'attackMove' || o.kind === 'attackGround') {
+        renderer.addEffect({
+          kind: 'moveFlash',
+          pos: { x: o.dest.x, y: o.dest.y },
+          startedAt: performance.now(),
+          duration: 400,
+          scale: 1,
+          element: Element.GRASS,
+        });
+      }
+    }
   };
 
   const renderer = new Renderer(canvas, DATA, atlas);
@@ -127,6 +146,26 @@ function runMatch(state: GameState): void {
   const input = new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
   input.bindMinimap(sidebar.minimapCanvas, minimap);
   input.enable();
+  const tooltip = new WorldTooltip(matchRoot, DATA, () => state, humanPlayer);
+
+  // Creature acknowledgement barks + cheer wiring.
+  input.onSelectionAck = (defId) => audio.bark(defId);
+  input.onCheer = (ids) => {
+    audio.cheer();
+    const nowMs = performance.now();
+    ids.slice(0, 24).forEach((id, i) => {
+      const u = state.entities.get(id);
+      if (!u) return;
+      renderer.addEffect({
+        kind: 'cheer',
+        pos: { x: u.pos.x, y: u.pos.y },
+        startedAt: nowMs + i * 60,
+        duration: 1200,
+        scale: 1,
+        element: Element.NEUTRAL,
+      });
+    });
+  };
 
   // Center camera on the human ConYard.
   const ownConYard = [...state.entities.values()].find(
@@ -155,6 +194,7 @@ function runMatch(state: GameState): void {
     cancelAnimationFrame(raf);
     window.removeEventListener('resize', resize);
     input.disable();
+    tooltip.destroy();
     audio.stopMusic();
     matchRoot.remove();
     current = null;
@@ -165,19 +205,77 @@ function runMatch(state: GameState): void {
     menus.showMainMenu();
   };
 
+  // AI taunt flavor: parody trash talk when the AI lands a meaningful blow.
+  const TAUNTS = ['Ha ha ha!', 'You coward.', 'Was that your economy?', 'Surrender now!', 'Too easy.'];
+  let lastTauntAt = 0;
+  const maybeTaunt = (events: GameEvent[]) => {
+    const nowMs = performance.now();
+    if (nowMs - lastTauntAt < 25000) return;
+    for (const ev of events) {
+      if (ev.type !== 'entityDied' || ev.owner !== humanPlayer || ev.kind !== 'building') continue;
+      const key = ev.defId.slice(ev.defId.indexOf('_') + 1);
+      if (key !== 'refinery' && key !== 'conyard' && key !== 'sw') continue;
+      const ai = state.players.find((p) => !p.isHuman && !p.eliminated);
+      if (!ai) return;
+      lastTauntAt = nowMs;
+      const text = TAUNTS[Math.floor(Math.random() * TAUNTS.length)];
+      hud.toast(`💬 ${ai.name}: "${text}"`, 'warn');
+      audio.handleEvents(
+        [{ type: 'aiTaunt', player: ai.id, text }],
+        state,
+        humanPlayer,
+        cam,
+        canvas.width,
+        canvas.height,
+      );
+      return;
+    }
+  };
+
+  const buildMatchResult = (winner: number | null): MatchResult => ({
+    dateISO: new Date().toISOString(),
+    seed: state.config.seed,
+    mapSize: state.config.mapSize,
+    water: state.config.waterAmount,
+    crates: state.config.crates,
+    durationSec: Math.round(state.tick / TICK_RATE),
+    victory: winner === humanPlayer,
+    players: state.players.map((p) => ({
+      name: p.name,
+      faction: p.faction,
+      colorIdx: p.colorIdx,
+      isHuman: p.isHuman,
+      difficulty: p.difficulty,
+      eliminated: p.eliminated,
+      stats: { ...p.stats },
+    })),
+    humanIdx: humanPlayer,
+  });
+
   const routeEvents = (events: GameEvent[]) => {
     renderer.handleEvents(events, state, humanPlayer);
     audio.handleEvents(events, state, humanPlayer, cam, canvas.width, canvas.height);
     input.notifyEvents(events);
+    maybeTaunt(events);
     for (const ev of events) {
       if (ev.type === 'gameOver' && !over) {
         over = true;
-        const victory = ev.winner === humanPlayer;
-        const me = state.players[humanPlayer];
-        const stats = `Kills: ${me.stats.unitsKilled + me.stats.buildingsKilled}   Losses: ${me.stats.unitsLost}   Structures built: ${me.stats.built}   Time: ${formatClock(state.tick)}`;
+        const result = buildMatchResult(ev.winner);
+        try {
+          recordMatch(result);
+        } catch (err) {
+          console.warn('history record failed', err);
+        }
         setTimeout(() => {
           stop();
-          menus.showGameOver(victory, stats, () => menus.showMainMenu());
+          menus.showScoreScreen(
+            result,
+            () => {
+              if (menus.lastConfig) startMatch(menus.lastConfig);
+              else menus.showMainMenu();
+            },
+            () => menus.showMainMenu(),
+          );
         }, 2500); // let the final explosion play out
       }
       if (ev.type === 'playerEliminated' && ev.player !== humanPlayer) {
@@ -185,6 +283,9 @@ function runMatch(state: GameState): void {
       }
       if (ev.type === 'superweaponLaunched' && ev.byPlayer !== humanPlayer) {
         hud.toast('⚠ ENEMY SUPERWEAPON LAUNCHED', 'warn');
+      }
+      if (ev.type === 'cratePickup' && ev.player === humanPlayer) {
+        hud.toast(ev.kind === 'money' ? `🎁 Crate: +$${ev.amount ?? 0}` : `🎁 Crate: ${ev.kind}!`, 'info');
       }
     }
   };
@@ -217,6 +318,32 @@ function runMatch(state: GameState): void {
           menus.hideEscMenu();
           quitToMenu();
         },
+        audioToggles: [
+          {
+            label: 'SFX',
+            get: () => audioState.sfx,
+            set: (on: boolean) => {
+              audioState.sfx = on;
+              audio.setEnabled(audioState.sfx, audioState.music, audioState.voice);
+            },
+          },
+          {
+            label: 'Music',
+            get: () => audioState.music,
+            set: (on: boolean) => {
+              audioState.music = on;
+              audio.setEnabled(audioState.sfx, audioState.music, audioState.voice);
+            },
+          },
+          {
+            label: 'Voice',
+            get: () => audioState.voice,
+            set: (on: boolean) => {
+              audioState.voice = on;
+              audio.setEnabled(audioState.sfx, audioState.music, audioState.voice);
+            },
+          },
+        ],
       });
     } else if (!ui.showMenu && escShown) {
       escShown = false;
@@ -257,6 +384,7 @@ function runMatch(state: GameState): void {
     minimap.render(state, cam, humanPlayer, canvas.width, canvas.height);
     sidebar.update();
     hud.update(state, humanPlayer);
+    tooltip.update(input.hoveredEntityId);
   };
 
   raf = requestAnimationFrame(frame);
@@ -271,7 +399,21 @@ function runMatch(state: GameState): void {
     dispatch,
     ui,
     cam,
+    input,
     quitToMenu,
+    // QA: advance the sim n ticks synchronously (rAF is suspended in hidden tabs).
+    pump(n: number) {
+      const sandbox = new URLSearchParams(location.search).has('sandbox');
+      for (let i = 0; i < n && state.winner === null; i++) {
+        for (const p of state.players) {
+          if (sandbox || p.isHuman || p.eliminated || !p.difficulty) continue;
+          if (state.tick % AI_THINK_INTERVAL[p.difficulty] === (p.id * 3) % AI_THINK_INTERVAL[p.difficulty]) {
+            pending.push(...aiThink(state, DATA, p.id));
+          }
+        }
+        routeEvents(tickGame(state, DATA, pending.splice(0, pending.length)));
+      }
+    },
   };
 }
 

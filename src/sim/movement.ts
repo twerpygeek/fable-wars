@@ -9,7 +9,9 @@
 // velocity heading. Ground/naval units soft-collide with stationary units and
 // buildings: they sidestep to an adjacent free tile or repath, gated by
 // `repathCooldown` (~1s, randomized ±25% via simRandom). Air units fly
-// straight and ignore collision entirely.
+// straight and ignore collision entirely. Moving units never hard-block each
+// other; overlap between movers is resolved by the soft-push pass
+// (applyUnitPushing, called by game.ts after the movement loop).
 //
 // Deterministic: tick counts + simRandom(state) only.
 // =============================================================================
@@ -307,7 +309,7 @@ export function updateUnitMovement(
 
   const isAir = def.domain === MoveDomain.AIR;
   const exceptId = attackOrCaptureTarget(u);
-  let remaining = def.speed / TICK_RATE;
+  let remaining = (def.speed * u.buffs.speed) / TICK_RATE; // crate speed buff
   let pops = 0;
 
   while (remaining > 1e-6 && u.path !== null && u.path.length > 0 && pops < MAX_WAYPOINTS_PER_TICK) {
@@ -351,4 +353,157 @@ export function updateUnitMovement(
   }
 
   if (u.path !== null && u.path.length === 0) onPathExhausted(u);
+}
+
+// --- Soft unit pushing -----------------------------------------------------------
+// Clean-room reimplementation of 0 A.D.'s unit-pushing mechanism from a prose
+// description (no GPL source consulted): after the per-unit movement loop,
+// pairs of MOVING same-domain surface units that overlap get pushed gently
+// apart, and opposing columns receive a perpendicular nudge so they slide
+// past each other instead of stop-start jamming. Idle units are never shoved
+// (the existing halt + sidestep handles moving-vs-stationary), and a push is
+// dropped rather than ever placing a unit on impassable terrain or a
+// building-occupied tile.
+
+/** Pair distance under which pushing engages (tiles). */
+const PUSH_RANGE = 1.2;
+const PUSH_RANGE_SQ = PUSH_RANGE * PUSH_RANGE;
+/** Separation strength: tiles moved per unit of overlap, per tick. */
+const PUSH_STRENGTH = 0.08;
+/** Perpendicular nudge for opposing headings (tiles, per tick). */
+const PUSH_PERP = 0.04;
+/** Normalized-heading dot product below which two movers count as opposing. */
+const PUSH_OPPOSE_DOT = -0.1;
+
+/** True iff the tile under (x, y) is passable for `domain` and free of live
+ *  buildings — the clamp test for a pushed position. */
+function pushDestinationOpen(
+  state: GameState,
+  domain: MoveDomain,
+  x: number,
+  y: number,
+): boolean {
+  const tx = Math.floor(x);
+  const ty = Math.floor(y);
+  if (!passableFor(state.map, domain, tx, ty)) return false;
+  const ids = state.occupancy.get(ty * state.map.w + tx);
+  if (ids !== undefined) {
+    for (let i = 0; i < ids.length; i++) {
+      const e = state.entities.get(ids[i]);
+      if (e !== undefined && e.kind === 'building' && e.hp > 0) return false;
+    }
+  }
+  return true;
+}
+
+/** Resolve one overlapping pair: separate along the offset vector, plus a
+ *  perpendicular nudge when their headings oppose. Clamped per unit. */
+function pushPair(state: GameState, u: Entity, v: Entity, domain: MoveDomain): void {
+  const up = u.path;
+  const vp = v.path;
+  if (up === null || up.length === 0 || vp === null || vp.length === 0) return;
+
+  let dx = v.pos.x - u.pos.x;
+  let dy = v.pos.y - u.pos.y;
+  const d2 = dx * dx + dy * dy;
+  if (d2 >= PUSH_RANGE_SQ) return;
+  let d = Math.sqrt(d2);
+  if (d < 1e-6) {
+    // Exactly stacked: deterministic separation axis.
+    dx = 1;
+    dy = 0;
+    d = 1;
+  }
+  const nx = dx / d;
+  const ny = dy / d;
+  const overlap = 1.0 - d;
+  const push = overlap > 0 ? PUSH_STRENGTH * overlap : 0;
+
+  let ux = -nx * push;
+  let uy = -ny * push;
+  let vx = nx * push;
+  let vy = ny * push;
+
+  // Opposing headings: nudge the pair perpendicular to the offset (rotate the
+  // offset 90°) so crossing columns slide past instead of deadlocking.
+  const uhx = up[0].x + 0.5 - u.pos.x;
+  const uhy = up[0].y + 0.5 - u.pos.y;
+  const vhx = vp[0].x + 0.5 - v.pos.x;
+  const vhy = vp[0].y + 0.5 - v.pos.y;
+  const ul = Math.sqrt(uhx * uhx + uhy * uhy);
+  const vl = Math.sqrt(vhx * vhx + vhy * vhy);
+  if (ul > 1e-6 && vl > 1e-6) {
+    const dot = (uhx * vhx + uhy * vhy) / (ul * vl);
+    if (dot < PUSH_OPPOSE_DOT) {
+      ux += -ny * PUSH_PERP;
+      uy += nx * PUSH_PERP;
+      vx -= -ny * PUSH_PERP;
+      vy -= nx * PUSH_PERP;
+    }
+  }
+
+  if (ux !== 0 || uy !== 0) {
+    const px = u.pos.x + ux;
+    const py = u.pos.y + uy;
+    if (pushDestinationOpen(state, domain, px, py)) {
+      u.pos.x = px;
+      u.pos.y = py;
+    }
+  }
+  if (vx !== 0 || vy !== 0) {
+    const px = v.pos.x + vx;
+    const py = v.pos.y + vy;
+    if (pushDestinationOpen(state, domain, px, py)) {
+      v.pos.x = px;
+      v.pos.y = py;
+    }
+  }
+}
+
+/**
+ * Soft-push pass over all moving surface units. Called by game.ts once per
+ * tick AFTER the per-unit movement loop (before projectiles). Candidate pairs
+ * come from the occupancy buckets (own tile + 8 neighbors; buckets are from
+ * the previous tick's rebuild, which is within one step of current positions
+ * — close enough for a soft force). Pairs are visited once each, in ascending
+ * entity-id order, with squared-distance early outs and no allocations in the
+ * hot loop. AIR units and moving-vs-idle pairs are skipped entirely.
+ */
+export function applyUnitPushing(state: GameState, data: GameData): void {
+  const map = state.map;
+  const w = map.w;
+  const h = map.h;
+  const entities = state.entities;
+  const occupancy = state.occupancy;
+
+  // Map iteration order = insertion order = ascending entity id.
+  for (const u of entities.values()) {
+    if (u.kind !== 'unit' || u.hp <= 0) continue;
+    if (u.path === null || u.path.length === 0) continue; // only movers push
+    const ud = data.units[u.defId];
+    if (ud === undefined || ud.domain === MoveDomain.AIR) continue;
+    const cx = Math.round(u.pos.x);
+    const cy = Math.round(u.pos.y);
+
+    for (let oy = -1; oy <= 1; oy++) {
+      const ty = cy + oy;
+      if (ty < 0 || ty >= h) continue;
+      const row = ty * w;
+      for (let ox = -1; ox <= 1; ox++) {
+        const tx = cx + ox;
+        if (tx < 0 || tx >= w) continue;
+        const ids = occupancy.get(row + tx);
+        if (ids === undefined) continue;
+        for (let i = 0; i < ids.length; i++) {
+          const vid = ids[i];
+          if (vid <= u.id) continue; // each pair handled once
+          const v = entities.get(vid);
+          if (v === undefined || v.kind !== 'unit' || v.hp <= 0) continue;
+          const vd = data.units[v.defId];
+          if (vd === undefined || vd.domain !== ud.domain) continue;
+          pushPair(state, u, v, ud.domain);
+        }
+      }
+    }
+  }
 }

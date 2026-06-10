@@ -369,15 +369,17 @@ function pickProducer(
   player: PlayerId,
   tab: ProductionTab,
 ): Entity | null {
+  let withRally: Entity | null = null;
   let first: Entity | null = null;
   for (const b of buildingsOf(state, player)) {
     if (b.buildProgress < 1) continue;
     const bd = data.buildings[b.defId];
     if (!bd.producesTabs || bd.producesTabs.indexOf(tab) < 0) continue;
-    if (b.rally) return b; // prefer a producer with a rally point set
+    if (b.isPrimary) return b; // primary factory wins outright
+    if (b.rally && !withRally) withRally = b; // then a producer with a rally point
     if (!first) first = b;
   }
-  return first;
+  return withRally ?? first;
 }
 
 function completeUnit(

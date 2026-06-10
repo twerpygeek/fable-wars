@@ -70,6 +70,12 @@ interface AIMemory {
   waveTarget: Vec2 | null;
   lastWaveTick: number;
   huntTarget: Vec2 | null;
+  /** Randomized launch threshold (waveMin + rolled bonus); re-rolled after each launch. */
+  waveRequired: number;
+  // unpredictability (clean-room from OpenRA SquadManager technique notes)
+  cadenceOffset: number; // rolled once; staggers the macro-concern phases (-1 = unrolled)
+  thinkCounter: number; // thinks since init — the cadence clock
+  crateRunnerId: EntityId | null; // one unit detoured to grab a nearby crate
   // scouting
   scoutId: EntityId | null;
   scoutDone: boolean;
@@ -103,6 +109,10 @@ function getMemory(p: PlayerState): AIMemory {
     m.waveTarget = null;
     m.lastWaveTick = 0;
     m.huntTarget = null;
+    m.waveRequired = 0;
+    m.cadenceOffset = -1;
+    m.thinkCounter = 0;
+    m.crateRunnerId = null;
     m.scoutId = null;
     m.scoutDone = false;
     m.knownBuildings = [];
@@ -194,6 +204,15 @@ const PARAMS: Record<AIDifficulty, DiffParams> = {
     defendSeconds: 18,
   },
 };
+
+// --- Unpredictability tuning (clean-room from OpenRA SquadManager prose specs;
+// techniques only — no upstream code was read). Easy skips all of it. ----------
+
+const WAVE_THRESHOLD_JITTER = 0.35; // launch at waveMin + 0..35% extra units, re-rolled per wave
+const RUSH_CONYARD_DIST = 40; // tiles: an enemy ConYard closer than this counts as exposed
+const RUSH_POOL_FRACTION = 0.7; // rush once the ground pool reaches this share of the threshold
+const RUSH_MAX_KNOWN_BUILDINGS = 4; // ...and the victim has shown us at most this many buildings
+const CRATE_CHASE_RADIUS = 10; // tiles from base center worth detouring a fighter for a crate
 
 // --- Build orders (key + target count + optional condition) --------------------
 
@@ -1135,7 +1154,86 @@ function runMicro(c: Ctx): void {
   }
 }
 
+// --- Crate chasing (medium/hard) ------------------------------------------------
+
+function runCrates(c: Ctx): void {
+  const { state, mem } = c;
+  // one runner at a time; release the slot once the errand ends (or the unit dies)
+  if (mem.crateRunnerId !== null) {
+    const u = state.entities.get(mem.crateRunnerId);
+    if (u !== undefined && u.hp > 0 && u.owner === c.pid && u.orders.length > 0) return;
+    mem.crateRunnerId = null;
+  }
+  if (state.crates.length === 0) return;
+  let crate: Vec2 | null = null;
+  let crateD = Infinity;
+  for (const cr of state.crates) {
+    const d = dist(c.baseCenter, cr.pos);
+    if (d <= CRATE_CHASE_RADIUS && d < crateD) {
+      crateD = d;
+      crate = cr.pos;
+    }
+  }
+  if (crate === null) return;
+  // nearest idle ground fighter (harvesters/engineers are not in c.military;
+  // the scout and retreaters keep their day jobs)
+  const retreatSet = new Set<EntityId>(mem.retreating);
+  let pick: Entity | null = null;
+  let pickD = Infinity;
+  for (const u of c.military) {
+    if (u.orders.length !== 0) continue;
+    if (u.id === mem.scoutId || u.id === mem.engineerId || retreatSet.has(u.id)) continue;
+    const d = c.data.units[u.defId];
+    if (d === undefined || d.domain !== MoveDomain.GROUND) continue;
+    const dd = dist(u.pos, crate);
+    if (dd < pickD || (dd === pickD && (pick === null || u.id < pick.id))) {
+      pickD = dd;
+      pick = u;
+    }
+  }
+  if (pick === null) return;
+  mem.crateRunnerId = pick.id;
+  issue(c, [pick.id], { kind: 'move', dest: clampTile(state.map, crate) });
+}
+
 // --- Attack waves -------------------------------------------------------------------
+
+/**
+ * Randomized wave threshold (SquadManager technique): the AI must not attack
+ * on a predictable unit count, so each wave needs waveMin plus a rolled bonus.
+ * Re-rolled after every launch; easy keeps its fixed, beatable count.
+ */
+function rollWaveRequired(c: Ctx): void {
+  if (c.diff === 'easy') return;
+  c.mem.waveRequired =
+    c.params.waveMin + Math.floor(simRandom(c.state) * c.params.waveMin * WAVE_THRESHOLD_JITTER);
+}
+
+/**
+ * Opportunistic rush check: a known enemy ConYard within RUSH_CONYARD_DIST of
+ * our base whose owner has shown us at most RUSH_MAX_KNOWN_BUILDINGS buildings
+ * is exposed — worth hitting before the full wave threshold is met.
+ */
+function exposedConYard(c: Ctx): Vec2 | null {
+  const ownerKnown: Record<number, number> = {};
+  for (const kb of c.mem.knownBuildings) {
+    ownerKnown[kb.owner] = (ownerKnown[kb.owner] ?? 0) + 1;
+  }
+  let best: Vec2 | null = null;
+  let bestD = Infinity;
+  for (const kb of c.mem.knownBuildings) {
+    if (keyOfDef(kb.defId) !== 'conyard') continue;
+    const owner = c.state.players[kb.owner];
+    if (owner !== undefined && owner.eliminated) continue;
+    if ((ownerKnown[kb.owner] ?? 0) > RUSH_MAX_KNOWN_BUILDINGS) continue;
+    const d = dist(c.baseCenter, kb.pos);
+    if (d < RUSH_CONYARD_DIST && d < bestD) {
+      bestD = d;
+      best = kb.pos;
+    }
+  }
+  return best !== null ? clampTile(c.state.map, best) : null;
+}
 
 function nearestClusterTarget(c: Ctx): Vec2 | null {
   const ks = c.mem.knownBuildings;
@@ -1245,6 +1343,7 @@ function runWaves(c: Ctx): void {
   const special = new Set<EntityId>(mem.retreating);
   if (mem.scoutId !== null) special.add(mem.scoutId);
   if (mem.engineerId !== null) special.add(mem.engineerId);
+  if (mem.crateRunnerId !== null) special.add(mem.crateRunnerId);
 
   const pool: Entity[] = [];
   for (const u of c.military) if (!special.has(u.id)) pool.push(u);
@@ -1256,15 +1355,42 @@ function runWaves(c: Ctx): void {
   const defending = state.tick < mem.defendUntil;
 
   if (mem.waveState === 'massing') {
+    // randomized launch threshold — easy keeps its fixed, predictable count
+    const required = c.diff === 'easy' ? params.waveMin : Math.max(params.waveMin, mem.waveRequired);
+
+    // Opportunistic rush: a close, barely-developed enemy ConYard is worth
+    // hitting at 70% strength, before the full wave assembles (medium/hard).
+    if (!defending && c.diff !== 'easy') {
+      const rushTarget = exposedConYard(c);
+      if (rushTarget !== null) {
+        let groundPool = 0;
+        for (const u of pool) {
+          const d = c.data.units[u.defId];
+          if (d !== undefined && d.domain === MoveDomain.GROUND) groundPool++;
+        }
+        if (groundPool >= Math.ceil(required * RUSH_POOL_FRACTION)) {
+          const ids = pool.map((u) => u.id);
+          issue(c, ids, { kind: 'attackMove', dest: rushTarget });
+          mem.waveUnits = ids;
+          mem.flankUnits = [];
+          mem.waveTarget = rushTarget;
+          mem.waveState = 'attacking';
+          mem.lastWaveTick = state.tick;
+          rollWaveRequired(c);
+          return;
+        }
+      }
+    }
+
     if (
       !defending &&
       state.tick - mem.lastWaveTick >= params.waveIntervalTicks &&
-      pool.length >= params.waveMin
+      pool.length >= required
     ) {
       // launch! hard splits off a fast flank squad when it can spare one
       let flankIds: EntityId[] = [];
       const ft = params.flank ? flankTargetFor(c) : null;
-      if (ft !== null && pool.length >= params.waveMin + 6) {
+      if (ft !== null && pool.length >= required + 6) {
         const fast = pool
           .filter((u) => {
             const d = c.data.units[u.defId];
@@ -1275,7 +1401,7 @@ function runWaves(c: Ctx): void {
             const sb = c.data.units[b.defId].speed;
             return sb !== sa ? sb - sa : a.id - b.id;
           });
-        const flankSize = Math.min(fast.length, pool.length - params.waveMin, simRandom(state) < 0.5 ? 3 : 4);
+        const flankSize = Math.min(fast.length, pool.length - required, simRandom(state) < 0.5 ? 3 : 4);
         flankIds = fast.slice(0, Math.max(0, flankSize)).map((u) => u.id);
       }
       const flankSet = new Set<EntityId>(flankIds);
@@ -1287,6 +1413,7 @@ function runWaves(c: Ctx): void {
       mem.waveTarget = target;
       mem.waveState = 'attacking';
       mem.lastWaveTick = state.tick;
+      rollWaveRequired(c);
     } else if (!defending && params.scout) {
       // medium/hard: mass idle troops at a forward staging point
       const stage = stagingPoint(c);
@@ -1446,18 +1573,37 @@ export function aiThink(state: GameState, data: GameData, player: PlayerId): Com
   const c = gatherCtx(state, data, p, player, diff, mem, out);
   if (c.myBuildings.length === 0 && c.myUnits.length === 0) return out;
 
+  // lazy unpredictability rolls — they need the sim RNG, so not done in getMemory
+  if (diff !== 'easy') {
+    if (mem.cadenceOffset < 0) mem.cadenceOffset = Math.floor(simRandom(state) * 8);
+    if (mem.waveRequired <= 0) rollWaveRequired(c);
+  }
+
+  // Desynchronized cadences (SquadManager technique): the four macro concerns
+  // alternate thinks, phase-shifted by player id + the rolled offset, so several
+  // AIs (and the concerns themselves) never all spend their budget on the same
+  // think tick. Intel and placement stay every-think; easy keeps the old beat.
+  mem.thinkCounter++;
+  const beat = mem.thinkCounter + player + mem.cadenceOffset;
+  const fires = (concern: number): boolean => diff === 'easy' || ((beat + concern) & 1) === 0;
+
   updateIntel(c);
   computeThreatFocus(c);
-  defenseReflex(c);
+  if (fires(3)) defenseReflex(c);
   dispatchPlacements(c);
-  macroStructures(c);
-  macroDefenses(c);
-  manageEconomy(c);
-  produceMilitary(c);
-  runScouting(c);
-  runMicro(c); // updates retreat/engineer sets before wave assignment
-  runWaves(c);
-  runNavy(c);
-  runSuperweapon(c);
+  if (fires(0)) {
+    macroStructures(c);
+    macroDefenses(c);
+    manageEconomy(c);
+  }
+  if (fires(1)) produceMilitary(c);
+  if (fires(2)) runScouting(c);
+  if (fires(3)) runMicro(c); // updates retreat/engineer sets before wave assignment
+  if (fires(2)) {
+    if (diff !== 'easy') runCrates(c);
+    runWaves(c);
+    runNavy(c);
+    runSuperweapon(c);
+  }
   return out;
 }

@@ -6,7 +6,15 @@
 
 import type { AIDifficulty, FactionId, GameConfig } from '../core/types';
 import { PLAYER_COLORS } from '../core/types';
+import {
+  SCROLL_RATE_DEFAULT,
+  SCROLL_RATE_MAX,
+  SCROLL_RATE_MIN,
+  SCROLL_RATE_TICKS,
+} from '../core/constants';
 import { DATA } from '../data/index';
+import { clearHistory, getHistory } from './history';
+import type { MatchResult } from './history';
 
 const STYLE_ID = 'pa-style-menu';
 const CSS = `
@@ -69,9 +77,52 @@ const CSS = `
 .pa-howto td { border: 1px solid #262a4c; padding: 4px 10px; }
 .pa-howto td:first-child { color: #ffd95e; font-weight: bold; white-space: nowrap; }
 .pa-menu-h2 { font-size: 13px; letter-spacing: 3px; color: #fff; text-transform: uppercase; margin: 18px 0 6px; }
+.pa-score-banner { animation: pa-banner-in 1000ms ease-out both; }
+@keyframes pa-banner-in { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+.pa-score-table { border-collapse: collapse; margin: 14px auto 4px; font-size: 12px; }
+.pa-score-table th { font-size: 9px; letter-spacing: 1px; color: #8d96c8; text-transform: uppercase; font-weight: normal;
+  padding: 6px 12px; border-bottom: 1px solid #2e3252; text-align: right; }
+.pa-score-table th:first-child { text-align: left; }
+.pa-score-table td { padding: 8px 12px; text-align: right; color: #cfd6ff; font-variant-numeric: tabular-nums; }
+.pa-score-table tr.pa-score-row { border-bottom: 1px solid rgba(46,50,82,0.5); }
+.pa-score-name { text-align: left !important; min-width: 160px; white-space: nowrap; }
+.pa-score-swatch { display: inline-block; width: 22px; height: 22px; border-radius: 4px; vertical-align: middle;
+  margin-right: 9px; border: 1px solid rgba(255,255,255,0.3); }
+.pa-score-score { font-weight: bold; color: #ffd95e; }
+.pa-score-dead { text-decoration: line-through; opacity: 0.65; }
+.pa-score-time { text-align: center; font-size: 11px; letter-spacing: 2px; color: #9aa3cf; margin: 14px 0 8px; }
+.pa-svc { margin-top: 22px; border-top: 1px solid #2e3252; padding-top: 2px; width: 470px; }
+.pa-svc-list { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
+.pa-svc-row { display: flex; gap: 9px; align-items: center; font-size: 10px; padding: 6px 8px;
+  border-bottom: 1px solid rgba(38,42,76,0.6); color: #aeb6e2; }
+.pa-svc-row:hover { background: #181a30; }
+.pa-svc-date { color: #6f78a8; white-space: nowrap; width: 92px; flex-shrink: 0; }
+.pa-svc-sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pa-svc-badge { font-weight: bold; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 3px; flex-shrink: 0; }
+.pa-svc-badge.win { color: #ffd95e; border: 1px solid #ffd95e; }
+.pa-svc-badge.lose { color: #e8453c; border: 1px solid #e8453c; }
+.pa-svc-num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pa-svc-replay { cursor: pointer; font-size: 13px; color: #8d96c8; padding: 1px 7px; border: 1px solid #3a3f66; border-radius: 3px; flex-shrink: 0; }
+.pa-svc-replay:hover { color: #fff; border-color: #4a7dff; }
+.pa-svc-clear { text-align: center; font-size: 9px; color: #5a6390; letter-spacing: 1px; cursor: pointer;
+  margin-top: 8px; text-decoration: underline; }
+.pa-svc-clear:hover { color: #aeb6e2; }
+.pa-opt-readout { font-size: 10px; color: #8d96c8; letter-spacing: 1px; min-width: 70px; font-variant-numeric: tabular-nums; }
 `;
 
 const FACTION_EMBLEMS: Record<FactionId, string> = { scorch: '🔥', tide: '🌊', verdant: '🌿' };
+const LOBBY_KEY = 'pa-lobby'; // persisted lobby settings (everything except seed)
+const SCROLL_RATE_KEY = 'pa-scrollRate'; // px/s at zoom 1 — input.ts re-reads this live
+
+/** Saved lobby settings shape (localStorage 'pa-lobby'). */
+interface LobbySettings {
+  faction: FactionId;
+  colorIdx: number;
+  ais: { faction: FactionId | 'random'; difficulty: AIDifficulty }[];
+  mapSize: 'S' | 'M' | 'L';
+  water: 'low' | 'medium' | 'high';
+  crates: boolean;
+}
 const TIPS = [
   'Peekachoo hits air AND ground. The cheeks are not just for show.',
   'Low power slows construction and shuts down radar and advanced defenses.',
@@ -98,10 +149,14 @@ export class MenuManager {
   private colorIdx = 0;
   private mapSize: 'S' | 'M' | 'L' = 'M';
   private water: 'low' | 'medium' | 'high' = 'medium';
+  private crates = true; // RA2 'Crates Appear' default ON
   private seed = Math.floor(Math.random() * 1e6);
   private ais: { faction: FactionId | 'random'; difficulty: AIDifficulty }[] = [
     { faction: 'random', difficulty: 'medium' },
   ];
+
+  /** Config of the last launched match — main.ts reads this for "Play Again". */
+  lastConfig: GameConfig | null = null;
 
   constructor(root: HTMLElement, onStartGame: (cfg: GameConfig) => void) {
     this.root = root;
@@ -136,6 +191,57 @@ export class MenuManager {
     this.overlayEl = null;
   }
 
+  /** Save every lobby setting except the seed (fresh seed per session by default). */
+  private persistLobby(): void {
+    try {
+      const s: LobbySettings = {
+        faction: this.faction,
+        colorIdx: this.colorIdx,
+        ais: this.ais,
+        mapSize: this.mapSize,
+        water: this.water,
+        crates: this.crates,
+      };
+      localStorage.setItem(LOBBY_KEY, JSON.stringify(s));
+    } catch {
+      // Storage unavailable — settings simply won't survive a reload.
+    }
+  }
+
+  /** Restore persisted lobby settings, validating every field (corruption-proof). */
+  private restoreLobby(): void {
+    try {
+      const raw = localStorage.getItem(LOBBY_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw) as Partial<LobbySettings>;
+      const factionIds: FactionId[] = ['scorch', 'tide', 'verdant'];
+      if (typeof s.faction === 'string' && factionIds.includes(s.faction)) this.faction = s.faction;
+      if (typeof s.colorIdx === 'number' && s.colorIdx >= 0 && s.colorIdx < PLAYER_COLORS.length) {
+        this.colorIdx = s.colorIdx | 0;
+      }
+      if (s.mapSize === 'S' || s.mapSize === 'M' || s.mapSize === 'L') this.mapSize = s.mapSize;
+      if (s.water === 'low' || s.water === 'medium' || s.water === 'high') this.water = s.water;
+      if (typeof s.crates === 'boolean') this.crates = s.crates;
+      if (Array.isArray(s.ais)) {
+        const ais = s.ais
+          .filter((a): a is LobbySettings['ais'][number] => !!a && typeof a === 'object')
+          .map((a) => ({
+            faction: (factionIds as string[]).includes(a.faction as string)
+              ? (a.faction as FactionId)
+              : ('random' as const),
+            difficulty:
+              a.difficulty === 'easy' || a.difficulty === 'medium' || a.difficulty === 'hard'
+                ? a.difficulty
+                : ('medium' as const),
+          }))
+          .slice(0, 3);
+        if (ais.length > 0) this.ais = ais;
+      }
+    } catch {
+      // Corrupted settings — keep defaults.
+    }
+  }
+
   private screen(): HTMLElement {
     this.clearMenu();
     const el = document.createElement('div');
@@ -166,11 +272,82 @@ export class MenuManager {
     const skirmish = btn('Skirmish', () => this.showLobby(), true);
     const howto = btn('How to Play', () => this.showHowTo());
     panel.append(skirmish, howto);
+    const record = this.serviceRecordPanel();
+    if (record) panel.appendChild(record);
     const credits = document.createElement('div');
     credits.style.cssText = 'margin-top:18px;text-align:center;font-size:9px;color:#5a6390;letter-spacing:1px;';
     credits.textContent = 'A loving parody. All creatures procedurally hatched in your browser.';
     panel.appendChild(credits);
     el.appendChild(panel);
+  }
+
+  /** Service Record: past matches with a ↻ replay button each. Null when empty. */
+  private serviceRecordPanel(): HTMLElement | null {
+    const history = getHistory();
+    if (history.length === 0) return null;
+    const wrap = document.createElement('div');
+    wrap.className = 'pa-svc';
+    wrap.innerHTML = `<div class="pa-menu-h2" style="text-align:center">Service Record</div>`;
+    const list = document.createElement('div');
+    list.className = 'pa-svc-list';
+    for (const r of history) {
+      const human = r.players[r.humanIdx] ?? r.players.find((p) => p.isHuman);
+      if (!human) continue;
+      const aiPlayers = r.players.filter((p) => !p.isHuman);
+      const diffs = [...new Set(aiPlayers.map((p) => p.difficulty ?? 'medium'))].join('/');
+      const facName = DATA.factions[human.faction]?.name.split(' ')[0] ?? human.faction;
+      const when = new Date(r.dateISO);
+      const dateLabel = isNaN(when.getTime())
+        ? '—'
+        : when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      const row = document.createElement('div');
+      row.className = 'pa-svc-row';
+      const badge = `<span class="pa-svc-badge ${r.victory ? 'win' : 'lose'}">${r.victory ? 'W' : 'L'}</span>`;
+      row.innerHTML = `<span class="pa-svc-date">${dateLabel}</span>
+        <span class="pa-svc-sum">${FACTION_EMBLEMS[human.faction] ?? ''} ${facName} vs ${aiPlayers.length} AI (${diffs})</span>
+        ${badge}
+        <span class="pa-svc-num" title="Score">★ ${human.stats.score.toLocaleString()}</span>
+        <span class="pa-svc-num" title="Duration">${formatDuration(r.durationSec)}</span>`;
+      const replay = document.createElement('span');
+      replay.className = 'pa-svc-replay';
+      replay.textContent = '↻';
+      replay.title = 'Replay this setup (same map seed)';
+      replay.addEventListener('click', () => this.replaySetup(r));
+      row.appendChild(replay);
+      list.appendChild(row);
+    }
+    wrap.appendChild(list);
+    const clear = document.createElement('div');
+    clear.className = 'pa-svc-clear';
+    clear.textContent = 'Clear history';
+    clear.addEventListener('click', () => {
+      if (confirm('Clear the service record?')) {
+        clearHistory();
+        this.showMainMenu();
+      }
+    });
+    wrap.appendChild(clear);
+    return wrap;
+  }
+
+  /** Pre-fill the lobby with a past match's exact setup — seed included. */
+  private replaySetup(r: MatchResult): void {
+    const human = r.players[r.humanIdx] ?? r.players.find((p) => p.isHuman);
+    if (!human) return;
+    this.faction = human.faction;
+    this.colorIdx = Math.max(0, Math.min(PLAYER_COLORS.length - 1, human.colorIdx | 0));
+    const ais = r.players
+      .filter((p) => !p.isHuman)
+      .map((p) => ({ faction: p.faction, difficulty: p.difficulty ?? ('medium' as const) }))
+      .slice(0, 3);
+    this.ais = ais.length > 0 ? ais : [{ faction: 'random', difficulty: 'medium' }];
+    this.mapSize = r.mapSize;
+    this.water = r.water;
+    this.crates = r.crates;
+    this.persistLobby(); // showLobby() restores from storage; keep them in sync
+    this.seed = Math.abs(r.seed | 0) || 1; // seed is NOT persisted — set after persist
+    this.showLobby();
   }
 
   private showHowTo(): void {
@@ -205,6 +382,7 @@ export class MenuManager {
   // --- lobby -----------------------------------------------------------------------
 
   showLobby(): void {
+    this.restoreLobby(); // last-used settings (everything except seed)
     const el = this.screen();
     const panel = document.createElement('div');
     panel.className = 'pa-panel';
@@ -230,6 +408,7 @@ export class MenuManager {
         <div class="pa-fc-blurb">${f.blurb}</div><div class="pa-fc-roster">${roster}…</div>`;
       card.addEventListener('click', () => {
         this.faction = f.id;
+        this.persistLobby();
         cards.querySelectorAll('.pa-fcard').forEach((c) => c.classList.remove('sel'));
         card.classList.add('sel');
       });
@@ -249,6 +428,7 @@ export class MenuManager {
       sw.title = c.name;
       sw.addEventListener('click', () => {
         this.colorIdx = i;
+        this.persistLobby();
         swatches.forEach((s) => s.classList.remove('sel'));
         sw.classList.add('sel');
       });
@@ -268,6 +448,7 @@ export class MenuManager {
     addBtn.addEventListener('click', () => {
       if (this.ais.length < 3) {
         this.ais.push({ faction: 'random', difficulty: 'medium' });
+        this.persistLobby();
         renderAIs();
       }
     });
@@ -287,11 +468,17 @@ export class MenuManager {
             .map((f) => `<option value="${f.id}" ${ai.faction === f.id ? 'selected' : ''}>${FACTION_EMBLEMS[f.id]} ${f.name}</option>`)
             .join('');
         fSel.value = ai.faction;
-        fSel.addEventListener('change', () => (ai.faction = fSel.value as FactionId | 'random'));
+        fSel.addEventListener('change', () => {
+          ai.faction = fSel.value as FactionId | 'random';
+          this.persistLobby();
+        });
         const dSel = document.createElement('select');
         dSel.innerHTML = `<option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>`;
         dSel.value = ai.difficulty;
-        dSel.addEventListener('change', () => (ai.difficulty = dSel.value as AIDifficulty));
+        dSel.addEventListener('change', () => {
+          ai.difficulty = dSel.value as AIDifficulty;
+          this.persistLobby();
+        });
         row.append(fSel, dSel);
         if (this.ais.length > 1) {
           const x = document.createElement('span');
@@ -300,6 +487,7 @@ export class MenuManager {
           x.title = 'Remove';
           x.addEventListener('click', () => {
             this.ais.splice(i, 1);
+            this.persistLobby();
             renderAIs();
           });
           row.appendChild(x);
@@ -311,8 +499,18 @@ export class MenuManager {
 
     // map settings
     panel.insertAdjacentHTML('beforeend', `<div class="pa-menu-h2">Battlefield</div>`);
-    const sizeRow = segRow('Map Size', ['S', 'M', 'L'], this.mapSize, (v) => (this.mapSize = v as 'S' | 'M' | 'L'));
-    const waterRow = segRow('Water', ['low', 'medium', 'high'], this.water, (v) => (this.water = v as 'low' | 'medium' | 'high'));
+    const sizeRow = segRow('Map Size', ['S', 'M', 'L'], this.mapSize, (v) => {
+      this.mapSize = v as 'S' | 'M' | 'L';
+      this.persistLobby();
+    });
+    const waterRow = segRow('Water', ['low', 'medium', 'high'], this.water, (v) => {
+      this.water = v as 'low' | 'medium' | 'high';
+      this.persistLobby();
+    });
+    const cratesRow = segRow('Crates', ['on', 'off'], this.crates ? 'on' : 'off', (v) => {
+      this.crates = v === 'on';
+      this.persistLobby();
+    });
     const seedRow = document.createElement('div');
     seedRow.className = 'pa-row';
     seedRow.innerHTML = `<span class="pa-label">Map Seed</span>`;
@@ -329,7 +527,7 @@ export class MenuManager {
       seedInput.value = String(this.seed);
     });
     seedRow.append(seedInput, dice);
-    panel.append(sizeRow, waterRow, seedRow);
+    panel.append(sizeRow, waterRow, cratesRow, seedRow);
 
     // start
     const start = btn('⚔ Start Operation', () => this.launch(), true);
@@ -351,7 +549,7 @@ export class MenuManager {
       seed: this.seed,
       mapSize: this.mapSize,
       waterAmount: this.water,
-      crates: true,
+      crates: this.crates,
       players: [
         { faction: this.faction, isHuman: true, difficulty: null, colorIdx: this.colorIdx, name: 'Commander' },
         ...this.ais.map((ai, i) => {
@@ -366,6 +564,8 @@ export class MenuManager {
         }),
       ],
     };
+    this.persistLobby();
+    this.lastConfig = cfg;
     this.onStart(cfg);
   }
 
@@ -409,7 +609,90 @@ export class MenuManager {
     this.root.appendChild(ov);
   }
 
-  showEscMenu(opts: { onResume: () => void; onSurrender: () => void; onQuit: () => void }): void {
+  /** RA2-style end-of-match score screen: banner, per-player score table, time. */
+  showScoreScreen(result: MatchResult, onPlayAgain: () => void, onBackToMenu: () => void): void {
+    this.clearMenu();
+    const ov = document.createElement('div');
+    ov.className = 'pa-overlay';
+    ov.style.background = 'rgba(5,6,12,0.9)';
+    const inner = document.createElement('div');
+    inner.innerHTML = `<div class="pa-go-banner pa-score-banner ${result.victory ? 'win' : 'lose'}">${
+      result.victory ? 'VICTORY' : 'DEFEAT'
+    }</div>`;
+
+    // Score table — header + one color-barred row per player.
+    const table = document.createElement('table');
+    table.className = 'pa-score-table';
+    const cols = [
+      'Creatures Killed',
+      'Creatures Lost',
+      'Buildings Destroyed',
+      'Buildings Lost',
+      'Crystals Harvested',
+      'Score',
+    ];
+    let html = `<tr><th></th>${cols.map((c) => `<th>${c}</th>`).join('')}</tr>`;
+    for (const p of result.players) {
+      const hex = PLAYER_COLORS[p.colorIdx]?.hex ?? '#888';
+      const nameStyle = p.isHuman ? 'font-weight:bold;color:#fff;' : '';
+      const nameClass = p.eliminated ? ' class="pa-score-dead"' : '';
+      const nums = [
+        p.stats.unitsKilled,
+        p.stats.unitsLost,
+        p.stats.buildingsKilled,
+        p.stats.buildingsLost,
+        p.stats.creditsHarvested,
+      ];
+      html += `<tr class="pa-score-row" style="background:linear-gradient(90deg, ${hex}1f, transparent 70%)">
+        <td class="pa-score-name"><span class="pa-score-swatch" style="background:${hex}"></span><span${nameClass} style="${nameStyle}">${escapeHtml(p.name)}</span></td>
+        ${nums.map((n) => `<td data-count="${n}">0</td>`).join('')}
+        <td class="pa-score-score" data-count="${p.stats.score}">0</td>
+      </tr>`;
+    }
+    table.innerHTML = html;
+    inner.appendChild(table);
+
+    inner.insertAdjacentHTML(
+      'beforeend',
+      `<div class="pa-score-time">Operation time ${formatDuration(result.durationSec)}</div>`,
+    );
+
+    const again = btn('⚔ Play Again', () => {
+      ov.remove();
+      onPlayAgain();
+    }, true);
+    const back = btn('Back to HQ', () => {
+      ov.remove();
+      onBackToMenu();
+    });
+    inner.append(again, back);
+    ov.appendChild(inner);
+    this.root.appendChild(ov);
+
+    // Count the numbers up over ~800ms (eased; cosmetic, renderer-side timing OK).
+    const counters = Array.from(table.querySelectorAll<HTMLElement>('[data-count]'));
+    const t0 = performance.now();
+    const DURATION = 800;
+    const step = (now: number) => {
+      if (!table.isConnected) return; // screen dismissed mid-animation
+      const k = Math.min(1, (now - t0) / DURATION);
+      const ease = 1 - Math.pow(1 - k, 3);
+      for (const c of counters) {
+        const target = Number(c.dataset.count) || 0;
+        c.textContent = Math.round(target * ease).toLocaleString();
+      }
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  showEscMenu(opts: {
+    onResume: () => void;
+    onSurrender: () => void;
+    onQuit: () => void;
+    /** Optional audio on/off rows (label + getter/setter), e.g. Music / SFX / Voice. */
+    audioToggles?: { label: string; get: () => boolean; set: (on: boolean) => void }[];
+  }): void {
     this.hideEscMenu();
     const ov = document.createElement('div');
     ov.className = 'pa-overlay';
@@ -425,9 +708,67 @@ export class MenuManager {
         if (confirm('Quit to the main menu? The match will be lost.')) opts.onQuit();
       }),
     );
+
+    // Options: Scroll Rate (CnCNet-style ticks, linear px/s) + audio toggles.
+    panel.insertAdjacentHTML('beforeend', `<div class="pa-menu-h2">Options</div>`);
+    panel.appendChild(this.scrollRateRow());
+    for (const t of opts.audioToggles ?? []) {
+      panel.appendChild(segRow(t.label, ['on', 'off'], t.get() ? 'on' : 'off', (v) => t.set(v === 'on')));
+    }
+
     ov.appendChild(panel);
     this.root.appendChild(ov);
     this.escEl = ov;
+  }
+
+  /**
+   * Scroll Rate segmented control: SCROLL_RATE_TICKS steps mapped linearly onto
+   * SCROLL_RATE_MIN..SCROLL_RATE_MAX px/s. Written to localStorage immediately —
+   * input.ts re-reads the key live, so the change applies without a restart.
+   */
+  private scrollRateRow(): HTMLElement {
+    const rateForTick = (i: number): number =>
+      Math.round(SCROLL_RATE_MIN + (i * (SCROLL_RATE_MAX - SCROLL_RATE_MIN)) / (SCROLL_RATE_TICKS - 1));
+    let rate = SCROLL_RATE_DEFAULT;
+    try {
+      const v = Number(localStorage.getItem(SCROLL_RATE_KEY));
+      if (Number.isFinite(v) && v > 0) rate = Math.max(SCROLL_RATE_MIN, Math.min(SCROLL_RATE_MAX, v));
+    } catch {
+      // Storage unreadable — show the default.
+    }
+    let tick = 0;
+    for (let i = 1; i < SCROLL_RATE_TICKS; i++) {
+      if (Math.abs(rateForTick(i) - rate) < Math.abs(rateForTick(tick) - rate)) tick = i;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'pa-row';
+    row.innerHTML = `<span class="pa-label">Scroll Rate</span>`;
+    const seg = document.createElement('div');
+    seg.className = 'pa-seg';
+    const readout = document.createElement('span');
+    readout.className = 'pa-opt-readout';
+    readout.textContent = `${rateForTick(tick)} px/s`;
+    for (let i = 0; i < SCROLL_RATE_TICKS; i++) {
+      const o = document.createElement('div');
+      o.className = 'pa-seg-opt' + (i === tick ? ' sel' : '');
+      o.textContent = String(i + 1);
+      o.title = `${rateForTick(i)} px/s`;
+      o.addEventListener('click', () => {
+        tick = i;
+        try {
+          localStorage.setItem(SCROLL_RATE_KEY, String(rateForTick(i)));
+        } catch {
+          // Storage unavailable — the rate just won't persist.
+        }
+        seg.querySelectorAll('.pa-seg-opt').forEach((x) => x.classList.remove('sel'));
+        o.classList.add('sel');
+        readout.textContent = `${rateForTick(i)} px/s`;
+      });
+      seg.appendChild(o);
+    }
+    row.append(seg, readout);
+    return row;
   }
 
   hideEscMenu(): void {
@@ -437,6 +778,17 @@ export class MenuManager {
 }
 
 // --- tiny DOM helpers -----------------------------------------------------------------
+
+/** Seconds -> 'M:SS' (e.g. 754 -> '12:34'). */
+function formatDuration(sec: number): string {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/** Player names come back out of localStorage — never trust them as HTML. */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function btn(label: string, onClick: () => void, primary = false): HTMLElement {
   const b = document.createElement('div');

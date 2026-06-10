@@ -46,6 +46,7 @@ import {
   VET_KILL_THRESHOLDS,
   WEAPON_VS_ARMOR,
   elementMultiplier,
+  scoreValue,
 } from '../core/constants';
 import { orderMove } from './movement';
 import { isVisibleTo } from './fog';
@@ -180,11 +181,13 @@ function isLowPower(state: GameState, player: PlayerId): boolean {
 /**
  * Apply damage to an entity. Final damage =
  *   rawDamage * WEAPON_VS_ARMOR[wc][armor] * elementMultiplier(elem, targetElem)
- *             * VET_DAMAGE_BONUS[attacker.vet]
+ *             * VET_DAMAGE_BONUS[attacker.vet] * attacker.buffs.fire
+ *             / target.buffs.armor               (crate buffs; 1 = none)
  * Records the damager (for retaliation preference and Verdant regen reset),
  * emits a deduped `underAttack` for the victim's owner, and on a lethal hit
- * credits the attacker's kills + veterancy promotion. The corpse itself is
- * removed by Owner A's cleanup phase (hp <= 0).
+ * credits the attacker's kills + veterancy promotion plus the attacking
+ * player's RA2-style stats (unitsKilled/buildingsKilled + scoreValue). The
+ * corpse itself is removed by Owner A's cleanup phase (hp <= 0).
  */
 export function dealDamage(
   state: GameState,
@@ -217,8 +220,12 @@ export function dealDamage(
   const atkEnt = attacker !== null ? state.entities.get(attacker) : undefined;
   const vetMult =
     atkEnt !== undefined && atkEnt.kind === 'unit' ? VET_DAMAGE_BONUS[atkEnt.vet] : 1.0;
+  // Crate buffs: firepower multiplies outgoing, armor divides incoming.
+  const fireMult = atkEnt !== undefined ? atkEnt.buffs.fire : 1.0;
 
-  const dmg = rawDamage * WEAPON_VS_ARMOR[wc][armor] * elementMultiplier(elem, targetElem) * vetMult;
+  const dmg =
+    (rawDamage * WEAPON_VS_ARMOR[wc][armor] * elementMultiplier(elem, targetElem) * vetMult * fireMult) /
+    target.buffs.armor;
   if (dmg <= 0) return;
   target.hp -= dmg;
 
@@ -249,11 +256,16 @@ export function dealDamage(
     });
   }
 
-  // Lethal hit: kill credit + veterancy.
+  // Lethal hit: kill credit + veterancy + RA2-style score accounting.
   if (target.hp <= 0 && atkEnt !== undefined && atkEnt.owner !== target.owner) {
     atkEnt.kills += 1;
     const ap = state.players[atkEnt.owner];
-    if (ap !== undefined) ap.stats.unitsKilled += 1;
+    if (ap !== undefined) {
+      if (target.kind === 'unit') ap.stats.unitsKilled += 1;
+      else ap.stats.buildingsKilled += 1;
+      const vdef = target.kind === 'unit' ? data.units[target.defId] : data.buildings[target.defId];
+      if (vdef !== undefined) ap.stats.score += scoreValue(vdef);
+    }
     if (atkEnt.kind === 'unit') {
       if (atkEnt.vet === VetRank.ROOKIE && atkEnt.kills >= VET_KILL_THRESHOLDS[0]) {
         atkEnt.vet = VetRank.VETERAN;
@@ -350,6 +362,67 @@ function fireWeapon(
         owner: shooter.owner,
         sourceDefId: shooter.defId,
         isAirTarget,
+      };
+      state.projectiles.push(proj);
+      memo.projShooter.set(proj.id, shooter.id);
+    }
+  }
+  shooter.attackCooldown = weapon.cooldown;
+}
+
+/**
+ * Force-fire at a ground point (attackGround order). Beam weapons resolve
+ * their splash at the point immediately; projectile weapons fly to the point
+ * with no homing target (targetId null) and splash on arrival. Always fires
+ * at the surface layer.
+ */
+function fireAtGround(
+  state: GameState,
+  data: GameData,
+  shooter: Entity,
+  weapon: WeaponDef,
+  dest: Vec2,
+  events: GameEvent[],
+): void {
+  const memo = memoOf(state);
+  const myC = entityCenter(shooter, data);
+  const elem = attackElement(data, shooter);
+  const burst = weapon.burst !== undefined && weapon.burst > 1 ? weapon.burst : 1;
+
+  events.push({
+    type: 'shotFired',
+    pos: { x: myC.x, y: myC.y },
+    weaponClass: weapon.weaponClass,
+    element: elem,
+  });
+
+  for (let i = 0; i < burst; i++) {
+    if (weapon.projectileSpeed >= INSTANT_SPEED) {
+      events.push({
+        type: 'impact',
+        pos: { x: dest.x, y: dest.y },
+        weaponClass: weapon.weaponClass,
+        element: elem,
+        splash: weapon.splashRadius,
+      });
+      applySplash(
+        state, data, dest, weapon.damage, weapon.weaponClass, weapon.splashRadius,
+        elem, shooter.owner, shooter.id, null, false, events,
+      );
+    } else {
+      const proj: Projectile = {
+        id: state.nextProjectileId++,
+        pos: { x: myC.x, y: myC.y },
+        dest: { x: dest.x, y: dest.y },
+        targetId: null,
+        speed: weapon.projectileSpeed,
+        damage: weapon.damage,
+        weaponClass: weapon.weaponClass,
+        element: elem,
+        splashRadius: weapon.splashRadius,
+        owner: shooter.owner,
+        sourceDefId: shooter.defId,
+        isAirTarget: false,
       };
       state.projectiles.push(proj);
       memo.projShooter.set(proj.id, shooter.id);
@@ -461,6 +534,38 @@ function engageTarget(
     dist(u.pathTarget, tc) > 2;
   if (needRepath) {
     orderMove(state, data, u, { x: Math.floor(tc.x), y: Math.floor(tc.y) });
+  }
+}
+
+/**
+ * Force-fire engagement: path into weapon range of the ground point, then
+ * hold and shell it. The order persists until replaced or stopped.
+ */
+function engageGround(
+  state: GameState,
+  data: GameData,
+  u: Entity,
+  weapon: WeaponDef,
+  dest: Vec2,
+  stagger: boolean,
+  events: GameEvent[],
+): void {
+  const myC = entityCenter(u, data);
+  if (dist(myC, dest) <= weapon.range) {
+    u.path = null;
+    u.pathTarget = null;
+    u.facing = lerpAngle(u.facing, Math.atan2(dest.y - myC.y, dest.x - myC.x), 0.5);
+    if (u.attackCooldown <= 0) fireAtGround(state, data, u, weapon, dest, events);
+    return;
+  }
+  if (!stagger) return;
+  const needRepath =
+    u.path === null ||
+    u.path.length === 0 ||
+    u.pathTarget === null ||
+    dist(u.pathTarget, dest) > 2;
+  if (needRepath) {
+    orderMove(state, data, u, { x: Math.floor(dest.x), y: Math.floor(dest.y) });
   }
 }
 
@@ -677,9 +782,21 @@ export function updateUnitCombat(
   }
 
   const weapon = def.weapon;
-  if (weapon === undefined) return; // harvesters, engineers without capture orders
+  if (weapon === undefined) {
+    // Unarmed units can't force-fire; drop the order instead of freezing.
+    if (order !== null && order.kind === 'attackGround') u.orders.shift();
+    return; // harvesters, engineers without capture orders
+  }
 
   const stagger = (state.tick + u.id) % STAGGER === 0;
+
+  // Explicit force-fire at a ground point (persists until replaced/stopped).
+  // Executes regardless of stance — it's an explicit order.
+  if (order !== null && order.kind === 'attackGround') {
+    u.targetId = null;
+    engageGround(state, data, u, weapon, order.dest, stagger, events);
+    return;
+  }
 
   // Explicit attack order: chase the target anywhere until it dies.
   if (order !== null && order.kind === 'attack') {
@@ -699,6 +816,18 @@ export function updateUnitCombat(
   // Auto-acquiring stances: attackMove / guard / idle.
   const autoStance = order === null || order.kind === 'attackMove' || order.kind === 'guard';
   if (!autoStance) return; // move/harvest/returnCargo: no opportunistic fire
+
+  // Hold-fire stance never auto-acquires (explicit orders handled above).
+  if (u.stance === 'holdfire') {
+    if (u.targetId !== null) {
+      u.targetId = null;
+      if (order === null || order.kind === 'guard') {
+        u.path = null;
+        u.pathTarget = null;
+      }
+    }
+    return;
+  }
 
   let target = u.targetId !== null ? liveEntity(state, u.targetId) : null;
   if (target !== null && !autoTargetValid(state, data, u, def, weapon, target)) {
