@@ -116,6 +116,11 @@ export class MenuManager {
 
   // --- helpers --------------------------------------------------------------------
 
+  /** Remove every menu screen/overlay — called when a match takes the stage. */
+  hideMenus(): void {
+    this.clearMenu();
+  }
+
   private clearMenu(): void {
     this.menuEl?.remove();
     this.menuEl = null;

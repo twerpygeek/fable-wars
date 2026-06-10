@@ -144,7 +144,7 @@ interface Theme {
   trim: string;
 }
 const THEMES: Record<string, Theme> = {
-  scorch: { wallA: '#4a3440', wallB: '#2c1d28', roof: '#5c4350', glow: '#ff5a2a', trim: '#1c1016' },
+  scorch: { wallA: '#7a5564', wallB: '#4e3442', roof: '#8d6a76', glow: '#ff5a2a', trim: '#2a1c24' },
   tide: { wallA: '#dde6ee', wallB: '#9fb4c6', roof: '#b9d0e0', glow: '#2ab4ff', trim: '#6e90aa' },
   verdant: { wallA: '#8a6a44', wallB: '#5c4630', roof: '#6e8a3e', glow: '#4ade5a', trim: '#3e3020' },
 };

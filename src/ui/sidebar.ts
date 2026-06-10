@@ -156,6 +156,7 @@ export class Sidebar {
     root.appendChild(this.el);
     window.addEventListener('keydown', this.onKey);
     this.shownCredits = getState().players[humanPlayer].credits;
+    this.crVal.textContent = String(this.shownCredits);
   }
 
   destroy(): void {

@@ -81,6 +81,7 @@ function startMatch(cfg: GameConfig): void {
 }
 
 function runMatch(state: GameState): void {
+  menus.hideMenus();
   const atlas = sprites!;
   const humanPlayer = Math.max(0, state.config.players.findIndex((p) => p.isHuman));
 
@@ -214,10 +215,12 @@ function runMatch(state: GameState): void {
     if (!ui.paused && state.winner === null) {
       acc += dt * ui.gameSpeed;
       let safety = 0;
+      // ?sandbox=1 disables AI thinking — a stable test bed for QA automation.
+      const sandbox = new URLSearchParams(location.search).has('sandbox');
       while (acc >= TICK_MS && safety < 8) {
         // AI commands at each AI's think cadence
         for (const p of state.players) {
-          if (p.isHuman || p.eliminated || !p.difficulty) continue;
+          if (sandbox || p.isHuman || p.eliminated || !p.difficulty) continue;
           if (state.tick % AI_THINK_INTERVAL[p.difficulty] === (p.id * 3) % AI_THINK_INTERVAL[p.difficulty]) {
             try {
               pending.push(...aiThink(state, DATA, p.id));
