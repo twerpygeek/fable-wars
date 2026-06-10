@@ -22,6 +22,7 @@ function run(seed: number, a: { f: FactionId; d: AIDifficulty }, b: { f: Faction
     seed,
     mapSize: 'M',
     waterAmount: 'medium',
+    crates: false,
     players: [
       { faction: a.f, isHuman: false, difficulty: a.d, colorIdx: 0, name: 'A' },
       { faction: b.f, isHuman: false, difficulty: b.d, colorIdx: 1, name: 'B' },

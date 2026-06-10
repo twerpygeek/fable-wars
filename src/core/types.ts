@@ -175,11 +175,33 @@ export type Order =
   | { kind: 'move'; dest: Vec2 }
   | { kind: 'attackMove'; dest: Vec2 }
   | { kind: 'attack'; target: EntityId }
+  | { kind: 'attackGround'; dest: Vec2 } // force-fire at a tile (Ctrl/F+click)
   | { kind: 'harvest'; tile?: Vec2 } // undefined = auto-find nearest crystal
   | { kind: 'returnCargo' }
   | { kind: 'capture'; target: EntityId }
   | { kind: 'guard' }
   | { kind: 'stop' };
+
+export type UnitStance = 'aggressive' | 'holdfire';
+
+// --- crates (RA2 [CrateRules]-style map bonuses) -------------------------------
+
+export type CrateKind =
+  | 'money'
+  | 'veteran'
+  | 'unit'
+  | 'heal'
+  | 'reveal'
+  | 'armor'
+  | 'speed'
+  | 'firepower';
+
+export interface Crate {
+  id: number;
+  pos: Vec2; // integer tile
+  kind: CrateKind;
+  spawnedTick: number;
+}
 
 export const enum VetRank {
   ROOKIE = 0,
@@ -207,6 +229,8 @@ export interface Entity {
   kills: number;
   vet: VetRank;
   repathCooldown: number; // ticks until allowed to repath (anti-thrash)
+  stance: UnitStance; // holdfire suppresses auto-acquire
+  buffs: { armor: number; speed: number; fire: number }; // crate multipliers (1 = none)
 
   // building-only
   buildProgress: number; // 0..1, construction animation; 1 = operational
@@ -214,6 +238,7 @@ export interface Entity {
   repairing: boolean; // owner paying credits to heal it
   captureProgress: number; // 0..100, engineer capture
   swChargeTick: number; // tick when this building's superweapon is ready (-1 n/a)
+  isPrimary: boolean; // primary factory: units of its tab spawn here
 }
 
 export interface Projectile {
@@ -261,7 +286,18 @@ export interface PlayerState {
   visible: Uint8Array; // map.w * map.h, 0/1 — recomputed each tick
   // AI scratch memory — sim never touches this; ai/ai.ts owns it
   aiMemory: Record<string, unknown>;
-  stats: { kills: number; losses: number; built: number };
+  stats: PlayerStats;
+}
+
+// RA2-style score accounting, updated live by the sim.
+export interface PlayerStats {
+  unitsKilled: number;
+  unitsLost: number;
+  buildingsKilled: number;
+  buildingsLost: number;
+  built: number; // structures placed
+  creditsHarvested: number;
+  score: number; // sum of scoreValue() of everything killed
 }
 
 // --- Game state --------------------------------------------------------------
@@ -270,6 +306,7 @@ export interface GameConfig {
   seed: number;
   mapSize: 'S' | 'M' | 'L'; // 56 / 72 / 96 tiles square (MAP_SIZES)
   waterAmount: 'low' | 'medium' | 'high';
+  crates: boolean; // RA2 'Crates Appear' lobby toggle
   players: {
     faction: FactionId;
     isHuman: boolean;
@@ -286,6 +323,7 @@ export interface GameState {
   players: PlayerState[];
   entities: Map<EntityId, Entity>;
   projectiles: Projectile[];
+  crates: Crate[];
   nextEntityId: number;
   nextProjectileId: number;
   rngState: number; // sim RNG lives in state for determinism
@@ -306,6 +344,8 @@ export type Command =
   | { type: 'sell'; player: PlayerId; buildingId: EntityId }
   | { type: 'toggleRepair'; player: PlayerId; buildingId: EntityId }
   | { type: 'fireSuperweapon'; player: PlayerId; target: Vec2 }
+  | { type: 'setStance'; player: PlayerId; unitIds: EntityId[]; stance: UnitStance }
+  | { type: 'setPrimary'; player: PlayerId; buildingId: EntityId }
   | { type: 'surrender'; player: PlayerId };
 
 // --- Events (sim -> UI / audio / AI) ------------------------------------------
@@ -329,7 +369,9 @@ export type GameEvent =
   | { type: 'impact'; pos: Vec2; weaponClass: WeaponClass; element: Element; splash: number }
   | { type: 'entityDied'; id: EntityId; defId: string; kind: 'unit' | 'building'; pos: Vec2; owner: PlayerId }
   | { type: 'crystalDepleted'; pos: Vec2 }
-  | { type: 'promotion'; id: EntityId; rank: VetRank };
+  | { type: 'promotion'; id: EntityId; rank: VetRank }
+  | { type: 'cratePickup'; player: PlayerId; kind: CrateKind; pos: Vec2; amount?: number }
+  | { type: 'aiTaunt'; player: PlayerId; text: string };
 
 // --- Rendering / UI shared types ----------------------------------------------
 
@@ -358,7 +400,10 @@ export interface UIState {
 
 // Per-frame visual effects (renderer-owned, fed by GameEvents)
 export interface VisualEffect {
-  kind: 'explosion' | 'spark' | 'splash' | 'nuke' | 'storm' | 'spore' | 'heal' | 'capture' | 'sell' | 'place' | 'promote';
+  kind:
+    | 'explosion' | 'spark' | 'splash' | 'nuke' | 'storm' | 'spore' | 'heal' | 'capture'
+    | 'sell' | 'place' | 'promote'
+    | 'spirit' | 'debris' | 'dust' | 'muzzle' | 'flicker' | 'cheer' | 'crate' | 'moveFlash' | 'taunt';
   pos: Vec2; // tile coords
   startedAt: number; // performance.now() ms
   duration: number; // ms

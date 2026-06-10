@@ -102,7 +102,15 @@ export function createGame(config: GameConfig, data: GameData): GameState {
       explored: new Uint8Array(map.w * map.h),
       visible: new Uint8Array(map.w * map.h),
       aiMemory: {},
-      stats: { kills: 0, losses: 0, built: 0 },
+      stats: {
+        unitsKilled: 0,
+        unitsLost: 0,
+        buildingsKilled: 0,
+        buildingsLost: 0,
+        built: 0,
+        creditsHarvested: 0,
+        score: 0,
+      },
     };
   });
 
@@ -113,6 +121,7 @@ export function createGame(config: GameConfig, data: GameData): GameState {
     players,
     entities: new Map(),
     projectiles: [],
+    crates: [],
     nextEntityId: 1,
     nextProjectileId: 1,
     rngState: config.seed >>> 0 || 1,
@@ -283,7 +292,7 @@ function eliminatePlayer(state: GameState, data: GameData, id: PlayerId, events:
   for (const e of [...entitiesOf(state, id)]) {
     if (e.kind === 'unit') {
       memo.deadUnitKills[id] += e.kills;
-      p.stats.losses++;
+      p.stats.unitsLost++;
     }
     const def = e.kind === 'building' ? data.buildings[e.defId] : data.units[e.defId];
     events.push({
@@ -331,7 +340,7 @@ function cleanupDeaths(state: GameState, data: GameData, events: GameEvent[]): v
     const p = state.players[e.owner];
     if (e.kind === 'unit') {
       memo.deadUnitKills[e.owner] += e.kills;
-      if (p) p.stats.losses++;
+      if (p) p.stats.unitsLost++;
     }
     const def = e.kind === 'building' ? data.buildings[e.defId] : data.units[e.defId];
     events.push({
@@ -351,7 +360,7 @@ function cleanupDeaths(state: GameState, data: GameData, events: GameEvent[]): v
   for (const p of state.players) {
     let live = 0;
     for (const e of entitiesOf(state, p.id)) if (e.kind === 'unit') live += e.kills;
-    p.stats.kills = live + memo.deadUnitKills[p.id];
+    p.stats.unitsKilled = live + memo.deadUnitKills[p.id];
   }
 }
 

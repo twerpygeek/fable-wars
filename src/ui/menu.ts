@@ -351,6 +351,7 @@ export class MenuManager {
       seed: this.seed,
       mapSize: this.mapSize,
       waterAmount: this.water,
+      crates: true,
       players: [
         { faction: this.faction, isHuman: true, difficulty: null, colorIdx: this.colorIdx, name: 'Commander' },
         ...this.ais.map((ai, i) => {

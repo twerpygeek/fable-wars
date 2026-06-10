@@ -22,6 +22,7 @@ function runMatch(seed: number, diffA: AIDifficulty, diffB: AIDifficulty, fa: Fa
     seed,
     mapSize: 'M',
     waterAmount: 'medium',
+    crates: false,
     players: [
       { faction: fa, isHuman: false, difficulty: diffA, colorIdx: 0, name: `AI-A(${diffA})` },
       { faction: fb, isHuman: false, difficulty: diffB, colorIdx: 1, name: `AI-B(${diffB})` },
@@ -47,7 +48,7 @@ function runMatch(seed: number, diffA: AIDifficulty, diffB: AIDifficulty, fa: Fa
   const simMin = (state.tick / TICK_RATE / 60).toFixed(1);
   const winner = state.winner === null ? 'DRAW/TIMEOUT' : state.players[state.winner].name;
   const built = state.players.map((p) => p.stats.built).join('/');
-  const kills = state.players.map((p) => p.stats.kills).join('/');
+  const kills = state.players.map((p) => p.stats.unitsKilled).join('/');
   console.log(
     `seed=${seed} ${fa}(${diffA}) vs ${fb}(${diffB}) → winner=${winner} simTime=${simMin}min ` +
       `ticks=${state.tick} events=${eventCount} built=${built} kills=${kills} wall=${wall}ms`

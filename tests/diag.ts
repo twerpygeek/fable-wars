@@ -5,7 +5,7 @@ import { createGame, tickGame } from '../src/sim/game';
 import { aiThink } from '../src/ai/ai';
 
 const config: GameConfig = {
-  seed: 9137, mapSize: 'M', waterAmount: 'medium',
+  seed: 9137, mapSize: 'M', waterAmount: 'medium', crates: false,
   players: [
     { faction: 'scorch', isHuman: false, difficulty: 'hard', colorIdx: 0, name: 'HARD' },
     { faction: 'scorch', isHuman: false, difficulty: 'medium', colorIdx: 1, name: 'MED' },
@@ -32,7 +32,7 @@ while (state.winner === null && state.tick < max) {
       const defs = ents.filter(e => e.kind === 'building' && DATA.buildings[e.defId]?.tab === 'defense').length;
       const bld = ents.filter(e => e.kind === 'building').length;
       const tech = ['radar','techlab','sw','factory','airpad','navalyard'].filter(k => ents.some(e => e.defId === `${p.faction}_${k}`)).join(',');
-      return `${p.name}: $${Math.round(p.credits)} mil${mil.length}($${milVal}) harv${harv} def${defs} bld${bld} [${tech}] k${p.stats.kills}/l${p.stats.losses}`;
+      return `${p.name}: $${Math.round(p.credits)} mil${mil.length}($${milVal}) harv${harv} def${defs} bld${bld} [${tech}] k${p.stats.unitsKilled}/l${p.stats.unitsLost}`;
     });
     console.log(`[${String(min).padStart(2)}m]`, rows.join(' || '));
   }

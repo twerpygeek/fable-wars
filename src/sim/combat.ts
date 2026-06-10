@@ -253,7 +253,7 @@ export function dealDamage(
   if (target.hp <= 0 && atkEnt !== undefined && atkEnt.owner !== target.owner) {
     atkEnt.kills += 1;
     const ap = state.players[atkEnt.owner];
-    if (ap !== undefined) ap.stats.kills += 1;
+    if (ap !== undefined) ap.stats.unitsKilled += 1;
     if (atkEnt.kind === 'unit') {
       if (atkEnt.vet === VetRank.ROOKIE && atkEnt.kills >= VET_KILL_THRESHOLDS[0]) {
         atkEnt.vet = VetRank.VETERAN;

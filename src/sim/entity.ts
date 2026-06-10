@@ -83,11 +83,14 @@ export function spawnUnit(
     kills: 0,
     vet: VetRank.ROOKIE,
     repathCooldown: 0,
+    stance: 'aggressive',
+    buffs: { armor: 1, speed: 1, fire: 1 },
     buildProgress: 1,
     rally: null,
     repairing: false,
     captureProgress: 0,
     swChargeTick: -1,
+    isPrimary: false,
   };
   state.entities.set(e.id, e);
   bumpVersion(state);
@@ -122,6 +125,8 @@ export function spawnBuilding(
     kills: 0,
     vet: VetRank.ROOKIE,
     repathCooldown: 0,
+    stance: 'aggressive',
+    buffs: { armor: 1, speed: 1, fire: 1 },
     // Placed buildings play a short construction ramp (advanced in
     // production.ts); buildProgress >= 1 means operational.
     buildProgress: instant ? 1 : 0,
@@ -129,6 +134,7 @@ export function spawnBuilding(
     repairing: false,
     captureProgress: 0,
     swChargeTick: -1,
+    isPrimary: false,
   };
   state.entities.set(e.id, e);
   bumpVersion(state);

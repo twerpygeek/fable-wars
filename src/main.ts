@@ -174,7 +174,7 @@ function runMatch(state: GameState): void {
         over = true;
         const victory = ev.winner === humanPlayer;
         const me = state.players[humanPlayer];
-        const stats = `Creatures lost: ${me.stats.losses}   Kills: ${me.stats.kills}   Structures built: ${me.stats.built}   Time: ${formatClock(state.tick)}`;
+        const stats = `Kills: ${me.stats.unitsKilled + me.stats.buildingsKilled}   Losses: ${me.stats.unitsLost}   Structures built: ${me.stats.built}   Time: ${formatClock(state.tick)}`;
         setTimeout(() => {
           stop();
           menus.showGameOver(victory, stats, () => menus.showMainMenu());

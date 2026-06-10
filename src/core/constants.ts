@@ -86,3 +86,61 @@ export const AI_THINK_INTERVAL: Record<'easy' | 'medium' | 'hard', number> = {
   medium: secondsToTicks(1.5),
   hard: secondsToTicks(0.75),
 };
+
+// --- Camera / scrolling (specs from RA2 manual + CnCNet + OpenRA research) ----------
+
+export const EDGE_SCROLL_BAND = 8; // px from the WINDOW edge
+export const EDGE_SCROLL_DWELL_MS = 120; // dwell before edge scroll engages
+export const SCROLL_RATE_DEFAULT = 1200; // px/s at zoom 1 (OpenRA default)
+export const SCROLL_RATE_MIN = 400;
+export const SCROLL_RATE_MAX = 2000;
+export const SCROLL_RATE_TICKS = 7; // options slider steps (CnCNet 0-6)
+export const RMB_PAN_MULT = 2; // RA2 manual: RMB drag scrolls "faster"
+export const RMB_PAN_DEADZONE = 8; // px before a drag counts (OpenRA value)
+
+// --- Health bar thresholds (rules.ini ConditionYellow/ConditionRed) -----------------
+
+export const HEALTH_YELLOW = 0.5;
+export const HEALTH_RED = 0.25;
+
+// --- Crates (rules.ini [CrateRules]/[Powerups]) --------------------------------------
+
+export const CRATE_INTERVAL_TICKS = secondsToTicks(180);
+export const CRATE_CAP = 6;
+export const CRATE_RADIUS = 3; // tiles, AoE for buff crates (friend-or-foe)
+export const CRATE_MONEY_BASE = 1000;
+export const CRATE_MONEY_RNG = 900;
+export const CRATE_BUFF_ARMOR = 1.5; // damage taken divided by this
+export const CRATE_BUFF_SPEED = 1.2;
+export const CRATE_BUFF_FIREPOWER = 2.0;
+// RA2 default weights: money/veteran/unit 20 each; heal/reveal/armor/speed/firepower 10
+export const CRATE_WEIGHTS: [import('./types').CrateKind, number][] = [
+  ['money', 20],
+  ['veteran', 20],
+  ['unit', 20],
+  ['heal', 10],
+  ['reveal', 10],
+  ['armor', 10],
+  ['speed', 10],
+  ['firepower', 10],
+];
+
+// --- Score (RA2-style points; sum of value of everything you kill) --------------------
+
+export function scoreValue(def: {
+  cost: number;
+  tab?: string;
+  tier?: number;
+  harvester?: unknown;
+  footprint?: unknown;
+}): number {
+  if (def.footprint) return Math.round(def.cost / 20); // buildings
+  if (def.harvester) return 55;
+  if (def.tier === 3) return 60;
+  if (def.tab === 'infantry') return 10;
+  return 25; // vehicles / air / naval
+}
+
+// --- Screen shake (rules.ini ShakeScreen=400) -----------------------------------------
+
+export const SHAKE_MIN_HP = 400; // entities with >= this max HP shake the screen on death

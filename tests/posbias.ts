@@ -5,7 +5,7 @@ import { createGame, tickGame } from '../src/sim/game';
 import { aiThink } from '../src/ai/ai';
 
 function run(seed: number, d0: AIDifficulty, d1: AIDifficulty) {
-  const config: GameConfig = { seed, mapSize: 'M', waterAmount: 'medium', players: [
+  const config: GameConfig = { seed, mapSize: 'M', waterAmount: 'medium', crates: false, players: [
     { faction: 'scorch', isHuman: false, difficulty: d0, colorIdx: 0, name: 'P0-' + d0 },
     { faction: 'scorch', isHuman: false, difficulty: d1, colorIdx: 1, name: 'P1-' + d1 },
   ]};
