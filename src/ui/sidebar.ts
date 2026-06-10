@@ -36,8 +36,12 @@ const CSS = `
   border-left: 2px solid #2a2d44; box-shadow: -4px 0 18px rgba(0,0,0,0.55);
   display: flex; flex-direction: column; gap: 6px; padding: 8px;
   font-family: Verdana, Geneva, sans-serif; color: #cfd6ff; user-select: none;
+  overflow-y: auto; scrollbar-width: thin;
 }
-.pa-side canvas.pa-minimap { width: 184px; height: 184px; background: #05060a; border: 1px solid #2a2d44; border-radius: 3px; }
+.pa-side canvas.pa-minimap { width: 184px; height: 184px; background: #05060a; border: 1px solid #2a2d44; border-radius: 3px; flex-shrink: 0; }
+/* short windows: shrink the minimap before squeezing the build grid */
+@media (max-height: 700px) { .pa-side canvas.pa-minimap { width: 140px; height: 140px; align-self: center; } }
+@media (max-height: 540px) { .pa-side canvas.pa-minimap { width: 110px; height: 110px; } }
 .pa-credits { display: flex; justify-content: space-between; align-items: center; background: #0a0c18; border: 1px solid #2a2d44; border-radius: 3px; padding: 4px 8px; }
 .pa-credits .pa-cr-val { font-size: 15px; font-weight: bold; color: #ffd95e; letter-spacing: 1px; text-shadow: 0 1px 2px #000; }
 .pa-credits .pa-cr-label { font-size: 8px; color: #6f78a8; text-transform: uppercase; letter-spacing: 1px; }
@@ -54,7 +58,7 @@ const CSS = `
 .pa-tab .pa-tab-key { display: block; font-size: 7px; color: #5a6390; }
 .pa-tab .pa-badge { position: absolute; top: -5px; right: -3px; min-width: 13px; height: 13px; border-radius: 7px;
   background: #e8453c; color: #fff; font-size: 8px; line-height: 13px; font-weight: bold; display: none; }
-.pa-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-content: start;
+.pa-grid { flex: 1; min-height: 150px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-content: start;
   background: #0a0c18; border: 1px solid #2a2d44; border-radius: 0 0 3px 3px; padding: 5px; scrollbar-width: thin; }
 .pa-item { position: relative; border: 1px solid #2e3252; border-radius: 3px; background: #161830; cursor: pointer; overflow: hidden; }
 .pa-item:hover { border-color: #4a7dff; }
