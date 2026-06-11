@@ -4,8 +4,9 @@
 // atmosphere. DOM-only. Reads GameState, never mutates it.
 // =============================================================================
 
-import type { GameState, PlayerId } from '../core/types';
+import type { GameData, GameState, PlayerId, UIState } from '../core/types';
 import { TICK_RATE, MAX_UNITS_PER_PLAYER } from '../core/constants';
+import { getGuidance } from './guidance';
 
 const STYLE_ID = 'pa-style-hud';
 
@@ -29,6 +30,22 @@ const CSS = `
   z-index: 41; display: flex; flex-direction: column; gap: 6px; align-items: center;
   pointer-events: none;
 }
+.pa-guide {
+  position: absolute; left: 12px; top: 52px; z-index: 42;
+  width: min(360px, calc(100vw - 232px));
+  background: linear-gradient(180deg, rgba(17, 23, 38, 0.94), rgba(8, 10, 18, 0.91));
+  border: 1px solid #4a7dff; border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  padding: 9px 11px; font-family: Verdana, Geneva, sans-serif;
+  color: #dfe5ff; pointer-events: none; user-select: none;
+  text-shadow: 0 1px 2px #000;
+}
+.pa-guide.hidden { display: none; }
+.pa-guide.warn { border-color: #ff8a3c; background: linear-gradient(180deg, rgba(51, 24, 10, 0.95), rgba(18, 10, 7, 0.92)); }
+.pa-guide-title { font-size: 11px; font-weight: bold; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; }
+.pa-guide-body { margin-top: 4px; font-size: 10px; line-height: 1.45; color: #b9c5f5; }
+.pa-guide.warn .pa-guide-body { color: #ffd9c4; }
+@media (max-width: 980px) { .pa-guide { width: 300px; font-size: 10px; } }
 .pa-toast {
   font-family: Verdana, Geneva, sans-serif; font-size: 12px; letter-spacing: 1.5px;
   padding: 6px 16px; border-radius: 3px; border: 1px solid;
@@ -58,21 +75,29 @@ function ensureStyle(): void {
 }
 
 export class HUD {
+  private data: GameData;
+  private ui: UIState;
   private clockEl: HTMLSpanElement;
   private unitsEl: HTMLSpanElement;
   private fpsEl: HTMLSpanElement;
   private toastWrap: HTMLDivElement;
+  private guideEl: HTMLDivElement;
+  private guideTitleEl: HTMLDivElement;
+  private guideBodyEl: HTMLDivElement;
 
   // cached text so we only touch the DOM on change
   private shownClock = '';
   private shownUnits = '';
   private shownFps = '';
+  private shownGuideId = '';
 
   // smoothed FPS (cosmetic — high-res timers are fine in UI code)
   private lastFrameAt = 0;
   private fpsEma = 60;
 
-  constructor(root: HTMLElement) {
+  constructor(root: HTMLElement, data: GameData, ui: UIState) {
+    this.data = data;
+    this.ui = ui;
     ensureStyle();
 
     const vignette = document.createElement('div');
@@ -100,6 +125,14 @@ export class HUD {
     this.unitsEl = mkCell('Units');
     this.fpsEl = mkCell('FPS');
     root.appendChild(bar);
+    this.guideEl = document.createElement('div');
+    this.guideEl.className = 'pa-guide hidden';
+    this.guideTitleEl = document.createElement('div');
+    this.guideTitleEl.className = 'pa-guide-title';
+    this.guideBodyEl = document.createElement('div');
+    this.guideBodyEl.className = 'pa-guide-body';
+    this.guideEl.append(this.guideTitleEl, this.guideBodyEl);
+    root.appendChild(this.guideEl);
 
     this.toastWrap = document.createElement('div');
     this.toastWrap.className = 'pa-hud-toasts';
@@ -139,6 +172,22 @@ export class HUD {
     if (fpsText !== this.shownFps) {
       this.shownFps = fpsText;
       this.fpsEl.textContent = fpsText;
+    }
+
+    const guide = getGuidance(state, this.data, humanPlayer, this.ui);
+    if (guide === null) {
+      if (this.shownGuideId !== '') {
+        this.shownGuideId = '';
+        this.guideEl.className = 'pa-guide hidden';
+      }
+    } else {
+      const guideClass = guide.severity === 'warn' ? 'pa-guide warn' : 'pa-guide';
+      if (guide.id !== this.shownGuideId) {
+        this.shownGuideId = guide.id;
+      }
+      this.guideEl.className = guideClass;
+      this.guideTitleEl.textContent = guide.title;
+      this.guideBodyEl.textContent = guide.body;
     }
   }
 

@@ -142,7 +142,7 @@ function runMatch(state: GameState): void {
   const renderer = new Renderer(canvas, DATA, atlas);
   const sidebar = new Sidebar(matchRoot, DATA, atlas, dispatch, () => state, humanPlayer, ui);
   const minimap = new Minimap(sidebar.minimapCanvas);
-  const hud = new HUD(matchRoot);
+  const hud = new HUD(matchRoot, DATA, ui);
   const input = new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
   input.bindMinimap(sidebar.minimapCanvas, minimap);
   input.enable();
