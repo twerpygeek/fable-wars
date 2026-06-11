@@ -62,6 +62,18 @@ const SCROLL_RATE_KEY = 'pa-scrollRate'; // localStorage, px/s at zoom 1
 const SCROLL_RATE_REREAD_MS = 1000; // re-read localStorage at most 1/s
 const RMB_PAN_FULL_SPEED_PX = 120; // drag length for full pan speed
 
+export type CommandFeedbackKind =
+  | 'move'
+  | 'attack'
+  | 'harvest'
+  | 'capture'
+  | 'rally'
+  | 'place'
+  | 'repair'
+  | 'sell'
+  | 'superweapon'
+  | 'cancel';
+
 // --- RA2-style directional scroll cursors --------------------------------------
 // 8 directions x {green, red(clamped)}, built once as inline SVG data URIs.
 // Index 0 = N, then clockwise in 45° steps (NE, E, SE, S, SW, W, NW).
@@ -128,6 +140,7 @@ export class InputController {
   /** Fired when the player actively selects own units (click / drag / group
    *  recall / T), with the first selected unit's defId. Throttled to 300ms. */
   public onSelectionAck: ((defId: string) => void) | null = null;
+  public onCommandFeedback: ((kind: CommandFeedbackKind, pos: Vec2) => void) | null = null;
 
   // bound listeners (so disable() can remove them)
   private onMouseDown = (e: MouseEvent) => this.handleMouseDown(e);
@@ -175,6 +188,10 @@ export class InputController {
     this.data = data;
     this.dispatch = dispatch;
     this.me = humanPlayer;
+  }
+
+  private feedback(kind: CommandFeedbackKind, pos: Vec2 | null): void {
+    if (pos !== null && this.onCommandFeedback) this.onCommandFeedback(kind, pos);
   }
 
   enable(): void {
@@ -395,6 +412,7 @@ export class InputController {
       if (tile && this.ui.placeValid) {
         const defId = this.ui.placingDefId;
         this.dispatch({ type: 'placeBuilding', player: this.me, defId, pos: tile });
+        this.feedback('place', { x: tile.x + 0.5, y: tile.y + 0.5 });
         const def = this.data.buildings[defId];
         if (!(e.shiftKey && def && def.cost <= 100)) this.ui.placingDefId = null; // shift chains walls
       }
@@ -404,6 +422,7 @@ export class InputController {
       const tile = this.ui.hoverTile;
       if (tile) {
         this.dispatch({ type: 'fireSuperweapon', player: this.me, target: { x: tile.x + 0.5, y: tile.y + 0.5 } });
+        this.feedback('superweapon', { x: tile.x + 0.5, y: tile.y + 0.5 });
         this.ui.targetingSuperweapon = false;
       }
       return;
@@ -411,11 +430,13 @@ export class InputController {
     if (this.ui.sellMode || this.ui.repairMode) {
       const b = this.pickEntity(state, 'building');
       if (b && b.owner === this.me) {
+        const kind = this.ui.sellMode ? 'sell' : 'repair';
         this.dispatch(
           this.ui.sellMode
             ? { type: 'sell', player: this.me, buildingId: b.id }
             : { type: 'toggleRepair', player: this.me, buildingId: b.id },
         );
+        this.feedback(kind, entityCenter(b, this.data));
       }
       return;
     }
@@ -545,11 +566,13 @@ export class InputController {
   /** Quick RMB click: cancel any armed mode, else issue the context order. */
   private performContextAction(queued: boolean): void {
     if (this.ui.placingDefId || this.ui.sellMode || this.ui.repairMode || this.ui.targetingSuperweapon || this.attackMoveArmed) {
+      const tile = this.ui.hoverTile;
       this.ui.placingDefId = null;
       this.ui.sellMode = false;
       this.ui.repairMode = false;
       this.ui.targetingSuperweapon = false;
       this.attackMoveArmed = false;
+      this.feedback('cancel', tile ? { x: tile.x + 0.5, y: tile.y + 0.5 } : null);
       return;
     }
     const state = this.getState();
@@ -565,12 +588,15 @@ export class InputController {
     const buildings = selected.filter((s) => s.kind === 'building');
     if (units.length === 0 && buildings.length > 0) {
       // Rally for selected production structures.
+      let rallied = false;
       for (const b of buildings) {
         const def = this.data.buildings[b.defId];
         if (def.producesTabs && def.producesTabs.length > 0) {
           this.dispatch({ type: 'setRally', player: this.me, buildingId: b.id, pos: { x: tile.x + 0.5, y: tile.y + 0.5 } });
+          rallied = true;
         }
       }
+      if (rallied) this.feedback('rally', { x: tile.x + 0.5, y: tile.y + 0.5 });
       return;
     }
 
@@ -593,6 +619,7 @@ export class InputController {
           order: { kind: 'capture', target: target.id },
           queued,
         });
+        this.feedback('capture', entityCenter(target, this.data));
       }
       if (fighters.length > 0) {
         this.dispatch({
@@ -602,6 +629,7 @@ export class InputController {
           order: { kind: 'attack', target: target.id },
           queued,
         });
+        this.feedback('attack', entityCenter(target, this.data));
       }
       return;
     }
@@ -617,9 +645,11 @@ export class InputController {
         order: { kind: 'harvest', tile: { x: Math.floor(tile.x), y: Math.floor(tile.y) } },
         queued,
       });
+      this.feedback('harvest', dest);
       const rest = units.filter((u) => !this.data.units[u.defId]?.harvester);
       if (rest.length > 0) {
         this.dispatch({ type: 'issueOrder', player: this.me, unitIds: rest.map((u) => u.id), order: { kind: 'move', dest }, queued });
+        this.feedback('move', dest);
       }
       return;
     }
@@ -631,6 +661,7 @@ export class InputController {
       order: { kind: 'move', dest },
       queued,
     });
+    this.feedback('move', dest);
   }
 
   private handleWheel(e: WheelEvent): void {

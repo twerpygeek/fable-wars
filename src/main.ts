@@ -123,10 +123,11 @@ function runMatch(state: GameState): void {
   const pending: Command[] = [];
   const dispatch = (c: Command) => {
     pending.push(c);
-    // RA2 move-flash: green ring where the player just ordered units to go.
+    // Legacy acknowledgements for non-context paths that do not emit through
+    // InputController.onCommandFeedback.
     if (c.type === 'issueOrder' && c.player === humanPlayer) {
       const o = c.order;
-      if (o.kind === 'move' || o.kind === 'attackMove' || o.kind === 'attackGround') {
+      if (o.kind === 'attackMove' || o.kind === 'attackGround') {
         renderer.addEffect({
           kind: 'moveFlash',
           pos: { x: o.dest.x, y: o.dest.y },
@@ -145,6 +146,30 @@ function runMatch(state: GameState): void {
   const hud = new HUD(matchRoot, DATA, ui);
   const input = new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
   input.bindMinimap(sidebar.minimapCanvas, minimap);
+  input.onCommandFeedback = (kind, pos) => {
+    const nowFx = performance.now();
+    const fxKind =
+      kind === 'repair'
+        ? 'heal'
+        : kind === 'sell'
+          ? 'sell'
+          : kind === 'place'
+            ? 'place'
+            : kind === 'capture'
+              ? 'capture'
+              : 'moveFlash';
+    renderer.addEffect({
+      kind: fxKind,
+      pos,
+      startedAt: nowFx,
+      duration: kind === 'attack' || kind === 'superweapon' ? 520 : 420,
+      scale: kind === 'superweapon' ? 1.8 : kind === 'attack' ? 1.25 : 1,
+      element:
+        kind === 'attack' || kind === 'superweapon'
+          ? DATA.factions[state.players[humanPlayer].faction].element
+          : Element.NEUTRAL,
+    });
+  };
   input.enable();
   const tooltip = new WorldTooltip(matchRoot, DATA, () => state, humanPlayer);
 
