@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import type { UIState } from '../src/core/types';
 import { DATA } from '../src/data/index';
 import { createGame } from '../src/sim/game';
+import { TICK_RATE } from '../src/core/constants';
 import { getGuidance } from '../src/ui/guidance';
 
 function ui(overrides: Partial<UIState> = {}): UIState {
@@ -58,6 +59,13 @@ function game() {
   p.queues.structure.items.push('scorch_power');
   const msg = getGuidance(state, DATA, 0, ui({ selection: [1] }));
   assert.equal(msg?.id, 'build-refinery');
+}
+
+{
+  const state = game();
+  state.tick = TICK_RATE * 61;
+  const msg = getGuidance(state, DATA, 0, ui({ selection: [1] }));
+  assert.equal(msg, null);
 }
 
 {

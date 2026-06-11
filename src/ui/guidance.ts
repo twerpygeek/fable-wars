@@ -53,7 +53,7 @@ export function getGuidance(
   if (state.winner !== null || ui.paused || ui.showMenu) return null;
   const p = state.players[humanPlayer];
   const faction = p.faction;
-  const firstMinute = state.tick < TICK_RATE * 75;
+  const firstMinute = state.tick < TICK_RATE * 60;
 
   if (p.powerProduced < p.powerConsumed) {
     return {
