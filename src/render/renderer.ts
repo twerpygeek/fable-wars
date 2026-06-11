@@ -795,7 +795,7 @@ export class Renderer {
     // selection ring under the sprite
     if (this.selectedSet.has(e.id)) {
       ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = this.playerHex[e.owner];
+      ctx.strokeStyle = this.playerHex[state.players[e.owner]?.colorIdx ?? 0] ?? '#ffffff';
       ctx.lineWidth = Math.max(1.25, 2.4 * z);
       ctx.beginPath();
       ctx.ellipse(sx, sy + (air ? 8 : 12) * z, rx + 4 * z, (rx + 4 * z) * 0.45, 0, 0, TAU);
@@ -848,7 +848,7 @@ export class Renderer {
     if (this.selectedSet.has(e.id)) {
       const a = ((fw + fh) / 2) * TILE_HALF_W * z;
       ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = this.playerHex[e.owner];
+      ctx.strokeStyle = this.playerHex[state.players[e.owner]?.colorIdx ?? 0] ?? '#ffffff';
       ctx.lineWidth = Math.max(1.25, 2.4 * z);
       ctx.beginPath();
       ctx.ellipse(sx, syCenter, a, a * (TILE_HALF_H / TILE_HALF_W), 0, 0, TAU);
