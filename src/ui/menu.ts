@@ -25,16 +25,16 @@ const CSS = `
   background: repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px); }
 .pa-particle { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0.55; animation: pa-drift linear infinite; }
 @keyframes pa-drift { from { transform: translateY(105vh); } to { transform: translateY(-8vh); } }
-.pa-panel { position: relative; z-index: 2; background: rgba(16, 18, 36, 0.92); border: 1px solid #2e3252; border-radius: 8px;
-  padding: 28px 34px; box-shadow: 0 18px 60px rgba(0,0,0,0.6); max-height: 92vh; overflow-y: auto; scrollbar-width: thin; }
-.pa-title { font-size: 44px; font-weight: bold; letter-spacing: 9px; text-align: center; color: #fff;
-  text-shadow: 0 0 22px #4a7dff, 0 2px 0 #000; margin: 0 0 2px; }
+.pa-panel { position: relative; z-index: 2; background: rgba(13, 16, 30, 0.94); border: 1px solid #343a63; border-radius: 8px;
+  padding: 28px 34px; box-shadow: 0 24px 70px rgba(0,0,0,0.68), inset 0 1px 0 rgba(255,255,255,0.06); max-height: 92vh; overflow-y: auto; scrollbar-width: thin; }
+.pa-title { font-size: 44px; font-weight: bold; letter-spacing: 8px; text-align: center; color: #fff;
+  text-shadow: 0 0 24px #4a7dff, 0 2px 0 #000; margin: 0 0 2px; }
 .pa-subtitle { text-align: center; font-size: 11px; letter-spacing: 6px; color: #8d96c8; margin-bottom: 28px; text-transform: uppercase; }
 .pa-btn { display: block; width: 280px; margin: 10px auto; padding: 13px 0; text-align: center; font-size: 14px; letter-spacing: 3px;
   background: linear-gradient(180deg, #232748 0%, #181a30 100%); color: #dfe5ff; border: 1px solid #3a3f66; border-radius: 4px;
   cursor: pointer; text-transform: uppercase; }
 .pa-btn:hover { border-color: #4a7dff; box-shadow: 0 0 14px rgba(74,125,255,0.35); color: #fff; }
-.pa-btn.primary { background: linear-gradient(180deg, #2c5d2e 0%, #1d3f1f 100%); border-color: #4ade5a; font-weight: bold; }
+.pa-btn.primary { background: linear-gradient(180deg, #34753a 0%, #1f4f24 100%); border-color: #6af079; font-weight: bold; }
 .pa-btn.primary:hover { box-shadow: 0 0 18px rgba(74,222,90,0.4); }
 .pa-row { display: flex; gap: 10px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
 .pa-label { font-size: 10px; letter-spacing: 2px; color: #8d96c8; text-transform: uppercase; min-width: 90px; }
@@ -124,6 +124,8 @@ interface LobbySettings {
   crates: boolean;
 }
 const TIPS = [
+  'First minute: power, refinery, barracks. Then scout before the first raid.',
+  'Right-click crystals with harvesters to claim a Candy field deliberately.',
   'Peekachoo hits air AND ground. The cheeks are not just for show.',
   'Low power slows construction and shuts down radar and advanced defenses.',
   'Harvesters auto-return to the nearest Candy Refinery. Protect them!',
@@ -132,7 +134,6 @@ const TIPS = [
   'Veteran creatures deal +25% damage. Elites self-heal. Keep them alive.',
   'Sell unwanted structures for half their cost — fast cash in a pinch.',
   'Press H to jump to your Citadel. Space jumps to the last attack.',
-  'Snorlux is 1600 HP of nap-powered violence. Bring anti-armor.',
   'Hard AI snipes harvesters. Wall in your Candy fields or guard them.',
 ];
 
