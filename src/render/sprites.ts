@@ -54,10 +54,7 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => {
-      console.warn(`[sprites] missing override image: ${url}`);
-      resolve(null);
-    };
+    img.onerror = () => resolve(null);
     img.src = url;
   });
 }
