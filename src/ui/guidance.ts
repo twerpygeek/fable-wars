@@ -40,8 +40,12 @@ function ownUnitCount(state: GameState, player: PlayerId, pred: (defId: string) 
   return n;
 }
 
-function queuedUnits(state: GameState, player: PlayerId, tab: ProductionTab): number {
-  return state.players[player].queues[tab].items.length;
+function queuedHarvesterCount(state: GameState, data: GameData, player: PlayerId): number {
+  let n = 0;
+  for (const defId of state.players[player].queues[VEHICLE].items) {
+    if (data.units[defId]?.harvester !== undefined) n++;
+  }
+  return n;
 }
 
 export function getGuidance(
@@ -65,7 +69,7 @@ export function getGuidance(
   }
 
   const harvesters = ownUnitCount(state, humanPlayer, (defId) => data.units[defId]?.harvester !== undefined);
-  if (harvesters === 0 && queuedUnits(state, humanPlayer, VEHICLE) === 0) {
+  if (harvesters === 0 && queuedHarvesterCount(state, data, humanPlayer) === 0) {
     return {
       id: 'rebuild-harvester',
       title: 'No harvesters',
