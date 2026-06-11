@@ -32,7 +32,9 @@ const CSS = `
 }
 .pa-guide {
   position: absolute; left: 12px; top: 52px; z-index: 42;
-  width: min(360px, calc(100vw - 232px));
+  box-sizing: border-box;
+  width: min(360px, calc(100% - 224px));
+  max-width: calc(100vw - 232px);
   background: linear-gradient(180deg, rgba(17, 23, 38, 0.94), rgba(8, 10, 18, 0.91));
   border: 1px solid #4a7dff; border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
@@ -45,7 +47,6 @@ const CSS = `
 .pa-guide-title { font-size: 11px; font-weight: bold; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; }
 .pa-guide-body { margin-top: 4px; font-size: 10px; line-height: 1.45; color: #b9c5f5; }
 .pa-guide.warn .pa-guide-body { color: #ffd9c4; }
-@media (max-width: 980px) { .pa-guide { width: 300px; font-size: 10px; } }
 .pa-toast {
   font-family: Verdana, Geneva, sans-serif; font-size: 12px; letter-spacing: 1.5px;
   padding: 6px 16px; border-radius: 3px; border: 1px solid;
@@ -89,7 +90,7 @@ export class HUD {
   private shownClock = '';
   private shownUnits = '';
   private shownFps = '';
-  private shownGuideId = '';
+  private shownGuideKey = '';
 
   // smoothed FPS (cosmetic — high-res timers are fine in UI code)
   private lastFrameAt = 0;
@@ -176,18 +177,18 @@ export class HUD {
 
     const guide = getGuidance(state, this.data, humanPlayer, this.ui);
     if (guide === null) {
-      if (this.shownGuideId !== '') {
-        this.shownGuideId = '';
+      if (this.shownGuideKey !== '') {
+        this.shownGuideKey = '';
         this.guideEl.className = 'pa-guide hidden';
       }
     } else {
-      const guideClass = guide.severity === 'warn' ? 'pa-guide warn' : 'pa-guide';
-      if (guide.id !== this.shownGuideId) {
-        this.shownGuideId = guide.id;
+      const key = `${guide.id}|${guide.severity}|${guide.title}|${guide.body}`;
+      if (key !== this.shownGuideKey) {
+        this.shownGuideKey = key;
+        this.guideEl.className = guide.severity === 'warn' ? 'pa-guide warn' : 'pa-guide';
+        this.guideTitleEl.textContent = guide.title;
+        this.guideBodyEl.textContent = guide.body;
       }
-      this.guideEl.className = guideClass;
-      this.guideTitleEl.textContent = guide.title;
-      this.guideBodyEl.textContent = guide.body;
     }
   }
 
