@@ -171,9 +171,9 @@ const PARAMS: Record<AIDifficulty, DiffParams> = {
   },
   medium: {
     harvTarget: 4,
-    waveIntervalTicks: secondsToTicks(180),
-    waveMin: 10,
-    creditReserve: 0,
+    waveIntervalTicks: secondsToTicks(195),
+    waveMin: 11,
+    creditReserve: 120,
     scout: true,
     navalAir: true,
     airCap: 3,
@@ -187,10 +187,10 @@ const PARAMS: Record<AIDifficulty, DiffParams> = {
     defendSeconds: 12,
   },
   hard: {
-    harvTarget: 6,
-    waveIntervalTicks: secondsToTicks(95),
-    waveMin: 16,
-    creditReserve: 400,
+    harvTarget: 5,
+    waveIntervalTicks: secondsToTicks(85),
+    waveMin: 14,
+    creditReserve: 250,
     scout: true,
     navalAir: true,
     airCap: 5,
@@ -201,16 +201,16 @@ const PARAMS: Record<AIDifficulty, DiffParams> = {
     repair: true,
     reinforce: true,
     flank: true,
-    defendSeconds: 18,
+    defendSeconds: 22,
   },
 };
 
 // --- Unpredictability tuning (clean-room from OpenRA SquadManager prose specs;
 // techniques only — no upstream code was read). Easy skips all of it. ----------
 
-const WAVE_THRESHOLD_JITTER = 0.35; // launch at waveMin + 0..35% extra units, re-rolled per wave
+const WAVE_THRESHOLD_JITTER = 0.22; // launch at waveMin + 0..22% extra units, re-rolled per wave
 const RUSH_CONYARD_DIST = 40; // tiles: an enemy ConYard closer than this counts as exposed
-const RUSH_POOL_FRACTION = 0.7; // rush once the ground pool reaches this share of the threshold
+const RUSH_POOL_FRACTION = 0.62; // rush once the ground pool reaches this share of the threshold
 const RUSH_MAX_KNOWN_BUILDINGS = 4; // ...and the victim has shown us at most this many buildings
 const CRATE_CHASE_RADIUS = 10; // tiles from base center worth detouring a fighter for a crate
 

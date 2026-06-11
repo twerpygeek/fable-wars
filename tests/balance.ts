@@ -81,5 +81,15 @@ for (let i = 0; i < F.length; i++) {
     fw[F[j]] += r.bWins;
   }
 }
+const hardTarget = Math.ceil(REPS * 3 * 0.66);
+const mediumTarget = Math.ceil(REPS * 3 * 0.66);
 console.log(`\nfaction wins (hard mirror-cross): ${JSON.stringify(fw)}`);
 console.log(`hard beat medium in ${hardOk}/${REPS * 3}; medium beat easy in ${medOk}/${REPS * 3}`);
+if (hardOk < hardTarget || medOk < mediumTarget) {
+  console.error(
+    `FAIL: expected hard>=${hardTarget}/${REPS * 3} and medium>=${mediumTarget}/${REPS * 3}, ` +
+      `got hard=${hardOk}, medium=${medOk}`,
+  );
+  process.exit(1);
+}
+console.log('PASS balance');
