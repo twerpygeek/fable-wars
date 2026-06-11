@@ -47,6 +47,7 @@ const CSS = `
 .pa-guide-title { font-size: 11px; font-weight: bold; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; }
 .pa-guide-body { margin-top: 4px; font-size: 10px; line-height: 1.45; color: #b9c5f5; }
 .pa-guide.warn .pa-guide-body { color: #ffd9c4; }
+@media (max-width: 980px) { .pa-guide { max-width: calc(100vw - 232px); } }
 .pa-toast {
   font-family: Verdana, Geneva, sans-serif; font-size: 12px; letter-spacing: 1.5px;
   padding: 6px 16px; border-radius: 3px; border: 1px solid;
