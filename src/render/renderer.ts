@@ -1377,6 +1377,31 @@ export class Renderer {
         const ratio = e.maxHp > 0 ? e.hp / e.maxHp : 0;
         this.drawBar(a.sx - bw / 2, a.top - 7 * z, bw, 3.2 * z, ratio, healthColor(ratio));
 
+        if (e.kind === 'building') {
+          const def = this.data.buildings[e.defId];
+          const fw = def ? def.footprint.w : 1;
+          const fh = def ? def.footprint.h : 1;
+          const rx = ((fw + fh) / 2) * TILE_HALF_W * z;
+          ctx.globalAlpha = selected ? 0.95 : 0.55;
+          ctx.strokeStyle = selected ? this.playerHex[e.owner] : 'rgba(255,255,255,0.45)';
+          ctx.lineWidth = Math.max(1.25, 2.4 * z);
+          ctx.beginPath();
+          ctx.ellipse(a.sx, a.ground, rx, rx * (TILE_HALF_H / TILE_HALF_W), 0, 0, TAU);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        } else {
+          const def = this.data.units[e.defId];
+          const big = def && (def.armor === ArmorClass.HEAVY || def.tier === 3);
+          const rx = (big ? 24 : def && def.tab === 'infantry' ? 15 : 20) * z;
+          ctx.globalAlpha = selected ? 0.95 : 0.55;
+          ctx.strokeStyle = selected ? this.playerHex[e.owner] : 'rgba(255,255,255,0.45)';
+          ctx.lineWidth = Math.max(1.25, 2.4 * z);
+          ctx.beginPath();
+          ctx.ellipse(a.sx, a.ground + 12 * z, rx, rx * 0.45, 0, 0, TAU);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
         // gold veterancy chevrons beside the bar
         if (e.kind === 'unit' && e.vet > 0) {
           ctx.strokeStyle = GOLD;

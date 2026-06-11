@@ -7,7 +7,7 @@
 // =============================================================================
 
 import { SHAKE_MIN_HP, TICK_MS, TILE_HALF_H, TILE_HALF_W } from '../core/constants';
-import { ArmorClass, Element } from '../core/types';
+import { ArmorClass, Element, WeaponClass } from '../core/types';
 import type {
   GameData,
   GameEvent,
@@ -205,6 +205,16 @@ export class EffectsSystem {
             scale: 0.8 + ev.splash * 0.55,
             element: ev.element,
           });
+          if (ev.weaponClass !== WeaponClass.CLAW) {
+            this.add({
+              kind: ev.element === Element.WATER ? 'splash' : 'spark',
+              pos: { x: ev.pos.x + 0.08, y: ev.pos.y - 0.08 },
+              startedAt: now + 35,
+              duration: 260,
+              scale: 0.55 + ev.splash * 0.2,
+              element: ev.element,
+            });
+          }
           if (ev.splash >= 2) this.shake(Math.min(10, ev.splash * 1.6), 260 + ev.splash * 90, now);
           break;
         }
