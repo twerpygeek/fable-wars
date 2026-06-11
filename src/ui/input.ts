@@ -859,6 +859,7 @@ export class InputController {
       }
       if (dest) {
         this.dispatch({ type: 'issueOrder', player: this.me, unitIds: [u.id], order: { kind: 'move', dest }, queued: false });
+        this.feedback('move', dest);
       }
     });
   }
