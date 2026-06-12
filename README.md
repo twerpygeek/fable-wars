@@ -1,4 +1,4 @@
-# Candy Rift: Fable Wars
+# Fable Wars
 
 An elemental fantasy real-time strategy game about three armies fighting over volatile candy-crystal
 rifts. Build your base, harvest crystal fields, raise an army of Scorch, Tide, or Verdant war-creatures,

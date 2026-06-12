@@ -18,40 +18,63 @@ import type { MatchResult } from './history';
 
 const STYLE_ID = 'pa-style-menu';
 const CSS = `
-.pa-menu-root { position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
-  background: #06070a url('/media/candy-rift-hero-poster.jpg') center / cover no-repeat;
+.pa-menu-root { position: absolute; inset: 0; z-index: 100; display: flex; align-items: stretch; justify-content: center;
+  background: #06070a url('/media/fable-wars-hero-poster.jpg') center / cover no-repeat;
   font-family: Verdana, Geneva, sans-serif; color: #cfd6ff; overflow: hidden; user-select: none; }
 .pa-bg-video { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.9; pointer-events: none; }
 .pa-menu-root::before { content: ''; position: absolute; inset: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 52%, rgba(255, 205, 112, 0.2) 0%, rgba(4,5,8,0.18) 33%, rgba(4,5,8,0.86) 84%),
-    linear-gradient(90deg, rgba(4,5,8,0.78) 0%, rgba(4,5,8,0.2) 46%, rgba(4,5,8,0.72) 100%); z-index: 1; }
+    radial-gradient(ellipse at 50% 40%, rgba(223, 70, 190, 0.24) 0%, rgba(4,5,8,0.1) 28%, rgba(4,5,8,0.8) 86%),
+    linear-gradient(90deg, rgba(4,5,8,0.82) 0%, rgba(4,5,8,0.18) 48%, rgba(4,5,8,0.82) 100%),
+    linear-gradient(180deg, rgba(4,5,8,0.12), rgba(4,5,8,0.86)); z-index: 1; }
 .pa-menu-root::after { content: ''; position: absolute; inset: 0; pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.08), transparent 18%, transparent 78%, rgba(0,0,0,0.55)),
+    linear-gradient(180deg, rgba(255,255,255,0.07), transparent 16%, transparent 74%, rgba(0,0,0,0.72)),
     repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px); z-index: 1; }
 .pa-particle { position: absolute; z-index: 1; border-radius: 50%; pointer-events: none; opacity: 0.55; animation: pa-drift linear infinite; }
 @keyframes pa-drift { from { transform: translateY(105vh); } to { transform: translateY(-8vh); } }
+.pa-title-stage { position: relative; z-index: 2; width: min(1180px, calc(100vw - 32px)); min-height: 100%;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: clamp(18px, 3vh, 34px) 0; }
 .pa-panel { position: relative; z-index: 2; background: rgba(13, 16, 30, 0.94); border: 1px solid #343a63; border-radius: 8px;
   padding: 28px 34px; box-shadow: 0 24px 70px rgba(0,0,0,0.68), inset 0 1px 0 rgba(255,255,255,0.06); max-height: 92vh; overflow-y: auto; scrollbar-width: thin; }
-.pa-panel--main { width: min(440px, calc(100vw - 32px)); margin-left: clamp(0px, 40vw, 520px);
-  background: linear-gradient(180deg, rgba(9,12,20,0.76), rgba(9,12,20,0.92));
-  border-color: rgba(255, 212, 116, 0.4);
-  backdrop-filter: blur(8px); }
+.pa-panel--main { width: min(980px, 100%); overflow: visible;
+  background:
+    linear-gradient(180deg, rgba(12, 14, 24, 0.54), rgba(8, 10, 18, 0.88)),
+    linear-gradient(90deg, rgba(255, 126, 45, 0.14), transparent 24%, transparent 76%, rgba(70, 182, 255, 0.14));
+  border-color: rgba(255, 221, 150, 0.32);
+  backdrop-filter: blur(10px);
+  padding: clamp(18px, 2.4vw, 28px);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.74), inset 0 1px 0 rgba(255,255,255,0.08); }
+.pa-panel--main::before, .pa-panel--main::after { content: ''; position: absolute; left: 18px; right: 18px; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 225, 166, 0.76), transparent); }
+.pa-panel--main::before { top: -1px; }
+.pa-panel--main::after { bottom: -1px; }
+.pa-logo-wrap { width: min(560px, 70vw); margin: 0 auto auto; padding-top: clamp(10px, 3vh, 26px);
+  filter: drop-shadow(0 16px 34px rgba(0,0,0,0.78)) drop-shadow(0 0 18px rgba(228, 54, 189, 0.25)); }
+.pa-logo-img { display: block; width: 100%; height: auto; }
 .pa-title { font-size: 44px; font-weight: bold; letter-spacing: 6px; text-align: center; color: #fff;
   text-shadow: 0 0 28px rgba(255, 214, 115, 0.45), 0 2px 0 #000; margin: 0 0 2px; }
 .pa-subtitle { text-align: center; font-size: 11px; letter-spacing: 6px; color: #8d96c8; margin-bottom: 28px; text-transform: uppercase; }
 .pa-hero-kicker { text-align: center; font-size: 10px; letter-spacing: 3px; color: #ffd777; text-transform: uppercase; margin-bottom: 8px; }
-.pa-art-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 18px 0 8px; }
-.pa-art-thumb { height: 62px; border: 1px solid rgba(255,255,255,0.16); border-radius: 5px; background-size: cover; background-position: center;
-  box-shadow: inset 0 -24px 28px rgba(0,0,0,0.3); }
-.pa-art-caption { text-align: center; font-size: 9px; letter-spacing: 1px; color: #6f78a8; margin-bottom: 16px; }
-.pa-btn { display: block; width: 280px; margin: 10px auto; padding: 13px 0; text-align: center; font-size: 14px; letter-spacing: 3px;
-  background: linear-gradient(180deg, #232748 0%, #181a30 100%); color: #dfe5ff; border: 1px solid #3a3f66; border-radius: 4px;
-  cursor: pointer; text-transform: uppercase; }
-.pa-btn:hover { border-color: #4a7dff; box-shadow: 0 0 14px rgba(74,125,255,0.35); color: #fff; }
-.pa-btn.primary { background: linear-gradient(180deg, #34753a 0%, #1f4f24 100%); border-color: #6af079; font-weight: bold; }
-.pa-btn.primary:hover { box-shadow: 0 0 18px rgba(74,222,90,0.4); }
+.pa-launch-top { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 14px; }
+.pa-launch-label { font-size: 10px; letter-spacing: 3px; color: #ffd777; text-transform: uppercase; }
+.pa-launch-status { font-size: 9px; letter-spacing: 2px; color: #8790bf; text-transform: uppercase; }
+.pa-faction-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; }
+.pa-faction-tile { min-height: 118px; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; overflow: hidden; position: relative;
+  background-size: cover; background-position: center; box-shadow: inset 0 -48px 42px rgba(0,0,0,0.68); }
+.pa-faction-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.52)); }
+.pa-faction-tile span { position: absolute; left: 10px; bottom: 9px; z-index: 1; color: #fff; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  text-shadow: 0 2px 8px #000; }
+.pa-command-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 10px; align-items: stretch; }
+.pa-btn { display: flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 18px; text-align: center; font-size: 13px; letter-spacing: 3px;
+  background: linear-gradient(180deg, #252945 0%, #121523 100%); color: #dfe5ff; border: 1px solid #3a3f66; border-radius: 6px;
+  cursor: pointer; text-transform: uppercase; box-shadow: inset 0 1px 0 rgba(255,255,255,0.07); }
+.pa-btn:hover { border-color: #6ea7ff; box-shadow: 0 0 18px rgba(74,125,255,0.36), inset 0 1px 0 rgba(255,255,255,0.12); color: #fff; }
+.pa-btn.primary { min-height: 64px; background: linear-gradient(180deg, #8c3b29 0%, #442018 100%); border-color: #ffb15d; color: #fff7e2; font-weight: bold;
+  box-shadow: 0 0 24px rgba(255, 101, 56, 0.22), inset 0 1px 0 rgba(255,255,255,0.18); }
+.pa-btn.primary:hover { box-shadow: 0 0 26px rgba(255, 101, 56, 0.48), inset 0 1px 0 rgba(255,255,255,0.2); }
+.pa-launch-footer { display: flex; justify-content: space-between; gap: 18px; margin-top: 14px; color: #727ca9; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.pa-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .pa-row { display: flex; gap: 10px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
 .pa-label { font-size: 10px; letter-spacing: 2px; color: #8d96c8; text-transform: uppercase; min-width: 90px; }
 .pa-fcards { display: flex; gap: 10px; margin: 6px 0 14px; }
@@ -133,11 +156,16 @@ const CSS = `
 .pa-codex-card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #05060a; }
 .pa-codex-card div { padding: 9px 10px; font-size: 10px; letter-spacing: 2px; color: #cfd6ff; text-transform: uppercase; }
 @media (max-width: 760px) {
-  .pa-menu-root { align-items: flex-end; padding: 14px; }
-  .pa-panel--main { margin-left: 0; width: 100%; }
+  .pa-menu-root { padding: 12px; }
+  .pa-title-stage { width: 100%; padding: 16px 0; }
+  .pa-panel--main { width: 100%; }
+  .pa-logo-wrap { width: min(420px, 82vw); margin-bottom: auto; }
   .pa-title { font-size: 34px; letter-spacing: 4px; }
   .pa-codex-grid { grid-template-columns: 1fr; }
-  .pa-art-thumb { height: 48px; }
+  .pa-faction-strip { grid-template-columns: 1fr; }
+  .pa-faction-tile { min-height: 74px; }
+  .pa-command-row { grid-template-columns: 1fr; }
+  .pa-launch-top, .pa-launch-footer { flex-direction: column; align-items: center; text-align: center; gap: 6px; }
 }
 `;
 
@@ -309,8 +337,8 @@ export class MenuManager {
     }
     const video = document.createElement('video');
     video.className = 'pa-bg-video';
-    video.src = '/media/candy-rift-hero.mp4';
-    video.poster = '/media/candy-rift-hero-poster.jpg';
+    video.src = '/media/fable-wars-hero.mp4';
+    video.poster = '/media/fable-wars-hero-poster.jpg';
     video.autoplay = true;
     video.muted = true;
     video.loop = true;
@@ -329,35 +357,55 @@ export class MenuManager {
 
   showMainMenu(): void {
     const el = this.screen();
+    const stage = document.createElement('main');
+    stage.className = 'pa-title-stage';
+
+    const logoWrap = document.createElement('div');
+    logoWrap.className = 'pa-logo-wrap';
+    logoWrap.innerHTML = `<img class="pa-logo-img" src="/brand/fable-wars-logo-alpha.png" alt="Fable Wars">`;
+    stage.appendChild(logoWrap);
+
     const panel = document.createElement('div');
     panel.className = 'pa-panel pa-panel--main';
-    panel.innerHTML = `<div class="pa-hero-kicker">Cinematic RTS Skirmish</div>
-      <h1 class="pa-title">CANDY RIFT</h1><div class="pa-subtitle">Fable Wars</div>`;
-    const artStrip = document.createElement('div');
-    artStrip.className = 'pa-art-strip';
-    for (const art of ART_CODEX.slice(1)) {
-      const thumb = document.createElement('div');
-      thumb.className = 'pa-art-thumb';
-      thumb.style.backgroundImage = `url('${art.src}')`;
-      thumb.title = art.title;
-      artStrip.appendChild(thumb);
+    panel.innerHTML = `<h1 class="pa-sr-only">Fable Wars</h1>
+      <div class="pa-launch-top">
+        <div class="pa-launch-label">Crystal Rift Campaign</div>
+        <div class="pa-launch-status">Hero video online · Skirmish build ready</div>
+      </div>`;
+
+    const factionStrip = document.createElement('div');
+    factionStrip.className = 'pa-faction-strip';
+    const factionTiles = [
+      { label: 'Scorch Legion', src: '/art/factions/scorch-banner.jpg' },
+      { label: 'Tide Dominion', src: '/art/factions/tide-banner.jpg' },
+      { label: 'Verdant Swarm', src: '/art/factions/verdant-banner.jpg' },
+    ];
+    for (const tile of factionTiles) {
+      const item = document.createElement('div');
+      item.className = 'pa-faction-tile';
+      item.style.backgroundImage = `url('${tile.src}')`;
+      item.innerHTML = `<span>${tile.label}</span>`;
+      factionStrip.appendChild(item);
     }
-    panel.appendChild(artStrip);
-    const artCaption = document.createElement('div');
-    artCaption.className = 'pa-art-caption';
-    artCaption.textContent = 'Scorch, Tide, and Verdant clash over rare crystal rifts.';
-    panel.appendChild(artCaption);
-    const skirmish = btn('Skirmish', () => this.showLobby(), true);
+    panel.appendChild(factionStrip);
+
+    const commandRow = document.createElement('div');
+    commandRow.className = 'pa-command-row';
+    const skirmish = btn('Start Skirmish', () => this.showLobby(), true);
     const howto = btn('How to Play', () => this.showHowTo());
     const codex = btn('Art Codex', () => this.showArtCodex());
-    panel.append(skirmish, howto, codex);
+    commandRow.append(skirmish, howto, codex);
+    panel.appendChild(commandRow);
+
     const record = this.serviceRecordPanel();
     if (record) panel.appendChild(record);
-    const credits = document.createElement('div');
-    credits.style.cssText = 'margin-top:18px;text-align:center;font-size:9px;color:#5a6390;letter-spacing:1px;';
-    credits.textContent = 'Original browser RTS prototype with generated world art and playable skirmish AI.';
-    panel.appendChild(credits);
-    el.appendChild(panel);
+    const footer = document.createElement('div');
+    footer.className = 'pa-launch-footer';
+    footer.innerHTML = `<span>Scorch · Tide · Verdant</span><span>Browser RTS prototype · AI skirmish mode</span>`;
+    panel.appendChild(footer);
+
+    stage.appendChild(panel);
+    el.appendChild(stage);
   }
 
   private showArtCodex(): void {
