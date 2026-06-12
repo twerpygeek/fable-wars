@@ -211,6 +211,53 @@ const CREATURES: Record<string, CreatureCfg> = {
   verdant_ludicolossus: { arch: 'blob', base: '#58a858', belly: '#f8d030', size: 42, sombrero: true, boat: true, big: true },
 };
 
+const WORLD_CREATURES: Record<string, CreatureCfg> = {
+  // SCORCH: obsidian bodies, molten cores, brutal silhouettes
+  scorch_charmandar: { arch: 'biped', base: '#2a2024', belly: '#ff6a22', accent: '#ffb13c', size: 35, tail: 'flame', horn: true },
+  scorch_peekachoo: { arch: 'machine', base: '#31262a', accent: '#ffcf3c', size: 32, magnets: true },
+  scorch_magmarr: { arch: 'biped', base: '#33242a', belly: '#ff7a28', accent: '#ffcf5a', size: 39, flameHead: true, horn: true },
+  scorch_prof_cinder: { arch: 'prof', base: '#3a2528', accent: '#ff8c32', size: 34, flameHead: true },
+  scorch_torkoala: { arch: 'turtle', base: '#30282a', belly: '#ff6a22', accent: '#ffb13c', size: 38, shellCannons: true },
+  scorch_ryhorrn: { arch: 'quad', base: '#312a2e', belly: '#5a4246', accent: '#ff6a22', size: 40, horn: true },
+  scorch_arcanyne: { arch: 'quad', base: '#35262a', belly: '#ff8c32', accent: '#141015', size: 37, tail: 'flame', horn: true },
+  scorch_magnetonn: { arch: 'machine', base: '#393238', accent: '#ffcf3c', size: 35, magnets: true },
+  scorch_groudonn: { arch: 'biped', base: '#211a1d', belly: '#ff5a1f', accent: '#f5c46b', size: 50, horn: true, big: true, tail: 'plain', flameHead: true },
+  scorch_zubattler: { arch: 'bird', base: '#302432', belly: '#ff6a22', accent: '#f5c46b', size: 32, wings: true, horn: true },
+  scorch_moltrez: { arch: 'bird', base: '#2b2024', belly: '#ff8c32', accent: '#ffd36b', size: 46, wings: true, flameHead: true, big: true },
+  scorch_magcarggo: { arch: 'blob', base: '#2a2024', belly: '#ff5a1f', accent: '#ffb13c', size: 36, boat: true, flameHead: true },
+  scorch_slugmariner: { arch: 'blob', base: '#343039', belly: '#ff6a22', accent: '#ffb13c', size: 34, sub: true },
+  // TIDE: pale coral armor, aqua cores, predatory sea shapes
+  tide_squirtul: { arch: 'biped', base: '#d9e7e9', belly: '#3fd3e7', accent: '#0b5f72', size: 34, horn: true },
+  tide_horsean: { arch: 'serpent', base: '#79d9e8', belly: '#eafcff', accent: '#23a8c5', size: 36, horn: true },
+  tide_polywrath: { arch: 'biped', base: '#2a6475', belly: '#8ff0f5', accent: '#eafcff', size: 39, horn: true },
+  tide_prof_brine: { arch: 'prof', base: '#2a6475', accent: '#8ff0f5', size: 34 },
+  tide_krabber: { arch: 'machine', base: '#cfe7e8', belly: '#7fe6ef', accent: '#1d7c91', size: 35, scythes: true },
+  tide_vaporeonix: { arch: 'quad', base: '#5dc7d8', belly: '#eafcff', accent: '#1d7c91', size: 36, tail: 'fin', horn: true },
+  tide_blastoyse: { arch: 'turtle', base: '#e7edf0', belly: '#59d8e8', accent: '#23849a', size: 42, shellCannons: true },
+  tide_starmiez: { arch: 'machine', base: '#d9e7e9', accent: '#39d8ef', size: 35, magnets: true },
+  tide_kyogrre: { arch: 'serpent', base: '#265f75', belly: '#eafcff', accent: '#39d8ef', size: 50, big: true, horn: true },
+  tide_wingullet: { arch: 'bird', base: '#e7edf0', belly: '#92f0f5', accent: '#26788d', size: 32, wings: true },
+  tide_pelipperator: { arch: 'bird', base: '#d9e7e9', belly: '#7fe6ef', accent: '#1d7c91', size: 44, wings: true, big: true },
+  tide_tentacrush: { arch: 'blob', base: '#34788b', belly: '#8ff0f5', accent: '#eafcff', size: 37, boat: true, scythes: true },
+  tide_sharpeedo: { arch: 'blob', base: '#214d64', belly: '#eafcff', accent: '#39d8ef', size: 35, sub: true },
+  tide_gyarrados: { arch: 'serpent', base: '#276f89', belly: '#d9fbff', accent: '#39d8ef', size: 52, big: true, boat: true, horn: true },
+  // VERDANT: living wood, moss plates, toxic green cores
+  verdant_bulbasore: { arch: 'quad', base: '#5b4a2f', belly: '#4ed66a', accent: '#b8df78', size: 34, bulb: true, horn: true },
+  verdant_beedrillz: { arch: 'bird', base: '#5f6f33', belly: '#b8df78', accent: '#d8f277', size: 34, wings: true, scythes: true },
+  verdant_oddishooter: { arch: 'blob', base: '#344a30', belly: '#4ed66a', accent: '#b8df78', size: 31, ears: 'leaf' },
+  verdant_scytherr: { arch: 'biped', base: '#40522f', belly: '#6ee47a', accent: '#d8f277', size: 40, scythes: true, wings: true, horn: true },
+  verdant_prof_oakley: { arch: 'prof', base: '#4b3a2a', accent: '#66df70', size: 34 },
+  verdant_torterrar: { arch: 'turtle', base: '#4b3a2a', belly: '#66df70', accent: '#a7d96a', size: 40, bulb: true, shellCannons: true },
+  verdant_sceptilash: { arch: 'biped', base: '#42532f', belly: '#6ee47a', accent: '#d8f277', size: 36, tail: 'leaf', horn: true },
+  verdant_venosore: { arch: 'quad', base: '#4b3a2a', belly: '#66df70', accent: '#d8f277', size: 44, flower: true, big: true, horn: true },
+  verdant_tanglevine: { arch: 'blob', base: '#2d3f2b', belly: '#4ed66a', accent: '#b8df78', size: 34, scythes: true },
+  verdant_snorlux: { arch: 'biped', base: '#3f4a32', belly: '#8adf74', accent: '#d8f277', size: 52, big: true, horn: true },
+  verdant_pidgeottoh: { arch: 'bird', base: '#55452d', belly: '#84dd72', accent: '#d8f277', size: 34, wings: true, horn: true },
+  verdant_butterfrei: { arch: 'bird', base: '#385232', belly: '#7ee176', accent: '#d8f277', size: 38, wings: true, big: true },
+  verdant_lotadder: { arch: 'blob', base: '#3c5833', belly: '#66df70', accent: '#d8f277', size: 34, boat: true },
+  verdant_ludicolossus: { arch: 'blob', base: '#4b3a2a', belly: '#77df6c', accent: '#d8f277', size: 44, boat: true, big: true, bulb: true },
+};
+
 // --- faction building themes -----------------------------------------------------
 
 interface Theme {
@@ -300,7 +347,7 @@ class Atlas implements SpriteAtlas {
       return mc;
     }
 
-    const cfg = CREATURES[key] ?? { arch: 'blob' as Archetype, base: '#c0c0c0', size: 32 };
+    const cfg = WORLD_CREATURES[key] ?? CREATURES[key] ?? { arch: 'blob' as Archetype, base: '#c0c0c0', size: 32 };
     const [cv, ctx] = canvas(64, 64);
     drawCreature(ctx, cfg, f, fr, PLAYER_COLORS[colorIdx]?.hex ?? '#ffffff', key);
     this.unitCache.set(ck, cv);
@@ -587,24 +634,31 @@ function tri(ctx: Ctx, x: number, yTop: number, halfW: number, h: number): void 
 function drawFace(ctx: Ctx, cfg: CreatureCfg, x: number, y: number, r: number, profile: boolean): void {
   const eyeY = y - r * 0.1;
   const eyes = profile ? [{ ex: x + r * 0.45 }] : [{ ex: x - r * 0.42 }, { ex: x + r * 0.42 }];
+  const glow = cfg.accent ?? cfg.belly ?? '#ffd24a';
+  ctx.save();
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 5;
   for (const { ex } of eyes) {
-    ctx.fillStyle = '#ffffff';
-    ellipse(ctx, ex, eyeY, r * 0.3, r * 0.36);
-    ctx.fillStyle = '#1a1626';
-    ellipse(ctx, ex + r * 0.06, eyeY + r * 0.04, r * 0.16, r * 0.2);
-    ctx.fillStyle = '#ffffff';
-    ellipse(ctx, ex + r * 0.11, eyeY - r * 0.05, r * 0.06, r * 0.07);
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.ellipse(ex, eyeY, r * 0.33, r * 0.12, profile ? 0.12 : 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff4b8';
+    ctx.beginPath();
+    ctx.ellipse(ex + r * 0.08, eyeY - r * 0.02, r * 0.12, r * 0.04, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
+  ctx.restore();
   if (cfg.cheeks && !profile) {
     ctx.fillStyle = cfg.cheeks;
     ellipse(ctx, x - r * 0.78, y + r * 0.28, r * 0.18, r * 0.15);
     ellipse(ctx, x + r * 0.78, y + r * 0.28, r * 0.18, r * 0.15);
   }
-  // tiny smile
-  ctx.strokeStyle = '#1a1626';
-  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = shade(cfg.base, -0.65);
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
-  ctx.arc(x + (profile ? r * 0.5 : 0), y + r * 0.42, r * 0.22, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.moveTo(x - (profile ? 0 : r * 0.24), y + r * 0.38);
+  ctx.lineTo(x + (profile ? r * 0.42 : r * 0.24), y + r * 0.34);
   ctx.stroke();
 }
 
