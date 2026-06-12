@@ -19,16 +19,17 @@ import type { MatchResult } from './history';
 const STYLE_ID = 'pa-style-menu';
 const CSS = `
 .pa-menu-root { position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
-  background: #06070a url('/art/menu-hero.webp') center / cover no-repeat;
+  background: #06070a url('/media/candy-rift-hero-poster.jpg') center / cover no-repeat;
   font-family: Verdana, Geneva, sans-serif; color: #cfd6ff; overflow: hidden; user-select: none; }
+.pa-bg-video { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.9; pointer-events: none; }
 .pa-menu-root::before { content: ''; position: absolute; inset: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 52%, rgba(255, 205, 112, 0.18) 0%, rgba(4,5,8,0.12) 33%, rgba(4,5,8,0.84) 84%),
-    linear-gradient(90deg, rgba(4,5,8,0.7) 0%, rgba(4,5,8,0.16) 46%, rgba(4,5,8,0.68) 100%); }
+    radial-gradient(ellipse at 50% 52%, rgba(255, 205, 112, 0.2) 0%, rgba(4,5,8,0.18) 33%, rgba(4,5,8,0.86) 84%),
+    linear-gradient(90deg, rgba(4,5,8,0.78) 0%, rgba(4,5,8,0.2) 46%, rgba(4,5,8,0.72) 100%); z-index: 1; }
 .pa-menu-root::after { content: ''; position: absolute; inset: 0; pointer-events: none;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.08), transparent 18%, transparent 78%, rgba(0,0,0,0.55)),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px); }
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px); z-index: 1; }
 .pa-particle { position: absolute; z-index: 1; border-radius: 50%; pointer-events: none; opacity: 0.55; animation: pa-drift linear infinite; }
 @keyframes pa-drift { from { transform: translateY(105vh); } to { transform: translateY(-8vh); } }
 .pa-panel { position: relative; z-index: 2; background: rgba(13, 16, 30, 0.94); border: 1px solid #343a63; border-radius: 8px;
@@ -306,6 +307,19 @@ export class MenuManager {
         filter: blur(${Math.random() < 0.4 ? 1 : 0}px);`;
       el.appendChild(p);
     }
+    const video = document.createElement('video');
+    video.className = 'pa-bg-video';
+    video.src = '/media/candy-rift-hero.mp4';
+    video.poster = '/media/candy-rift-hero-poster.jpg';
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.setAttribute('aria-hidden', 'true');
+    el.prepend(video);
+    void video.play().catch(() => {
+      // Autoplay is best-effort; poster art remains as the fallback background.
+    });
     this.root.appendChild(el);
     this.menuEl = el;
     return el;
@@ -317,8 +331,8 @@ export class MenuManager {
     const el = this.screen();
     const panel = document.createElement('div');
     panel.className = 'pa-panel pa-panel--main';
-    panel.innerHTML = `<div class="pa-hero-kicker">GPT Images 2 World Art</div>
-      <h1 class="pa-title">POCKET ALERT</h1><div class="pa-subtitle">Creature Command</div>`;
+    panel.innerHTML = `<div class="pa-hero-kicker">Cinematic RTS Skirmish</div>
+      <h1 class="pa-title">CANDY RIFT</h1><div class="pa-subtitle">Fable Wars</div>`;
     const artStrip = document.createElement('div');
     artStrip.className = 'pa-art-strip';
     for (const art of ART_CODEX.slice(1)) {
@@ -331,7 +345,7 @@ export class MenuManager {
     panel.appendChild(artStrip);
     const artCaption = document.createElement('div');
     artCaption.className = 'pa-art-caption';
-    artCaption.textContent = 'Scorch, Tide, and Verdant now share one painted world direction.';
+    artCaption.textContent = 'Scorch, Tide, and Verdant clash over rare crystal rifts.';
     panel.appendChild(artCaption);
     const skirmish = btn('Skirmish', () => this.showLobby(), true);
     const howto = btn('How to Play', () => this.showHowTo());
@@ -341,7 +355,7 @@ export class MenuManager {
     if (record) panel.appendChild(record);
     const credits = document.createElement('div');
     credits.style.cssText = 'margin-top:18px;text-align:center;font-size:9px;color:#5a6390;letter-spacing:1px;';
-    credits.textContent = 'A loving parody. All creatures procedurally hatched in your browser.';
+    credits.textContent = 'Original browser RTS prototype with generated world art and playable skirmish AI.';
     panel.appendChild(credits);
     el.appendChild(panel);
   }

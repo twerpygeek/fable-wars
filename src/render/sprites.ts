@@ -1705,31 +1705,75 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
     ctx.restore();
   };
 
+  const bevel = (left: string, right: string, lip = 'rgba(255,255,255,0.1)') => {
+    ctx.save();
+    diamond();
+    ctx.clip();
+    const midY = baseY + TILE_HALF_H;
+    const bottomY = baseY + TILE_H;
+    const lg = ctx.createLinearGradient(0, midY, TILE_W / 2, bottomY);
+    lg.addColorStop(0, left);
+    lg.addColorStop(1, 'rgba(0,0,0,0.26)');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.moveTo(0, midY);
+    ctx.lineTo(TILE_W / 2, bottomY);
+    ctx.lineTo(TILE_W / 2, bottomY - 4);
+    ctx.lineTo(5, midY);
+    ctx.closePath();
+    ctx.fill();
+
+    const rg = ctx.createLinearGradient(TILE_W, midY, TILE_W / 2, bottomY);
+    rg.addColorStop(0, right);
+    rg.addColorStop(1, 'rgba(0,0,0,0.34)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.moveTo(TILE_W, midY);
+    ctx.lineTo(TILE_W / 2, bottomY);
+    ctx.lineTo(TILE_W / 2, bottomY - 4);
+    ctx.lineTo(TILE_W - 5, midY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = lip;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(7, midY);
+    ctx.lineTo(TILE_W / 2, baseY + 4);
+    ctx.lineTo(TILE_W - 7, midY);
+    ctx.stroke();
+    ctx.restore();
+  };
+
   switch (t) {
     case Terrain.GRASS: {
-      fillBase(shade('#4f9e3e', 0.06 + variant * 0.03), shade('#3d7e30', variant * 0.02));
-      speckle(['#63b54e', '#356f2a', '#79c861'], 26);
+      fillBase(shade('#5aa44a', 0.08 + variant * 0.03), shade('#34712b', variant * 0.02));
+      speckle(['#7ccf62', '#2f6728', '#9ad879', '#496f35'], 34);
+      bevel('rgba(31,75,34,0.34)', 'rgba(20,50,31,0.42)');
       break;
     }
     case Terrain.DIRT: {
-      fillBase(shade('#8a6a44', 0.05 + variant * 0.03), '#6e5436');
-      speckle(['#9c7c52', '#5c4630', '#7a6040'], 22);
+      fillBase(shade('#92714a', 0.07 + variant * 0.03), '#62482e');
+      speckle(['#b08a5c', '#4e3926', '#80623f', '#c59b66'], 30);
+      bevel('rgba(72,48,30,0.38)', 'rgba(43,31,24,0.48)');
       break;
     }
     case Terrain.SAND: {
-      fillBase(shade('#d8c08a', 0.04 + variant * 0.03), '#c0a870');
-      speckle(['#e8d4a4', '#b09858'], 18);
+      fillBase(shade('#dbc48c', 0.08 + variant * 0.03), '#b9975e');
+      speckle(['#f1dcaa', '#a7834f', '#c9ad76'], 24);
+      bevel('rgba(128,98,55,0.3)', 'rgba(93,70,45,0.38)', 'rgba(255,238,184,0.12)');
       break;
     }
     case Terrain.WATER: {
-      fillBase(shade('#2a6a9e', 0.08 + variant * 0.04), '#1d4f7c');
+      fillBase(shade('#2387b6', 0.11 + variant * 0.04), '#103b64');
+      bevel('rgba(24,98,126,0.26)', 'rgba(8,42,73,0.38)', 'rgba(152,229,255,0.14)');
       // wave hints
       ctx.save();
       diamond();
       ctx.clip();
-      ctx.strokeStyle = 'rgba(160,220,255,0.35)';
+      ctx.strokeStyle = 'rgba(160,235,255,0.44)';
       ctx.lineWidth = 1.2;
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 5; i++) {
         const y = baseY + 6 + rnd() * (TILE_H - 12);
         const x = 6 + rnd() * (TILE_W - 24);
         ctx.beginPath();
@@ -1741,13 +1785,15 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
       break;
     }
     case Terrain.CRYSTAL: {
-      fillBase('#7a6040', '#5c4630');
+      fillBase('#7c5b42', '#4b382c');
+      speckle(['#9a7352', '#4a3127', '#b98b64'], 18);
+      bevel('rgba(67,43,32,0.44)', 'rgba(34,26,26,0.52)', 'rgba(255,189,232,0.16)');
       // candy gems
-      const n = 4 + variant;
+      const n = 5 + variant;
       for (let i = 0; i < n; i++) {
         const gx = 12 + rnd() * (TILE_W - 24);
         const gy = baseY + 8 + rnd() * (TILE_H - 14);
-        const r = 3.5 + rnd() * 3.5;
+        const r = 4.5 + rnd() * 4.5;
         const pink = rnd() < 0.6;
         const col = pink ? '#ff7ae0' : '#5ee0ff';
         const g = ctx.createLinearGradient(gx - r, gy - r, gx + r, gy + r);
@@ -1762,9 +1808,12 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
         ctx.lineTo(gx - r, gy - r * 0.2);
         ctx.closePath();
         ctx.fill();
+        ctx.shadowColor = col;
+        ctx.shadowBlur = 6;
         ctx.strokeStyle = shade(col, -0.5);
         ctx.lineWidth = 0.8;
         ctx.stroke();
+        ctx.shadowBlur = 0;
         // specular glint
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.beginPath();
@@ -1774,8 +1823,9 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
       break;
     }
     case Terrain.ROCK: {
-      fillBase('#4f9e3e', '#3d7e30');
-      speckle(['#63b54e', '#356f2a'], 12);
+      fillBase('#4e8f3e', '#346c30');
+      speckle(['#63b54e', '#2f6228'], 14);
+      bevel('rgba(31,65,31,0.36)', 'rgba(20,42,30,0.44)');
       // boulder cluster (overhangs upward)
       const n = 2 + variant;
       for (let i = 0; i < n; i++) {
@@ -1799,8 +1849,9 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
       break;
     }
     case Terrain.TREE: {
-      fillBase('#4f9e3e', '#3d7e30');
-      speckle(['#63b54e', '#356f2a'], 12);
+      fillBase('#4e8f3e', '#346c30');
+      speckle(['#63b54e', '#2f6228'], 14);
+      bevel('rgba(31,65,31,0.36)', 'rgba(20,42,30,0.44)');
       const n = 1 + (variant % 2);
       for (let i = 0; i < n; i++) {
         const tx = 20 + rnd() * (TILE_W - 40) + (i === 1 ? 10 : 0);

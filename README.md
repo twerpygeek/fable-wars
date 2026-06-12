@@ -1,7 +1,8 @@
-# ⚡ Pocket Alert — Creature Command
+# Candy Rift: Fable Wars
 
-A Red Alert 2-inspired real-time strategy game with a creature-collecting twist. Build your base,
-harvest Rare Candy crystals, raise an army of elemental creatures, and erase your enemy from the map.
+An elemental fantasy real-time strategy game about three armies fighting over volatile candy-crystal
+rifts. Build your base, harvest crystal fields, raise an army of Scorch, Tide, or Verdant war-creatures,
+and erase your enemy from the map.
 
 **Play:** run locally with `npm run dev`, or deploy the static build anywhere (Vercel-ready).
 
@@ -13,7 +14,7 @@ harvest Rare Candy crystals, raise an army of elemental creatures, and erase you
 - Land, air, and naval combat. 41 creature units, 45 structures.
 - Procedurally generated maps (seeded — share a seed with friends), 2–4 player free-for-all skirmish
   against Easy / Medium / Hard AI (no resource cheating — hard is smarter, not richer).
-- 100% generated assets: procedural sprites, synthesized SFX/music, speech-synthesis EVA announcer.
+- Generated world art, 3D-style creature sprites, synthesized SFX/music, and speech-synthesis announcer.
 - Single player, in-browser, desktop mouse+keyboard.
 
 ## Dev
@@ -29,5 +30,5 @@ npm run build          # production build (dist/)
 See [ARCHITECTURE.md](ARCHITECTURE.md) (engine contract & module map) and
 [DESIGN.md](DESIGN.md) (factions, rosters, balance, AI design).
 
-All names are loving parodies. No copyrighted assets are used; every sprite and sound is generated
-in code at load time.
+No copyrighted game assets are used; the shipped art and sound are generated or custom-authored for
+this prototype.
