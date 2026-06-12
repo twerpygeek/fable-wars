@@ -19,17 +19,32 @@ import type { MatchResult } from './history';
 const STYLE_ID = 'pa-style-menu';
 const CSS = `
 .pa-menu-root { position: absolute; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(ellipse at 50% 30%, #161a33 0%, #0a0a12 70%);
+  background: #06070a url('/art/menu-hero.webp') center / cover no-repeat;
   font-family: Verdana, Geneva, sans-serif; color: #cfd6ff; overflow: hidden; user-select: none; }
+.pa-menu-root::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 52%, rgba(255, 205, 112, 0.18) 0%, rgba(4,5,8,0.12) 33%, rgba(4,5,8,0.84) 84%),
+    linear-gradient(90deg, rgba(4,5,8,0.7) 0%, rgba(4,5,8,0.16) 46%, rgba(4,5,8,0.68) 100%); }
 .pa-menu-root::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px); }
-.pa-particle { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0.55; animation: pa-drift linear infinite; }
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), transparent 18%, transparent 78%, rgba(0,0,0,0.55)),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px); }
+.pa-particle { position: absolute; z-index: 1; border-radius: 50%; pointer-events: none; opacity: 0.55; animation: pa-drift linear infinite; }
 @keyframes pa-drift { from { transform: translateY(105vh); } to { transform: translateY(-8vh); } }
 .pa-panel { position: relative; z-index: 2; background: rgba(13, 16, 30, 0.94); border: 1px solid #343a63; border-radius: 8px;
   padding: 28px 34px; box-shadow: 0 24px 70px rgba(0,0,0,0.68), inset 0 1px 0 rgba(255,255,255,0.06); max-height: 92vh; overflow-y: auto; scrollbar-width: thin; }
-.pa-title { font-size: 44px; font-weight: bold; letter-spacing: 8px; text-align: center; color: #fff;
-  text-shadow: 0 0 24px #4a7dff, 0 2px 0 #000; margin: 0 0 2px; }
+.pa-panel--main { width: min(440px, calc(100vw - 32px)); margin-left: clamp(0px, 40vw, 520px);
+  background: linear-gradient(180deg, rgba(9,12,20,0.76), rgba(9,12,20,0.92));
+  border-color: rgba(255, 212, 116, 0.4);
+  backdrop-filter: blur(8px); }
+.pa-title { font-size: 44px; font-weight: bold; letter-spacing: 6px; text-align: center; color: #fff;
+  text-shadow: 0 0 28px rgba(255, 214, 115, 0.45), 0 2px 0 #000; margin: 0 0 2px; }
 .pa-subtitle { text-align: center; font-size: 11px; letter-spacing: 6px; color: #8d96c8; margin-bottom: 28px; text-transform: uppercase; }
+.pa-hero-kicker { text-align: center; font-size: 10px; letter-spacing: 3px; color: #ffd777; text-transform: uppercase; margin-bottom: 8px; }
+.pa-art-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 18px 0 8px; }
+.pa-art-thumb { height: 62px; border: 1px solid rgba(255,255,255,0.16); border-radius: 5px; background-size: cover; background-position: center;
+  box-shadow: inset 0 -24px 28px rgba(0,0,0,0.3); }
+.pa-art-caption { text-align: center; font-size: 9px; letter-spacing: 1px; color: #6f78a8; margin-bottom: 16px; }
 .pa-btn { display: block; width: 280px; margin: 10px auto; padding: 13px 0; text-align: center; font-size: 14px; letter-spacing: 3px;
   background: linear-gradient(180deg, #232748 0%, #181a30 100%); color: #dfe5ff; border: 1px solid #3a3f66; border-radius: 4px;
   cursor: pointer; text-transform: uppercase; }
@@ -70,6 +85,9 @@ const CSS = `
 .pa-go-banner.lose { color: #e8453c; text-shadow: 0 0 32px #e8453c; }
 .pa-go-stats { text-align: center; font-size: 11px; color: #9aa3cf; letter-spacing: 1px; margin-bottom: 22px; }
 .pa-load-tip { margin-top: 14px; font-size: 10px; color: #6f78a8; letter-spacing: 1px; text-align: center; max-width: 420px; }
+.pa-load-card { min-width: min(520px, calc(100vw - 32px)); padding: 28px 34px; border: 1px solid rgba(255,215,119,0.32);
+  border-radius: 8px; background: linear-gradient(180deg, rgba(6,8,13,0.78), rgba(6,8,13,0.95));
+  box-shadow: 0 24px 70px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08); }
 .pa-spin { width: 38px; height: 38px; margin: 0 auto 14px; border-radius: 50%; border: 3px solid #2e3252; border-top-color: #4a7dff;
   animation: pa-spin 800ms linear infinite; }
 @keyframes pa-spin { to { transform: rotate(360deg); } }
@@ -108,6 +126,18 @@ const CSS = `
   margin-top: 8px; text-decoration: underline; }
 .pa-svc-clear:hover { color: #aeb6e2; }
 .pa-opt-readout { font-size: 10px; color: #8d96c8; letter-spacing: 1px; min-width: 70px; font-variant-numeric: tabular-nums; }
+.pa-codex { width: min(1120px, calc(100vw - 32px)); }
+.pa-codex-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pa-codex-card { border: 1px solid #2e3252; border-radius: 6px; background: rgba(9,11,20,0.74); overflow: hidden; }
+.pa-codex-card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #05060a; }
+.pa-codex-card div { padding: 9px 10px; font-size: 10px; letter-spacing: 2px; color: #cfd6ff; text-transform: uppercase; }
+@media (max-width: 760px) {
+  .pa-menu-root { align-items: flex-end; padding: 14px; }
+  .pa-panel--main { margin-left: 0; width: 100%; }
+  .pa-title { font-size: 34px; letter-spacing: 4px; }
+  .pa-codex-grid { grid-template-columns: 1fr; }
+  .pa-art-thumb { height: 48px; }
+}
 `;
 
 const FACTION_EMBLEMS: Record<FactionId, string> = { scorch: '🔥', tide: '🌊', verdant: '🌿' };
@@ -135,6 +165,24 @@ const TIPS = [
   'Sell unwanted structures for half their cost — fast cash in a pinch.',
   'Press H to jump to your Citadel. Space jumps to the last attack.',
   'Hard AI snipes harvesters. Wall in your Candy fields or guard them.',
+];
+const ART_CODEX = [
+  {
+    title: 'World Style',
+    src: '/art/world-style-board.webp',
+  },
+  {
+    title: 'Faction Strongholds',
+    src: '/art/faction-buildings-sheet.webp',
+  },
+  {
+    title: 'Creature Roster',
+    src: '/art/creature-units-sheet.webp',
+  },
+  {
+    title: 'Battlefield Terrain',
+    src: '/art/world-map-sheet.webp',
+  },
 ];
 
 export class MenuManager {
@@ -268,17 +316,57 @@ export class MenuManager {
   showMainMenu(): void {
     const el = this.screen();
     const panel = document.createElement('div');
-    panel.className = 'pa-panel';
-    panel.innerHTML = `<h1 class="pa-title">POCKET ALERT</h1><div class="pa-subtitle">Creature Command</div>`;
+    panel.className = 'pa-panel pa-panel--main';
+    panel.innerHTML = `<div class="pa-hero-kicker">GPT Images 2 World Art</div>
+      <h1 class="pa-title">POCKET ALERT</h1><div class="pa-subtitle">Creature Command</div>`;
+    const artStrip = document.createElement('div');
+    artStrip.className = 'pa-art-strip';
+    for (const art of ART_CODEX.slice(1)) {
+      const thumb = document.createElement('div');
+      thumb.className = 'pa-art-thumb';
+      thumb.style.backgroundImage = `url('${art.src}')`;
+      thumb.title = art.title;
+      artStrip.appendChild(thumb);
+    }
+    panel.appendChild(artStrip);
+    const artCaption = document.createElement('div');
+    artCaption.className = 'pa-art-caption';
+    artCaption.textContent = 'Scorch, Tide, and Verdant now share one painted world direction.';
+    panel.appendChild(artCaption);
     const skirmish = btn('Skirmish', () => this.showLobby(), true);
     const howto = btn('How to Play', () => this.showHowTo());
-    panel.append(skirmish, howto);
+    const codex = btn('Art Codex', () => this.showArtCodex());
+    panel.append(skirmish, howto, codex);
     const record = this.serviceRecordPanel();
     if (record) panel.appendChild(record);
     const credits = document.createElement('div');
     credits.style.cssText = 'margin-top:18px;text-align:center;font-size:9px;color:#5a6390;letter-spacing:1px;';
     credits.textContent = 'A loving parody. All creatures procedurally hatched in your browser.';
     panel.appendChild(credits);
+    el.appendChild(panel);
+  }
+
+  private showArtCodex(): void {
+    const el = this.screen();
+    const panel = document.createElement('div');
+    panel.className = 'pa-panel pa-codex';
+    panel.innerHTML = `<h1 class="pa-title" style="font-size:24px;letter-spacing:4px;">ART CODEX</h1>
+      <div class="pa-subtitle" style="margin-bottom:16px">World · Factions · Creatures · Terrain</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'pa-codex-grid';
+    for (const art of ART_CODEX) {
+      const card = document.createElement('div');
+      card.className = 'pa-codex-card';
+      const img = document.createElement('img');
+      img.src = art.src;
+      img.alt = art.title;
+      const label = document.createElement('div');
+      label.textContent = art.title;
+      card.append(img, label);
+      grid.appendChild(card);
+    }
+    panel.appendChild(grid);
+    panel.appendChild(btn('Back', () => this.showMainMenu()));
     el.appendChild(panel);
   }
 
@@ -578,6 +666,7 @@ export class MenuManager {
     const ov = document.createElement('div');
     ov.className = 'pa-overlay';
     const inner = document.createElement('div');
+    inner.className = 'pa-load-card';
     inner.innerHTML = `<div class="pa-spin"></div>
       <div style="text-align:center;font-size:13px;letter-spacing:3px;color:#dfe5ff">${msg}</div>
       <div class="pa-load-tip"></div>`;
