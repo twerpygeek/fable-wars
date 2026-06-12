@@ -250,9 +250,11 @@ export class Renderer {
     this.drawGroundLayer(state, nowMs);
     this.drawAirLayer(state, nowMs);
     this.effects.drawWorld(ctx, nowMs, this.camX, this.camY, this.zoom, vw, vh);
+    this.drawBloom(vw, vh);
     this.drawAmbient(state, humanPlayer, nowMs, vw, vh);
     this.drawFog(state, humanPlayer);
     this.drawOverlays(state, ui, humanPlayer, nowMs, vw, vh);
+    this.drawVignette(vw, vh);
     this.effects.drawScreenFlashes(ctx, nowMs, vw, vh);
 
     // periodic cleanup of per-entity records for dead entities / stale flickers
@@ -270,6 +272,61 @@ export class Renderer {
   }
 
   private lastNow = 0;
+
+  // --- post-processing: bloom + vignette ------------------------------------------
+  // Quarter-res bright-pass-free bloom: downsample the frame, blur it cheaply with
+  // the canvas filter, and re-composite with 'lighter'. Dark pixels contribute
+  // almost nothing under additive blending, so emissive art (lava, crystals,
+  // explosions, tracers) glows while terrain stays put. ~0.3ms at 1080p.
+  private bloomCanvas: HTMLCanvasElement | null = null;
+  private bloomCtx: CanvasRenderingContext2D | null = null;
+
+  private drawBloom(vw: number, vh: number): void {
+    const bw = Math.max(1, vw >> 2);
+    const bh = Math.max(1, vh >> 2);
+    if (!this.bloomCanvas || this.bloomCanvas.width !== bw || this.bloomCanvas.height !== bh) {
+      this.bloomCanvas = document.createElement('canvas');
+      this.bloomCanvas.width = bw;
+      this.bloomCanvas.height = bh;
+      this.bloomCtx = this.bloomCanvas.getContext('2d');
+    }
+    const bctx = this.bloomCtx;
+    if (!bctx) return;
+    bctx.setTransform(1, 0, 0, 1, 0, 0);
+    bctx.filter = 'blur(3px) brightness(0.92)';
+    bctx.globalCompositeOperation = 'copy'; // overwrite previous frame, no clear needed
+    bctx.drawImage(this.ctx.canvas, 0, 0, vw, vh, 0, 0, bw, bh);
+    bctx.filter = 'none';
+    bctx.globalCompositeOperation = 'source-over';
+
+    const ctx = this.ctx;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.28;
+    ctx.drawImage(this.bloomCanvas, 0, 0, bw, bh, 0, 0, vw, vh);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // Cached radial vignette, rebuilt on resize. Subtle edge darkening pulls the
+  // eye to screen center and reads as a "graded" frame.
+  private vignetteCanvas: HTMLCanvasElement | null = null;
+
+  private drawVignette(vw: number, vh: number): void {
+    if (!this.vignetteCanvas || this.vignetteCanvas.width !== vw || this.vignetteCanvas.height !== vh) {
+      this.vignetteCanvas = document.createElement('canvas');
+      this.vignetteCanvas.width = vw;
+      this.vignetteCanvas.height = vh;
+      const vctx = this.vignetteCanvas.getContext('2d');
+      if (!vctx) return;
+      const r = Math.hypot(vw, vh) / 2;
+      const g = vctx.createRadialGradient(vw / 2, vh / 2, r * 0.55, vw / 2, vh / 2, r);
+      g.addColorStop(0, 'rgba(4,5,10,0)');
+      g.addColorStop(1, 'rgba(4,5,10,0.32)');
+      vctx.fillStyle = g;
+      vctx.fillRect(0, 0, vw, vh);
+    }
+    this.ctx.drawImage(this.vignetteCanvas, 0, 0);
+  }
 
   // --- projection helpers (inline math, no allocation) --------------------------
 
@@ -782,13 +839,14 @@ export class Renderer {
     const sx = this.projX(px, py);
     const sy = this.projY(px, py);
 
-    // shadow on the ground plane
+    // shadow on the ground plane, offset down-right (key light from top-left)
     const big = def.armor === ArmorClass.HEAVY || def.tier === 3;
     const rx = (big ? 20 : def.tab === 'infantry' ? 11 : 16) * z;
+    const shOX = (air ? 6 : 3) * z;
     ctx.globalAlpha = air ? 0.18 : 0.26;
     ctx.fillStyle = '#000000';
     ctx.beginPath();
-    ctx.ellipse(sx, sy + (air ? 8 : 12) * z, rx * (air ? 0.7 : 1), rx * 0.42, 0, 0, TAU);
+    ctx.ellipse(sx + shOX, sy + (air ? 10 : 13) * z, rx * (air ? 0.7 : 1), rx * 0.42, 0, 0, TAU);
     ctx.fill();
     ctx.globalAlpha = 1;
 
@@ -853,6 +911,17 @@ export class Renderer {
       ctx.beginPath();
       ctx.ellipse(sx, syCenter, a, a * (TILE_HALF_H / TILE_HALF_W), 0, 0, TAU);
       ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // soft footprint shadow, offset down-right to match the unit key light
+    {
+      const a = ((fw + fh) / 2) * TILE_HALF_W * z * 0.92;
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.ellipse(sx + 4 * z, syCenter + 3 * z, a, a * (TILE_HALF_H / TILE_HALF_W), 0, 0, TAU);
+      ctx.fill();
       ctx.globalAlpha = 1;
     }
 
