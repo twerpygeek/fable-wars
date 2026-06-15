@@ -38,6 +38,7 @@ export interface SpriteAtlas {
 
 export interface UnitOverride {
   imgs: Map<string, HTMLImageElement>; // key: `${dir}_${frame}`, dir in e,se,s,sw,w,nw,n,ne
+  frames: number;
 }
 
 export interface SpriteOverrides {
@@ -72,9 +73,9 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
   const out: SpriteOverrides = { units: new Map(), buildings: new Map() };
   const jobs: Promise<void>[] = [];
   for (const [id, spec] of Object.entries(manifest.units ?? {})) {
-    const ov: UnitOverride = { imgs: new Map() };
+    const frames = Math.max(1, Math.min(4, spec.frames ?? 1));
+    const ov: UnitOverride = { imgs: new Map(), frames };
     out.units.set(id, ov);
-    const frames = Math.max(1, Math.min(2, spec.frames ?? 1));
     for (const dir of spec.facings) {
       for (let f = 0; f < frames; f++) {
         jobs.push(
@@ -295,13 +296,13 @@ class Atlas implements SpriteAtlas {
 
   getUnitSprite(key: string, facing8: number, frame: number, colorIdx: number): HTMLCanvasElement {
     const f = ((facing8 % 8) + 8) % 8;
-    const fr = frame & 1;
+    const ovUnit = this.ov?.units.get(key);
+    const fr = ovUnit ? ((frame % ovUnit.frames) + ovUnit.frames) % ovUnit.frames : frame & 1;
     const ck = `${key}|${f}|${fr}|${colorIdx}`;
     let c = this.unitCache.get(ck);
     if (c) return c;
 
     // custom art override: use the player's PNG when provided for this facing
-    const ovUnit = this.ov?.units.get(key);
     if (ovUnit) {
       const dir = DIR_NAMES[f];
       let img = ovUnit.imgs.get(`${dir}_${fr}`) ?? ovUnit.imgs.get(`${dir}_0`);

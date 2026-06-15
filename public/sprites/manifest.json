@@ -1,11 +1,15 @@
 {
-  "_readme": "GPT Images 2 creature override pack. Units use one strong isometric facing from the generated art sheet; missing facings reuse this sprite. Buildings keep the faction override PNGs.",
+  "_readme": "GPT Images 2 creature override pack. Units can use 5 real facings (s, sw, w, nw, n) and up to 4 walk frames; missing facings are mirrored or reused by the loader. Buildings keep the faction override PNGs.",
   "units": {
     "scorch_charmandar": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
-      "frames": 1
+      "frames": 4
     },
     "scorch_peekachoo": {
       "facings": [
@@ -81,9 +85,13 @@
     },
     "tide_squirtul": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
-      "frames": 1
+      "frames": 4
     },
     "tide_horsean": {
       "facings": [
@@ -165,9 +173,13 @@
     },
     "verdant_bulbasore": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
-      "frames": 1
+      "frames": 4
     },
     "verdant_beedrillz": {
       "facings": [

@@ -865,7 +865,7 @@ export class Renderer {
     let f8 = Math.round(e.facing / EIGHTH) % 8;
     if (f8 < 0) f8 += 8;
     const moving = rec !== undefined && nowMs - rec.lastMoveMs < 140;
-    const frame = moving || air ? (((nowMs + e.id * 53) / 160) | 0) % 2 : 0;
+    const frame = moving || air ? (((nowMs + e.id * 53) / 160) | 0) % 4 : 0;
     const colorIdx = state.players[e.owner]?.colorIdx ?? 0;
     const spr = this.atlas.getUnitSprite(def.spriteKey, f8, frame, colorIdx);
     const dw = spr.width * z;
