@@ -47,6 +47,12 @@ import { updateProjectiles, updateUnitCombat } from './combat';
 import { updateCrates } from './crates';
 import { updateFog } from './fog';
 import { launchSuperweapon, updateSuperweapons } from './superweapons';
+import {
+  applyCrystalRushCommand,
+  revealCrystalRushMap,
+  setupCrystalRush,
+  updateCrystalRush,
+} from './modes/crystalRush';
 
 const ALL_TABS: ProductionTab[] = ['structure', 'defense', 'infantry', 'vehicle', 'air', 'naval'];
 
@@ -160,8 +166,10 @@ export function createGame(config: GameConfig, data: GameData): GameState {
     }
     recomputePower(state, data, p);
   }
+  if (config.mode === 'crystalRush') setupCrystalRush(state, data);
   rebuildOccupancy(state, data);
   updateFog(state, data);
+  if (config.mode === 'crystalRush') revealCrystalRushMap(state);
   return state;
 }
 
@@ -178,6 +186,7 @@ function tabOfDef(data: GameData, defId: string): ProductionTab | null {
 function applyCommand(state: GameState, data: GameData, c: Command, events: GameEvent[]): void {
   const p = state.players[c.player];
   if (!p || p.eliminated) return;
+  if (applyCrystalRushCommand(state, data, c, events)) return;
 
   switch (c.type) {
     case 'queueProduction': {
@@ -308,6 +317,9 @@ function applyCommand(state: GameState, data: GameData, c: Command, events: Game
       b.isPrimary = true;
       return;
     }
+    case 'crystalRushSetStance':
+    case 'crystalRushBuyUpgrade':
+      return;
     case 'surrender': {
       eliminatePlayer(state, data, c.player, events);
       return;
@@ -416,8 +428,11 @@ export function tickGame(state: GameState, data: GameData, commands: Command[]):
 
   for (const c of commands) applyCommand(state, data, c, events);
 
-  advanceProduction(state, data, events);
-  updateEconomy(state, data, events);
+  if (state.config.mode === 'crystalRush') updateCrystalRush(state, data, events);
+  else {
+    advanceProduction(state, data, events);
+    updateEconomy(state, data, events);
+  }
 
   // Unit/building brains. Snapshot the list: spawns/removals during the loop
   // must not affect iteration.
@@ -431,9 +446,12 @@ export function tickGame(state: GameState, data: GameData, commands: Command[]):
   applyUnitPushing(state, data);
 
   updateProjectiles(state, data, events);
-  updateSuperweapons(state, data, events);
-  updateCrates(state, data, events);
+  if (state.config.mode !== 'crystalRush') {
+    updateSuperweapons(state, data, events);
+    updateCrates(state, data, events);
+  }
   updateFog(state, data);
+  if (state.config.mode === 'crystalRush') revealCrystalRushMap(state);
 
   cleanupDeaths(state, data, events);
   checkVictory(state, data, events);

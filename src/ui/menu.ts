@@ -4,7 +4,7 @@
 // drifting elemental particles. Produces GameConfig (human is player 0).
 // =============================================================================
 
-import type { AIDifficulty, FactionId, GameConfig } from '../core/types';
+import type { AIDifficulty, FactionId, GameConfig, GameMode } from '../core/types';
 import { PLAYER_COLORS } from '../core/types';
 import {
   SCROLL_RATE_DEFAULT,
@@ -66,6 +66,13 @@ const CSS = `
 .pa-faction-tile span { position: absolute; left: 10px; bottom: 9px; z-index: 1; color: #fff; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
   text-shadow: 0 2px 8px #000; }
 .pa-command-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 10px; align-items: stretch; }
+.pa-mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+.pa-mode-choice { min-height: 48px; padding: 8px 10px; border: 1px solid #343a63; border-radius: 6px;
+  background: linear-gradient(180deg, rgba(24,27,49,0.88), rgba(10,12,23,0.92)); cursor: pointer; }
+.pa-mode-choice:hover { border-color: #6ea7ff; }
+.pa-mode-choice.sel { border-color: #ffb15d; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 0 18px rgba(255,112,70,0.2); }
+.pa-mode-choice strong { display: block; color: #fff; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.pa-mode-choice span { display: block; margin-top: 5px; color: #8d96c8; font-size: 9px; line-height: 1.35; letter-spacing: 1px; }
 .pa-btn { display: flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 18px; text-align: center; font-size: 13px; letter-spacing: 3px;
   background: linear-gradient(180deg, #252945 0%, #121523 100%); color: #dfe5ff; border: 1px solid #3a3f66; border-radius: 6px;
   cursor: pointer; text-transform: uppercase; box-shadow: inset 0 1px 0 rgba(255,255,255,0.07); }
@@ -178,6 +185,8 @@ const CSS = `
   .pa-faction-tile { min-height: 52px; }
   .pa-faction-tile span { left: 6px; bottom: 5px; font-size: 7px; letter-spacing: 1px; }
   .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
+  .pa-mode-pick { grid-template-columns: 1fr; gap: 6px; }
+  .pa-mode-choice { min-height: 42px; }
   .pa-btn { min-height: 40px; font-size: 11px; letter-spacing: 2px; }
   .pa-btn.primary { min-height: 46px; }
   .pa-launch-footer { justify-content: center; text-align: center; margin-top: 9px; }
@@ -244,6 +253,7 @@ export class MenuManager {
   private mapSize: 'S' | 'M' | 'L' = 'M';
   private water: 'low' | 'medium' | 'high' = 'medium';
   private crates = true; // RA2 'Crates Appear' default ON
+  private mode: GameMode = 'classic';
   private seed = Math.floor(Math.random() * 1e6);
   private ais: { faction: FactionId | 'random'; difficulty: AIDifficulty }[] = [
     { faction: 'random', difficulty: 'medium' },
@@ -405,9 +415,31 @@ export class MenuManager {
     }
     panel.appendChild(factionStrip);
 
+    const modePick = document.createElement('div');
+    modePick.className = 'pa-mode-pick';
+    const classic = document.createElement('div');
+    const rush = document.createElement('div');
+    const paintModes = () => {
+      classic.className = 'pa-mode-choice' + (this.mode === 'classic' ? ' sel' : '');
+      rush.className = 'pa-mode-choice' + (this.mode === 'crystalRush' ? ' sel' : '');
+    };
+    classic.innerHTML = `<strong>Classic RTS</strong><span>Build bases, harvest crystals, command units directly.</span>`;
+    rush.innerHTML = `<strong>Crystal Rush Beta</strong><span>Auto waves, center crystal income, macro stance upgrades.</span>`;
+    classic.addEventListener('click', () => {
+      this.mode = 'classic';
+      paintModes();
+    });
+    rush.addEventListener('click', () => {
+      this.mode = 'crystalRush';
+      paintModes();
+    });
+    paintModes();
+    modePick.append(classic, rush);
+    panel.appendChild(modePick);
+
     const commandRow = document.createElement('div');
     commandRow.className = 'pa-command-row';
-    const skirmish = btn('Start Skirmish', () => this.showLobby(), true);
+    const skirmish = btn('Start Match', () => this.showLobby(), true);
     const howto = btn('How to Play', () => this.showHowTo());
     const codex = btn('Art Codex', () => this.showArtCodex());
     commandRow.append(skirmish, howto, codex);
@@ -712,25 +744,48 @@ export class MenuManager {
       for (let i = 0; i < PLAYER_COLORS.length; i++) if (!usedColors.has(i)) return (usedColors.add(i), i);
       return 0;
     };
-    const cfg: GameConfig = {
-      seed: this.seed,
-      mapSize: this.mapSize,
-      waterAmount: this.water,
-      crates: this.crates,
-      players: [
-        { faction: this.faction, isHuman: true, difficulty: null, colorIdx: this.colorIdx, name: 'Commander' },
-        ...this.ais.map((ai, i) => {
-          const f = ai.faction === 'random' ? factions[Math.floor(Math.random() * 3)] : ai.faction;
-          return {
-            faction: f,
-            isHuman: false,
-            difficulty: ai.difficulty,
-            colorIdx: nextColor(),
-            name: `${DATA.factions[f].name.split(' ')[0]} AI ${i + 1} (${ai.difficulty})`,
+    const cfg: GameConfig =
+      this.mode === 'crystalRush'
+        ? {
+            mode: 'crystalRush',
+            seed: this.seed,
+            mapSize: this.mapSize === 'S' ? 'M' : this.mapSize,
+            waterAmount: 'low',
+            crates: false,
+            players: [
+              { faction: this.faction, isHuman: true, difficulty: null, colorIdx: this.colorIdx, name: 'Commander' },
+              ...[0, 1, 2].map((_, i) => {
+                const f = factions[(factions.indexOf(this.faction) + i + 1) % factions.length];
+                return {
+                  faction: f,
+                  isHuman: false,
+                  difficulty: 'medium' as AIDifficulty,
+                  colorIdx: nextColor(),
+                  name: `${DATA.factions[f].name.split(' ')[0]} Rush AI ${i + 1}`,
+                };
+              }),
+            ],
+          }
+        : {
+            mode: 'classic',
+            seed: this.seed,
+            mapSize: this.mapSize,
+            waterAmount: this.water,
+            crates: this.crates,
+            players: [
+              { faction: this.faction, isHuman: true, difficulty: null, colorIdx: this.colorIdx, name: 'Commander' },
+              ...this.ais.map((ai, i) => {
+                const f = ai.faction === 'random' ? factions[Math.floor(Math.random() * 3)] : ai.faction;
+                return {
+                  faction: f,
+                  isHuman: false,
+                  difficulty: ai.difficulty,
+                  colorIdx: nextColor(),
+                  name: `${DATA.factions[f].name.split(' ')[0]} AI ${i + 1} (${ai.difficulty})`,
+                };
+              }),
+            ],
           };
-        }),
-      ],
-    };
     this.persistLobby();
     this.lastConfig = cfg;
     this.onStart(cfg);

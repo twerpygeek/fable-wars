@@ -73,6 +73,9 @@ export interface WeaponDef {
 // --- Defs --------------------------------------------------------------------
 
 export type FactionId = 'scorch' | 'tide' | 'verdant';
+export type GameMode = 'classic' | 'crystalRush';
+export type CrystalRushStance = 'greedy' | 'aggressive' | 'split';
+export type CrystalRushUpgradeId = 'economy' | 'waves' | 'defense';
 
 export type ProductionTab =
   | 'structure'
@@ -300,9 +303,26 @@ export interface PlayerStats {
   score: number; // sum of scoreValue() of everything killed
 }
 
+export interface CrystalRushPlayerState {
+  stance: CrystalRushStance;
+  incomeRate: number;
+  totalIncome: number;
+  waveLevel: number;
+  economyLevel: number;
+  defenseLevel: number;
+  nextWaveTick: number;
+}
+
+export interface CrystalRushState {
+  objective: Vec2;
+  radius: number;
+  player: CrystalRushPlayerState[];
+}
+
 // --- Game state --------------------------------------------------------------
 
 export interface GameConfig {
+  mode?: GameMode;
   seed: number;
   mapSize: 'S' | 'M' | 'L'; // 56 / 72 / 96 tiles square (MAP_SIZES)
   waterAmount: 'low' | 'medium' | 'high';
@@ -328,6 +348,7 @@ export interface GameState {
   nextProjectileId: number;
   rngState: number; // sim RNG lives in state for determinism
   winner: PlayerId | null; // set when one player (or none) remains
+  crystalRush?: CrystalRushState;
   // spatial index rebuilt each tick: tile -> entity ids occupying it
   // (sim-internal; renderer may read)
   occupancy: Map<number, EntityId[]>; // key = tileY * map.w + tileX
@@ -346,6 +367,8 @@ export type Command =
   | { type: 'fireSuperweapon'; player: PlayerId; target: Vec2 }
   | { type: 'setStance'; player: PlayerId; unitIds: EntityId[]; stance: UnitStance }
   | { type: 'setPrimary'; player: PlayerId; buildingId: EntityId }
+  | { type: 'crystalRushSetStance'; player: PlayerId; stance: CrystalRushStance }
+  | { type: 'crystalRushBuyUpgrade'; player: PlayerId; upgrade: CrystalRushUpgradeId }
   | { type: 'surrender'; player: PlayerId };
 
 // --- Events (sim -> UI / audio / AI) ------------------------------------------

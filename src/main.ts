@@ -26,6 +26,7 @@ import { HUD } from './ui/hud';
 import { InputController } from './ui/input';
 import { MenuManager } from './ui/menu';
 import { WorldTooltip } from './ui/tooltip';
+import { CrystalRushPanel } from './ui/crystalRushPanel';
 import { recordMatch, type MatchResult } from './ui/history';
 import { AudioSystem } from './audio/audio';
 import { Element } from './core/types';
@@ -119,6 +120,12 @@ function runMatch(state: GameState): void {
 
   const ui = freshUIState();
   const cam: Camera = { x: 0, y: 0, zoom: 1 };
+  const crystalRush = state.config.mode === 'crystalRush';
+  const onCrystalRushKey = (e: KeyboardEvent) => {
+    if (!crystalRush || e.key !== 'Escape') return;
+    ui.showMenu = !ui.showMenu;
+  };
+  if (crystalRush) window.addEventListener('keydown', onCrystalRushKey);
 
   const pending: Command[] = [];
   const dispatch = (c: Command) => {
@@ -141,63 +148,74 @@ function runMatch(state: GameState): void {
   };
 
   const renderer = new Renderer(canvas, DATA, atlas);
-  const sidebar = new Sidebar(matchRoot, DATA, atlas, dispatch, () => state, humanPlayer, ui);
-  const minimap = new Minimap(sidebar.minimapCanvas);
+  const sidebar = crystalRush ? null : new Sidebar(matchRoot, DATA, atlas, dispatch, () => state, humanPlayer, ui);
+  const minimap = sidebar === null ? null : new Minimap(sidebar.minimapCanvas);
   const hud = new HUD(matchRoot, DATA, ui);
-  const input = new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
-  input.bindMinimap(sidebar.minimapCanvas, minimap);
-  input.onCommandFeedback = (kind, pos) => {
-    const nowFx = performance.now();
-    const fxKind =
-      kind === 'repair'
-        ? 'heal'
-        : kind === 'sell'
-          ? 'sell'
-          : kind === 'place'
-            ? 'place'
-            : kind === 'capture'
-              ? 'capture'
-              : 'moveFlash';
-    renderer.addEffect({
-      kind: fxKind,
-      pos,
-      startedAt: nowFx,
-      duration: kind === 'attack' || kind === 'superweapon' ? 520 : 420,
-      scale: kind === 'superweapon' ? 1.8 : kind === 'attack' ? 1.25 : 1,
-      element:
-        kind === 'attack' || kind === 'superweapon'
-          ? DATA.factions[state.players[humanPlayer].faction].element
-          : Element.NEUTRAL,
-    });
-  };
-  input.enable();
-  const tooltip = new WorldTooltip(matchRoot, DATA, () => state, humanPlayer);
+  const input = crystalRush ? null : new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
+  if (input !== null && sidebar !== null && minimap !== null) {
+    input.bindMinimap(sidebar.minimapCanvas, minimap);
+    input.onCommandFeedback = (kind, pos) => {
+      const nowFx = performance.now();
+      const fxKind =
+        kind === 'repair'
+          ? 'heal'
+          : kind === 'sell'
+            ? 'sell'
+            : kind === 'place'
+              ? 'place'
+              : kind === 'capture'
+                ? 'capture'
+                : 'moveFlash';
+      renderer.addEffect({
+        kind: fxKind,
+        pos,
+        startedAt: nowFx,
+        duration: kind === 'attack' || kind === 'superweapon' ? 520 : 420,
+        scale: kind === 'superweapon' ? 1.8 : kind === 'attack' ? 1.25 : 1,
+        element:
+          kind === 'attack' || kind === 'superweapon'
+            ? DATA.factions[state.players[humanPlayer].faction].element
+            : Element.NEUTRAL,
+      });
+    };
+    input.enable();
+  }
+  const tooltip = crystalRush ? null : new WorldTooltip(matchRoot, DATA, () => state, humanPlayer);
+  const rushPanel = crystalRush ? new CrystalRushPanel(matchRoot, dispatch, () => state, humanPlayer) : null;
 
   // Creature acknowledgement barks + cheer wiring.
-  input.onSelectionAck = (defId) => audio.bark(defId);
-  input.onCheer = (ids) => {
-    audio.cheer();
-    const nowMs = performance.now();
-    ids.slice(0, 24).forEach((id, i) => {
-      const u = state.entities.get(id);
-      if (!u) return;
-      renderer.addEffect({
-        kind: 'cheer',
-        pos: { x: u.pos.x, y: u.pos.y },
-        startedAt: nowMs + i * 60,
-        duration: 1200,
-        scale: 1,
-        element: Element.NEUTRAL,
+  if (input !== null) {
+    input.onSelectionAck = (defId) => audio.bark(defId);
+    input.onCheer = (ids) => {
+      audio.cheer();
+      const nowMs = performance.now();
+      ids.slice(0, 24).forEach((id, i) => {
+        const u = state.entities.get(id);
+        if (!u) return;
+        renderer.addEffect({
+          kind: 'cheer',
+          pos: { x: u.pos.x, y: u.pos.y },
+          startedAt: nowMs + i * 60,
+          duration: 1200,
+          scale: 1,
+          element: Element.NEUTRAL,
+        });
       });
-    });
-  };
+    };
+  }
 
-  // Center camera on the human ConYard.
+  // Center camera on the main objective in Crystal Rush, otherwise the human ConYard.
   const ownConYard = [...state.entities.values()].find(
     (e) => e.owner === humanPlayer && e.kind === 'building' && DATA.buildings[e.defId]?.isConYard
   );
-  if (ownConYard) {
-    const { sx, sy } = tileToScreen({ x: 0, y: 0, zoom: cam.zoom }, ownConYard.pos.x + 1.5, ownConYard.pos.y + 1.5);
+  const cameraTarget =
+    state.crystalRush !== undefined
+      ? state.crystalRush.objective
+      : ownConYard
+        ? { x: ownConYard.pos.x + 1.5, y: ownConYard.pos.y + 1.5 }
+        : null;
+  if (cameraTarget !== null) {
+    const { sx, sy } = tileToScreen({ x: 0, y: 0, zoom: cam.zoom }, cameraTarget.x, cameraTarget.y);
     cam.x = sx - canvas.width / 2;
     cam.y = sy - canvas.height / 2;
     clampCamera(cam, state.map, canvas.width, canvas.height);
@@ -218,8 +236,11 @@ function runMatch(state: GameState): void {
     stopped = true;
     cancelAnimationFrame(raf);
     window.removeEventListener('resize', resize);
-    input.disable();
-    tooltip.destroy();
+    window.removeEventListener('keydown', onCrystalRushKey);
+    input?.disable();
+    tooltip?.destroy();
+    rushPanel?.destroy();
+    sidebar?.destroy();
     audio.stopMusic();
     matchRoot.remove();
     current = null;
@@ -280,7 +301,7 @@ function runMatch(state: GameState): void {
   const routeEvents = (events: GameEvent[]) => {
     renderer.handleEvents(events, state, humanPlayer);
     audio.handleEvents(events, state, humanPlayer, cam, canvas.width, canvas.height);
-    input.notifyEvents(events);
+    input?.notifyEvents(events);
     maybeTaunt(events);
     for (const ev of events) {
       if (ev.type === 'gameOver' && !over) {
@@ -384,7 +405,7 @@ function runMatch(state: GameState): void {
       while (acc >= TICK_MS && safety < 8) {
         // AI commands at each AI's think cadence
         for (const p of state.players) {
-          if (sandbox || p.isHuman || p.eliminated || !p.difficulty) continue;
+          if (crystalRush || sandbox || p.isHuman || p.eliminated || !p.difficulty) continue;
           if (state.tick % AI_THINK_INTERVAL[p.difficulty] === (p.id * 3) % AI_THINK_INTERVAL[p.difficulty]) {
             try {
               pending.push(...aiThink(state, DATA, p.id));
@@ -402,14 +423,15 @@ function runMatch(state: GameState): void {
       if (safety >= 8) acc = 0; // dropped behind; don't spiral
     }
 
-    input.update(dt, canvas.width, canvas.height);
+    input?.update(dt, canvas.width, canvas.height);
     clampCamera(cam, state.map, canvas.width, canvas.height);
     const alpha = Math.min(1, acc / TICK_MS);
     renderer.render(state, cam, ui, humanPlayer, now, alpha);
-    minimap.render(state, cam, humanPlayer, canvas.width, canvas.height);
-    sidebar.update();
+    minimap?.render(state, cam, humanPlayer, canvas.width, canvas.height);
+    sidebar?.update();
     hud.update(state, humanPlayer);
-    tooltip.update(input.hoveredEntityId);
+    rushPanel?.update();
+    tooltip?.update(input?.hoveredEntityId ?? null);
   };
 
   raf = requestAnimationFrame(frame);
@@ -431,7 +453,7 @@ function runMatch(state: GameState): void {
       const sandbox = new URLSearchParams(location.search).has('sandbox');
       for (let i = 0; i < n && state.winner === null; i++) {
         for (const p of state.players) {
-          if (sandbox || p.isHuman || p.eliminated || !p.difficulty) continue;
+          if (crystalRush || sandbox || p.isHuman || p.eliminated || !p.difficulty) continue;
           if (state.tick % AI_THINK_INTERVAL[p.difficulty] === (p.id * 3) % AI_THINK_INTERVAL[p.difficulty]) {
             pending.push(...aiThink(state, DATA, p.id));
           }
