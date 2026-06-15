@@ -156,16 +156,32 @@ const CSS = `
 .pa-codex-card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #05060a; }
 .pa-codex-card div { padding: 9px 10px; font-size: 10px; letter-spacing: 2px; color: #cfd6ff; text-transform: uppercase; }
 @media (max-width: 760px) {
-  .pa-menu-root { padding: 12px; }
-  .pa-title-stage { width: 100%; padding: 16px 0; }
-  .pa-panel--main { width: 100%; }
-  .pa-logo-wrap { width: min(420px, 82vw); margin-bottom: auto; }
+  .pa-menu-root { padding: 10px; min-height: 100svh; }
+  .pa-menu-root::before {
+    background:
+      radial-gradient(ellipse at 50% 32%, rgba(223, 70, 190, 0.18) 0%, rgba(4,5,8,0.08) 30%, rgba(4,5,8,0.66) 88%),
+      linear-gradient(180deg, rgba(4,5,8,0.08), rgba(4,5,8,0.72));
+  }
+  .pa-menu-root::after {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.05), transparent 20%, transparent 80%, rgba(0,0,0,0.54)),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px);
+  }
+  .pa-title-stage { width: 100%; min-height: 100svh; padding: max(10px, env(safe-area-inset-top)) 0 max(10px, env(safe-area-inset-bottom)); }
+  .pa-panel--main { width: 100%; padding: 12px; background: linear-gradient(180deg, rgba(12,14,24,0.34), rgba(8,10,18,0.76)); backdrop-filter: blur(5px); }
+  .pa-logo-wrap { width: min(300px, 66vw); margin-bottom: auto; padding-top: clamp(6px, 2vh, 14px); }
   .pa-title { font-size: 34px; letter-spacing: 4px; }
   .pa-codex-grid { grid-template-columns: 1fr; }
-  .pa-faction-strip { grid-template-columns: 1fr; }
-  .pa-faction-tile { min-height: 74px; }
-  .pa-command-row { grid-template-columns: 1fr; }
-  .pa-launch-top, .pa-launch-footer { flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+  .pa-launch-top { margin-bottom: 9px; }
+  .pa-launch-status { display: none; }
+  .pa-faction-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .pa-faction-tile { min-height: 52px; }
+  .pa-faction-tile span { left: 6px; bottom: 5px; font-size: 7px; letter-spacing: 1px; }
+  .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
+  .pa-btn { min-height: 40px; font-size: 11px; letter-spacing: 2px; }
+  .pa-btn.primary { min-height: 46px; }
+  .pa-launch-footer { justify-content: center; text-align: center; margin-top: 9px; }
+  .pa-launch-footer span:first-child { display: none; }
 }
 `;
 
