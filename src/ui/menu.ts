@@ -59,12 +59,24 @@ const CSS = `
 .pa-launch-top { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 14px; }
 .pa-launch-label { font-size: 10px; letter-spacing: 3px; color: #ffd777; text-transform: uppercase; }
 .pa-launch-status { font-size: 9px; letter-spacing: 2px; color: #8790bf; text-transform: uppercase; }
-.pa-faction-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; }
-.pa-faction-tile { min-height: 118px; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; overflow: hidden; position: relative;
-  background-size: cover; background-position: center; box-shadow: inset 0 -48px 42px rgba(0,0,0,0.68); }
-.pa-faction-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.52)); }
-.pa-faction-tile span { position: absolute; left: 10px; bottom: 9px; z-index: 1; color: #fff; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-  text-shadow: 0 2px 8px #000; }
+.pa-faction-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+.pa-faction-tile { min-height: 156px; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; overflow: hidden; position: relative;
+  background-size: cover; background-position: center; cursor: pointer;
+  box-shadow: inset 0 -82px 58px rgba(0,0,0,0.76), inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 0 #050506; }
+.pa-faction-tile::before { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.22) 34%, rgba(0,0,0,0.84)); }
+.pa-faction-tile::after { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(255,220,150,0.18); pointer-events: none; }
+.pa-faction-tile:hover { border-color: #b99052; filter: brightness(1.08); }
+.pa-faction-tile.sel { border-color: var(--fc, #f0b35c);
+  box-shadow: inset 0 -82px 58px rgba(0,0,0,0.74), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 22px color-mix(in srgb, var(--fc, #f0b35c) 44%, transparent); }
+.pa-faction-copy { position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 1; }
+.pa-faction-title { color: #fff; font-size: 12px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 8px #000; }
+.pa-faction-role { margin-top: 4px; color: #ffd777; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 6px #000; }
+.pa-faction-stats { display: grid; gap: 4px; margin-top: 8px; }
+.pa-faction-stat { display: grid; grid-template-columns: 56px 1fr 20px; align-items: center; gap: 6px; color: #cfd6ff;
+  font-size: 7px; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 1px 3px #000; }
+.pa-faction-bar { height: 4px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); }
+.pa-faction-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--fc, #f0b35c), #fff1a4); box-shadow: 0 0 8px color-mix(in srgb, var(--fc, #f0b35c) 60%, transparent); }
 .pa-command-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; align-items: stretch; }
 .pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
   margin: 18px -10px -18px; padding: 12px 10px 10px;
@@ -238,8 +250,11 @@ const CSS = `
   .pa-launch-top { margin-bottom: 9px; }
   .pa-launch-status { display: none; }
   .pa-faction-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
-  .pa-faction-tile { min-height: 52px; }
-  .pa-faction-tile span { left: 6px; bottom: 5px; font-size: 7px; letter-spacing: 1px; }
+  .pa-faction-tile { min-height: 118px; }
+  .pa-faction-copy { left: 8px; right: 8px; bottom: 7px; }
+  .pa-faction-title { font-size: 9px; letter-spacing: 1px; }
+  .pa-faction-role { font-size: 7px; letter-spacing: 1px; }
+  .pa-faction-stat { grid-template-columns: 42px 1fr 16px; gap: 4px; font-size: 6px; }
   .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
   .pa-lobby-actions { position: sticky; bottom: -12px; grid-template-columns: 1fr; margin: 12px -4px -8px; padding: 10px 4px 6px; }
   .pa-mode-pick { grid-template-columns: 1fr; gap: 6px; }
@@ -254,6 +269,38 @@ const CSS = `
 `;
 
 const FACTION_EMBLEMS: Record<FactionId, string> = { scorch: 'SL', tide: 'TD', verdant: 'VS' };
+const FACTION_CLASS_STATS: Record<
+  FactionId,
+  {
+    role: string;
+    stats: { label: string; value: number }[];
+  }
+> = {
+  scorch: {
+    role: 'Assault · Armor · Siege',
+    stats: [
+      { label: 'Damage', value: 92 },
+      { label: 'Armor', value: 86 },
+      { label: 'Speed', value: 48 },
+    ],
+  },
+  tide: {
+    role: 'Control · Range · Tech',
+    stats: [
+      { label: 'Range', value: 88 },
+      { label: 'Control', value: 84 },
+      { label: 'Armor', value: 58 },
+    ],
+  },
+  verdant: {
+    role: 'Swarm · Speed · Economy',
+    stats: [
+      { label: 'Speed', value: 90 },
+      { label: 'Growth', value: 86 },
+      { label: 'Damage', value: 62 },
+    ],
+  },
+};
 const LOBBY_KEY = 'pa-lobby'; // persisted lobby settings (everything except seed)
 const SCROLL_RATE_KEY = 'pa-scrollRate'; // px/s at zoom 1 — input.ts re-reads this live
 
@@ -461,17 +508,39 @@ export class MenuManager {
     const factionStrip = document.createElement('div');
     factionStrip.className = 'pa-faction-strip';
     const factionTiles = [
-      { label: 'Scorch Legion', src: '/art/factions/scorch-banner.jpg' },
-      { label: 'Tide Dominion', src: '/art/factions/tide-banner.jpg' },
-      { label: 'Verdant Swarm', src: '/art/factions/verdant-banner.jpg' },
+      { faction: 'scorch' as const, label: 'Scorch Legion', src: '/art/factions/scorch-banner.jpg' },
+      { faction: 'tide' as const, label: 'Tide Dominion', src: '/art/factions/tide-banner.jpg' },
+      { faction: 'verdant' as const, label: 'Verdant Swarm', src: '/art/factions/verdant-banner.jpg' },
     ];
     for (const tile of factionTiles) {
       const item = document.createElement('div');
+      const faction = DATA.factions[tile.faction];
+      const stats = FACTION_CLASS_STATS[tile.faction];
       item.className = 'pa-faction-tile';
+      item.style.setProperty('--fc', faction.themeColor);
       item.style.backgroundImage = `url('${tile.src}')`;
-      item.innerHTML = `<span>${tile.label}</span>`;
+      item.innerHTML = `<div class="pa-faction-copy">
+        <div class="pa-faction-title">${tile.label}</div>
+        <div class="pa-faction-role">${stats.role}</div>
+        <div class="pa-faction-stats">${stats.stats
+          .map(
+            (s) => `<div class="pa-faction-stat"><span>${s.label}</span><div class="pa-faction-bar"><span class="pa-faction-fill" style="width:${s.value}%"></span></div><b>${s.value}</b></div>`
+          )
+          .join('')}</div>
+      </div>`;
+      item.addEventListener('click', () => {
+        this.faction = tile.faction;
+        this.persistLobby();
+        paintFactions();
+      });
       factionStrip.appendChild(item);
     }
+    const paintFactions = () => {
+      factionStrip.querySelectorAll<HTMLElement>('.pa-faction-tile').forEach((item, i) => {
+        item.classList.toggle('sel', factionTiles[i]?.faction === this.faction);
+      });
+    };
+    paintFactions();
     panel.appendChild(factionStrip);
 
     const modePick = document.createElement('div');

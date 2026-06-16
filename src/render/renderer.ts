@@ -1486,7 +1486,6 @@ export class Renderer {
     ctx.stroke();
 
     this.drawCrystalSpire(objSx, objSy - 20 * z, z, pulse);
-    this.drawWorldLabel(objSx, objSy - 148 * z, 'CENTRAL CRYSTAL', 'Hold this for income', '#80edff');
 
     const base = [...state.entities.values()].find(
       (e) => e.owner === humanPlayer && e.kind === 'building' && this.data.buildings[e.defId]?.isConYard,
@@ -1496,14 +1495,21 @@ export class Renderer {
       const bx = this.projX(base.pos.x + (def?.footprint.w ?? 2) / 2, base.pos.y + (def?.footprint.h ?? 2) / 2);
       const by = this.projY(base.pos.x + (def?.footprint.w ?? 2) / 2, base.pos.y + (def?.footprint.h ?? 2) / 2);
       const color = PLAYER_COLORS[state.players[humanPlayer]?.colorIdx ?? 0]?.hex ?? '#ffffff';
-      this.drawObjectiveArrow(bx, by, objSx, objSy, color, pulse);
-      ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = Math.max(2, 3 * z);
+      const aura = ctx.createRadialGradient(bx, by + 12 * z, 8 * z, bx, by + 12 * z, 82 * z);
+      aura.addColorStop(0, `${color}55`);
+      aura.addColorStop(0.58, `${color}22`);
+      aura.addColorStop(1, `${color}00`);
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = aura;
       ctx.beginPath();
-      ctx.ellipse(bx, by + 12 * z, 62 * z, 26 * z, 0, 0, TAU);
+      ctx.ellipse(bx, by + 12 * z, 86 * z, 36 * z, 0, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 0.24 + pulse * 0.08;
+      ctx.strokeStyle = 'rgba(255, 224, 172, 0.72)';
+      ctx.lineWidth = Math.max(1, 1.2 * z);
+      ctx.beginPath();
+      ctx.ellipse(bx, by + 12 * z, 70 * z, 30 * z, 0, 0, TAU);
       ctx.stroke();
-      this.drawWorldLabel(bx, by - 92 * z, 'YOUR CITADEL', 'Your waves spawn here', color);
     }
     ctx.restore();
   }
@@ -1565,66 +1571,6 @@ export class Renderer {
     ctx.moveTo(sx - w * 0.58, sy - 16 * z);
     ctx.lineTo(sx + w * 0.66, sy - 16 * z);
     ctx.stroke();
-    ctx.restore();
-  }
-
-  private drawObjectiveArrow(fromX: number, fromY: number, toX: number, toY: number, color: string, pulse: number): void {
-    const ctx = this.ctx;
-    const dx = toX - fromX;
-    const dy = toY - fromY;
-    const len = Math.hypot(dx, dy);
-    if (len < 80) return;
-    const ux = dx / len;
-    const uy = dy / len;
-    const startX = fromX + ux * 70;
-    const startY = fromY + uy * 32;
-    const endX = toX - ux * 128;
-    const endY = toY - uy * 54;
-    const head = Math.max(10, 14 * this.zoom);
-    ctx.save();
-    ctx.globalAlpha = 0.34 + pulse * 0.16;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(2, 4 * this.zoom);
-    ctx.setLineDash([14 * this.zoom, 9 * this.zoom]);
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(endX, endY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(endX, endY);
-    ctx.lineTo(endX - ux * head - uy * head * 0.55, endY - uy * head + ux * head * 0.55);
-    ctx.lineTo(endX - ux * head + uy * head * 0.55, endY - uy * head - ux * head * 0.55);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-
-  private drawWorldLabel(sx: number, sy: number, title: string, body: string, color: string): void {
-    const ctx = this.ctx;
-    const z = this.zoom;
-    const w = Math.max(138, 160 * z);
-    const h = Math.max(38, 42 * z);
-    const x = sx - w / 2;
-    const y = sy - h / 2;
-    ctx.save();
-    ctx.globalAlpha = 0.94;
-    ctx.fillStyle = 'rgba(7, 10, 20, 0.82)';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 6);
-    ctx.fill();
-    ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${Math.max(10, 11 * z)}px Verdana, Geneva, sans-serif`;
-    ctx.fillText(title, sx, y + h * 0.38);
-    ctx.fillStyle = '#bfc7ee';
-    ctx.font = `${Math.max(8, 9 * z)}px Verdana, Geneva, sans-serif`;
-    ctx.fillText(body, sx, y + h * 0.7);
     ctx.restore();
   }
 

@@ -8,5 +8,9 @@ assert.match(source, /classic-rts-gameplay-preview\.png/);
 assert.match(source, /modePreview/);
 assert.match(source, /Watch Trailer/);
 assert.match(source, /showTrailer/);
+assert.match(source, /FACTION_CLASS_STATS/);
+assert.match(source, /paintFactions/);
+assert.match(source, /pa-faction-stat/);
+assert.match(source, /Assault/);
 
 console.log('PASS menu visuals');
