@@ -40,6 +40,8 @@ const BASE_OBJECTIVE_INCOME = 54;
 const OBJECTIVE_RADIUS = 4.2;
 const MAX_WAVE_UNITS = 24;
 const BASE_HP = 1150;
+const MANUAL_DEPLOY_COOLDOWN = secondsToTicks(24);
+const MANUAL_DEPLOY_COST_BASE = 180;
 
 const STANCE_ORDER: Array<'greedy' | 'aggressive' | 'split'> = ['greedy', 'split', 'aggressive'];
 
@@ -58,6 +60,7 @@ export function setupCrystalRush(state: GameState, data: GameData): void {
       economyLevel: 1,
       defenseLevel: 0,
       nextWaveTick: FIRST_WAVE_DELAY + i * secondsToTicks(2),
+      nextDeployTick: secondsToTicks(12),
     })),
   };
 
@@ -110,6 +113,9 @@ export function applyCrystalRushCommand(
     case 'crystalRushBuyUpgrade':
       buyUpgrade(state, data, c.player, c.upgrade, events);
       return true;
+    case 'crystalRushDeployWave':
+      deployManualWave(state, data, c.player, events);
+      return true;
     case 'surrender':
       return false;
     default:
@@ -150,6 +156,16 @@ export function getCrystalRushUpgradeCost(state: GameState, player: PlayerId, up
     case 'defense':
       return 425 + crp.defenseLevel * 260;
   }
+}
+
+export function getCrystalRushDeployCost(state: GameState, player: PlayerId): number {
+  const crp = state.crystalRush?.player[player];
+  if (crp === undefined) return MANUAL_DEPLOY_COST_BASE;
+  return MANUAL_DEPLOY_COST_BASE + Math.max(0, crp.waveLevel - 1) * 70;
+}
+
+export function getCrystalRushDeployCooldownTicks(): number {
+  return MANUAL_DEPLOY_COOLDOWN;
 }
 
 function sculptCenterCrystal(state: GameState, center: Vec2): void {
@@ -257,6 +273,21 @@ function buyUpgrade(
   }
 }
 
+function deployManualWave(state: GameState, data: GameData, player: PlayerId, events: GameEvent[]): void {
+  const p = state.players[player];
+  const crp = state.crystalRush?.player[player];
+  if (p === undefined || crp === undefined || p.eliminated) return;
+  if (state.tick < crp.nextDeployTick) return;
+  const cost = getCrystalRushDeployCost(state, player);
+  if (p.credits < cost) {
+    events.push({ type: 'insufficientFunds', player });
+    return;
+  }
+  p.credits -= cost;
+  crp.nextDeployTick = state.tick + MANUAL_DEPLOY_COOLDOWN;
+  spawnWave(state, data, player, events, true);
+}
+
 function placeDefense(state: GameState, data: GameData, player: PlayerId, events: GameEvent[]): void {
   const faction = state.players[player]?.faction;
   if (faction === undefined) return;
@@ -292,7 +323,7 @@ function canPlaceOneTileBuilding(state: GameState, pos: Vec2): boolean {
   return (state.occupancy.get(idx)?.length ?? 0) === 0;
 }
 
-function spawnWave(state: GameState, data: GameData, player: PlayerId, events: GameEvent[]): void {
+function spawnWave(state: GameState, data: GameData, player: PlayerId, events: GameEvent[], manual = false): void {
   const p = state.players[player];
   const crp = state.crystalRush?.player[player];
   if (p === undefined || crp === undefined || p.eliminated) return;
@@ -301,7 +332,8 @@ function spawnWave(state: GameState, data: GameData, player: PlayerId, events: G
   const roster = waveRoster(data, p.faction, crp.waveLevel, state.tick);
   if (roster.length === 0) return;
   const bd = data.buildings[base.defId];
-  const count = Math.min(MAX_WAVE_UNITS, 3 + crp.waveLevel * 2 + Math.floor(state.tick / secondsToTicks(105)));
+  const baseCount = 3 + crp.waveLevel * 2 + Math.floor(state.tick / secondsToTicks(105));
+  const count = Math.min(MAX_WAVE_UNITS, manual ? Math.ceil(baseCount * 0.75) + 2 : baseCount);
   for (let i = 0; i < count; i++) {
     const def = roster[i % roster.length];
     const tile = findSpawnTileNear(state, base.pos.x | 0, base.pos.y | 0, bd.footprint.w, bd.footprint.h, def.domain);

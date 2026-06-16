@@ -6,7 +6,10 @@ import type {
   PlayerId,
 } from '../core/types';
 import { PLAYER_COLORS } from '../core/types';
-import { getCrystalRushUpgradeCost } from '../sim/modes/crystalRush';
+import {
+  getCrystalRushDeployCost,
+  getCrystalRushUpgradeCost,
+} from '../sim/modes/crystalRush';
 
 const STYLE_ID = 'pa-style-crystal-rush';
 const CSS = `
@@ -28,6 +31,12 @@ const CSS = `
 .pa-rush-label { margin: 10px 0 5px; color: #8d96c8; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
 .pa-rush-stances, .pa-rush-ups { display: grid; gap: 6px; }
 .pa-rush-stances { grid-template-columns: repeat(3, 1fr); }
+.pa-rush-deploy {
+  width: 100%; min-height: 48px; margin: 0 0 9px; border-color: #ffb15d;
+  color: #fff7d1; background: linear-gradient(180deg, #8c3b29 0%, #442018 100%);
+  box-shadow: 0 0 18px rgba(255, 101, 56, 0.24), inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.pa-rush-deploy:disabled { border-color: #343a63; background: linear-gradient(180deg, #1b1f38, #101321); box-shadow: none; color: #8d96c8; }
 .pa-rush-btn {
   min-height: 36px; border: 1px solid #343a63; border-radius: 5px; color: #cfd6ff;
   background: linear-gradient(180deg, #1b1f38, #101321); cursor: pointer;
@@ -107,11 +116,21 @@ export class CrystalRushPanel {
         <div><span>Income</span><strong>+${crp.incomeRate}/s</strong></div>
         <div><span>Wave</span><strong>Lv ${crp.waveLevel}</strong></div>
       </div>
+      <button class="pa-rush-btn pa-rush-deploy"></button>
       <div class="pa-rush-label">Wave Stance</div>
       <div class="pa-rush-stances"></div>
       <div class="pa-rush-label">Upgrades</div>
       <div class="pa-rush-ups"></div>
       <div class="pa-rush-factions"></div>`;
+
+    const deployBtn = this.el.querySelector('.pa-rush-deploy') as HTMLButtonElement;
+    const deployCost = getCrystalRushDeployCost(state, this.me);
+    const ticksLeft = Math.max(0, crp.nextDeployTick - state.tick);
+    const cd = Math.ceil(ticksLeft / 15);
+    deployBtn.disabled = ticksLeft > 0 || p.credits < deployCost;
+    deployBtn.textContent = ticksLeft > 0 ? `Deploy Wave ${cd}s` : `Deploy Wave ${deployCost}`;
+    deployBtn.title = 'Send an extra wave immediately using the selected stance.';
+    deployBtn.addEventListener('click', () => this.dispatch({ type: 'crystalRushDeployWave', player: this.me }));
 
     const stanceHost = this.el.querySelector('.pa-rush-stances') as HTMLElement;
     for (const stance of STANCES) {

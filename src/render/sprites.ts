@@ -44,12 +44,24 @@ export interface UnitOverride {
 export interface SpriteOverrides {
   units: Map<string, UnitOverride>;
   buildings: Map<string, HTMLImageElement>;
+  terrain: Map<string, HTMLImageElement>;
 }
 
 interface SpriteManifest {
   units?: Record<string, { facings: string[]; frames?: number }>;
   buildings?: string[];
+  terrain?: Record<string, { variants?: number }>;
 }
+
+const TERRAIN_KEYS: Record<number, string> = {
+  [Terrain.GRASS]: 'grass',
+  [Terrain.DIRT]: 'dirt',
+  [Terrain.SAND]: 'sand',
+  [Terrain.WATER]: 'water',
+  [Terrain.ROCK]: 'rock',
+  [Terrain.TREE]: 'tree',
+  [Terrain.CRYSTAL]: 'crystal',
+};
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -70,7 +82,7 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
   } catch {
     return null;
   }
-  const out: SpriteOverrides = { units: new Map(), buildings: new Map() };
+  const out: SpriteOverrides = { units: new Map(), buildings: new Map(), terrain: new Map() };
   const jobs: Promise<void>[] = [];
   for (const [id, spec] of Object.entries(manifest.units ?? {})) {
     const frames = Math.max(1, Math.min(4, spec.frames ?? 1));
@@ -92,6 +104,16 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
         if (img) out.buildings.set(id, img);
       }),
     );
+  }
+  for (const [id, spec] of Object.entries(manifest.terrain ?? {})) {
+    const variants = Math.max(1, Math.min(8, spec.variants ?? 1));
+    for (let v = 0; v < variants; v++) {
+      jobs.push(
+        loadImage(`${base}/terrain/${id}_${v}.png`).then((img) => {
+          if (img) out.terrain.set(`${id}_${v}`, img);
+        }),
+      );
+    }
   }
   await Promise.all(jobs);
   const total = [...out.units.values()].reduce((s, u) => s + u.imgs.size, 0) + out.buildings.size;
@@ -400,6 +422,14 @@ class Atlas implements SpriteAtlas {
     const ck = `${t}|${variant % 3}`;
     let c = this.terrainCache.get(ck);
     if (c) return c;
+    const key = TERRAIN_KEYS[t];
+    const img = key ? this.ov?.terrain.get(`${key}_${variant % 3}`) : undefined;
+    if (img) {
+      const [cv, ctx] = canvas(img.width, img.height);
+      ctx.drawImage(img, 0, 0);
+      this.terrainCache.set(ck, cv);
+      return cv;
+    }
     c = drawTerrain(t, variant % 3);
     this.terrainCache.set(ck, c);
     return c;

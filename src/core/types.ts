@@ -311,6 +311,7 @@ export interface CrystalRushPlayerState {
   economyLevel: number;
   defenseLevel: number;
   nextWaveTick: number;
+  nextDeployTick: number;
 }
 
 export interface CrystalRushState {
@@ -369,6 +370,7 @@ export type Command =
   | { type: 'setPrimary'; player: PlayerId; buildingId: EntityId }
   | { type: 'crystalRushSetStance'; player: PlayerId; stance: CrystalRushStance }
   | { type: 'crystalRushBuyUpgrade'; player: PlayerId; upgrade: CrystalRushUpgradeId }
+  | { type: 'crystalRushDeployWave'; player: PlayerId }
   | { type: 'surrender'; player: PlayerId };
 
 // --- Events (sim -> UI / audio / AI) ------------------------------------------

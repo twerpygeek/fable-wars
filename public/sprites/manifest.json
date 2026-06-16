@@ -1,5 +1,5 @@
 {
-  "_readme": "GPT Images 2 creature override pack. Units can use 5 real facings (s, sw, w, nw, n) and up to 4 walk frames; missing facings are mirrored or reused by the loader. Buildings keep the faction override PNGs.",
+  "_readme": "GPT Images 2 override pack. Units use 5 real facings and up to 4 walk frames. Terrain uses GPT-generated pre-rendered RTS texture tiles with procedural fallback.",
   "units": {
     "scorch_charmandar": {
       "facings": [
@@ -306,5 +306,28 @@
     "verdant_sw",
     "verdant_techlab",
     "verdant_wall"
-  ]
+  ],
+  "terrain": {
+    "grass": {
+      "variants": 3
+    },
+    "dirt": {
+      "variants": 3
+    },
+    "sand": {
+      "variants": 3
+    },
+    "water": {
+      "variants": 3
+    },
+    "crystal": {
+      "variants": 3
+    },
+    "rock": {
+      "variants": 3
+    },
+    "tree": {
+      "variants": 3
+    }
+  }
 }

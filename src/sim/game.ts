@@ -319,6 +319,7 @@ function applyCommand(state: GameState, data: GameData, c: Command, events: Game
     }
     case 'crystalRushSetStance':
     case 'crystalRushBuyUpgrade':
+    case 'crystalRushDeployWave':
       return;
     case 'surrender': {
       eliminatePlayer(state, data, c.player, events);

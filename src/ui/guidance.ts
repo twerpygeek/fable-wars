@@ -55,6 +55,7 @@ export function getGuidance(
   ui: UIState,
 ): GuidanceMessage | null {
   if (state.winner !== null || ui.paused || ui.showMenu) return null;
+  if (state.config.mode === 'crystalRush') return null;
   const p = state.players[humanPlayer];
   const faction = p.faction;
   const firstMinute = state.tick < TICK_RATE * 60;
