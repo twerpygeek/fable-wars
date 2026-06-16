@@ -37,43 +37,56 @@ const STYLE_ID = 'pa-style-sidebar';
 const CSS = `
 .pa-side {
   position: absolute; top: 0; right: 0; bottom: 0; width: 200px; z-index: 50;
-  background: linear-gradient(180deg, #14162a 0%, #0e1020 100%);
-  border-left: 2px solid #2a2d44; box-shadow: -4px 0 18px rgba(0,0,0,0.55);
+  background:
+    linear-gradient(180deg, rgba(55, 48, 41, 0.22), transparent 22%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.026) 0 1px, transparent 1px 7px),
+    linear-gradient(180deg, #15151a 0%, #0a0b12 100%);
+  border-left: 2px solid rgba(217, 168, 92, 0.42); box-shadow: -7px 0 26px rgba(0,0,0,0.68), inset 2px 0 0 rgba(255,237,190,0.08);
   display: flex; flex-direction: column; gap: 6px; padding: 8px;
   font-family: Verdana, Geneva, sans-serif; color: #cfd6ff; user-select: none;
   overflow-y: auto; scrollbar-width: thin;
 }
-.pa-side canvas.pa-minimap { width: 184px; height: 184px; background: #05060a; border: 1px solid #2a2d44; border-radius: 3px; flex-shrink: 0; }
+.pa-side canvas.pa-minimap { width: 184px; height: 184px; background: #05060a; border: 2px solid #282018; border-radius: 3px; flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,229,170,0.16), 0 2px 0 #050506; }
 /* short windows: shrink the minimap before squeezing the build grid */
 @media (max-height: 700px) { .pa-side canvas.pa-minimap { width: 140px; height: 140px; align-self: center; } }
 @media (max-height: 540px) { .pa-side canvas.pa-minimap { width: 110px; height: 110px; } }
-.pa-credits { display: flex; justify-content: space-between; align-items: center; background: #0a0c18; border: 1px solid #2a2d44; border-radius: 3px; padding: 4px 8px; }
+.pa-credits { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, #17151a, #08090e); border: 2px solid #282018; border-radius: 3px; padding: 5px 8px;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.14), inset 0 -2px 0 rgba(0,0,0,0.58), 0 2px 0 #050506; }
 .pa-credits .pa-cr-val { font-size: 15px; font-weight: bold; color: #ffd95e; letter-spacing: 1px; text-shadow: 0 1px 2px #000; }
 .pa-credits .pa-cr-label { font-size: 8px; color: #6f78a8; text-transform: uppercase; letter-spacing: 1px; }
-.pa-power { height: 10px; background: #0a0c18; border: 1px solid #2a2d44; border-radius: 3px; position: relative; overflow: hidden; }
+.pa-power { height: 11px; background: #09090d; border: 2px solid #282018; border-radius: 3px; position: relative; overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.9), 0 1px 0 rgba(255,237,190,0.08); }
 .pa-power .pa-pw-fill { position: absolute; inset: 0; width: 50%; background: linear-gradient(90deg,#2fae5a,#5ee887); transition: width 200ms; }
 .pa-power.low .pa-pw-fill { background: linear-gradient(90deg,#a8242f,#e8453c); animation: pa-pw-flash 700ms infinite alternate; }
 .pa-power .pa-pw-text { position: absolute; inset: 0; font-size: 8px; text-align: center; line-height: 10px; color: #fff; text-shadow: 0 1px 1px #000; letter-spacing: 1px; }
 @keyframes pa-pw-flash { from { opacity: 1; } to { opacity: 0.45; } }
 .pa-tabs { display: flex; gap: 2px; }
 .pa-tab { flex: 1; position: relative; text-align: center; padding: 5px 0 3px; font-size: 9px; letter-spacing: 0.5px;
-  background: #181a30; border: 1px solid #2a2d44; border-radius: 3px 3px 0 0; cursor: pointer; color: #8d96c8; }
-.pa-tab:hover { background: #20233e; color: #fff; }
-.pa-tab.active { background: #262a4c; color: #fff; border-bottom-color: #262a4c; box-shadow: inset 0 2px 0 #4a7dff; }
+  background: linear-gradient(180deg, #303344, #10121b); border: 2px solid #282018; border-radius: 3px 3px 0 0; cursor: pointer; color: #a99f8b;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.12), inset 0 -2px 0 rgba(0,0,0,0.66); }
+.pa-tab:hover { border-color: #b99052; color: #fff8e6; filter: brightness(1.08); }
+.pa-tab.active { background: linear-gradient(180deg, #77522d, #1c130d); color: #fff5d8; border-color: #e4ad5d; box-shadow: inset 0 1px 0 rgba(255,237,190,0.22), inset 0 -2px 0 rgba(0,0,0,0.72), 0 0 12px rgba(223,169,89,0.22); }
 .pa-tab .pa-tab-key { display: block; font-size: 7px; color: #5a6390; }
 .pa-tab .pa-badge { position: absolute; top: -5px; right: -3px; min-width: 13px; height: 13px; border-radius: 7px;
   background: #e8453c; color: #fff; font-size: 8px; line-height: 13px; font-weight: bold; display: none; }
 .pa-grid { flex: 1; min-height: 150px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-content: start;
-  background: #0a0c18; border: 1px solid #2a2d44; border-radius: 0 0 3px 3px; padding: 5px; scrollbar-width: thin; }
+  background:
+    linear-gradient(180deg, rgba(17,16,18,0.96), rgba(6,7,11,0.98)),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 8px);
+  border: 2px solid #282018; border-radius: 0 0 3px 3px; padding: 5px; scrollbar-width: thin;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.08), inset 0 0 22px rgba(0,0,0,0.44); }
 .pa-item {
-  position: relative; border: 1px solid #343a63; border-radius: 4px;
-  background: linear-gradient(180deg, #1a1d36 0%, #111426 100%);
+  position: relative; border: 2px solid #282018; border-radius: 4px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,229,170,0.09), transparent 40%),
+    linear-gradient(180deg, #232637 0%, #11131e 48%, #08090d 100%);
   cursor: pointer; overflow: hidden; min-height: 74px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.14), inset 0 -3px 0 rgba(0,0,0,0.7), 0 2px 0 #050506;
 }
-.pa-item:hover { border-color: #6f9dff; box-shadow: 0 0 10px rgba(74,125,255,0.24), inset 0 1px 0 rgba(255,255,255,0.08); }
+.pa-item:hover { border-color: #c99b57; filter: brightness(1.08); box-shadow: 0 0 14px rgba(223,169,89,0.24), inset 0 1px 0 rgba(255,237,190,0.2), inset 0 -3px 0 rgba(0,0,0,0.72), 0 2px 0 #050506; }
 .pa-item img, .pa-item canvas { display: block; width: 100%; height: 56px; object-fit: cover; }
-.pa-item .pa-item-name { font-size: 7.5px; text-align: center; padding: 3px 1px 4px; color: #c4ccf4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pa-item .pa-item-name { font-size: 7.5px; text-align: center; padding: 3px 1px 4px; color: #d8cfba; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 0 #000; }
 .pa-item .pa-item-cost { position: absolute; top: 2px; right: 3px; font-size: 8px; font-weight: bold; color: #ffd95e; text-shadow: 0 1px 2px #000; }
 .pa-item.locked { opacity: 0.46; filter: grayscale(0.75) contrast(0.82); cursor: not-allowed; }
 .pa-item.locked::after {
@@ -82,7 +95,7 @@ const CSS = `
   pointer-events: none;
 }
 .pa-item.ready { border-color: #ffd95e; animation: pa-ready-pulse 650ms infinite alternate; }
-.pa-item .pa-prog { position: absolute; left: 0; bottom: 16px; height: 4px; width: 0%; background: linear-gradient(90deg,#4a7dff,#9bc0ff); }
+.pa-item .pa-prog { position: absolute; left: 0; bottom: 16px; height: 4px; width: 0%; background: linear-gradient(90deg,#c17a2d,#ffe39a); box-shadow: 0 0 8px rgba(255,217,94,0.3); }
 .pa-item .pa-inf { position: absolute; top: 2px; left: 4px; font-size: 14px; font-weight: bold; color: #ffd95e;
   text-shadow: 0 1px 3px #000, 0 0 8px rgba(255,217,94,0.65); display: none; pointer-events: none; }
 .pa-item .pa-ready-tag { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font-size: 9px; font-weight: bold;
@@ -91,9 +104,10 @@ const CSS = `
 @keyframes pa-ready-pulse { from { box-shadow: 0 0 2px #ffd95e; } to { box-shadow: 0 0 10px #ffd95e; } }
 .pa-modes { display: flex; gap: 4px; }
 .pa-mode-btn { flex: 1; padding: 5px 0; text-align: center; font-size: 9px; letter-spacing: 1px; cursor: pointer;
-  background: #181a30; border: 1px solid #2a2d44; border-radius: 3px; color: #8d96c8; }
-.pa-mode-btn:hover { color: #fff; background: #20233e; }
-.pa-mode-btn.active { background: #4d3211; border-color: #ffd95e; color: #ffd95e; }
+  background: linear-gradient(180deg, #303344, #10121b); border: 2px solid #282018; border-radius: 3px; color: #c9c0aa; font-weight: bold;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.12), inset 0 -2px 0 rgba(0,0,0,0.68), 0 2px 0 #050506; }
+.pa-mode-btn:hover { color: #fff8e6; border-color: #c99b57; filter: brightness(1.08); }
+.pa-mode-btn.active { background: linear-gradient(180deg, #75522d, #20140d); border-color: #ffd95e; color: #fff5d8; }
 .pa-sw { display: none; align-items: center; gap: 6px; background: #1c0f24; border: 1px solid #6b2a8c; border-radius: 3px; padding: 4px; cursor: pointer; }
 .pa-sw.visible { display: flex; }
 .pa-sw canvas { width: 42px; height: 32px; border-radius: 2px; }
@@ -102,8 +116,8 @@ const CSS = `
 .pa-sw.ready { border-color: #ff5ad9; animation: pa-ready-pulse 700ms infinite alternate; }
 .pa-sw.ready .pa-sw-time { color: #ff9af0; }
 .pa-tip { position: absolute; z-index: 60; width: 212px; display: none; pointer-events: none; user-select: none;
-  background: linear-gradient(180deg, #181b33 0%, #0e1020 100%);
-  border: 1px solid #4a7dff; border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,0.65);
+  background: linear-gradient(180deg, #1d1a19 0%, #0b0c12 100%);
+  border: 2px solid #b99052; border-radius: 4px; box-shadow: 0 8px 22px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,237,190,0.14);
   padding: 8px 10px; font-family: Verdana, Geneva, sans-serif; color: #cfd6ff; }
 .pa-tip .pa-tip-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .pa-tip .pa-tip-name { font-size: 12px; font-weight: bold; color: #fff; letter-spacing: 0.5px; }
@@ -247,14 +261,14 @@ export class Sidebar {
     modes.className = 'pa-modes';
     this.repairBtn = document.createElement('div');
     this.repairBtn.className = 'pa-mode-btn';
-    this.repairBtn.textContent = '🔧 REPAIR';
+    this.repairBtn.textContent = 'REPAIR';
     this.repairBtn.addEventListener('click', () => {
       this.ui.repairMode = !this.ui.repairMode;
       if (this.ui.repairMode) this.ui.sellMode = false;
     });
     this.sellBtn = document.createElement('div');
     this.sellBtn.className = 'pa-mode-btn';
-    this.sellBtn.textContent = '💰 SELL';
+    this.sellBtn.textContent = 'SELL';
     this.sellBtn.addEventListener('click', () => {
       this.ui.sellMode = !this.ui.sellMode;
       if (this.ui.sellMode) this.ui.repairMode = false;

@@ -14,13 +14,14 @@ const CSS = `
 .pa-hud-bar {
   position: absolute; top: 10px; left: 12px; z-index: 40;
   display: flex; gap: 14px; align-items: center;
-  background: rgba(10, 10, 18, 0.72);
-  border: 1px solid #2a2d44; border-radius: 4px;
+  background: linear-gradient(180deg, rgba(23, 21, 22, 0.88), rgba(8, 9, 14, 0.82));
+  border: 2px solid #282018; border-radius: 4px;
   padding: 5px 12px;
   font-family: Verdana, Geneva, sans-serif; font-size: 12px;
   color: #cfd6ff; letter-spacing: 1px;
   pointer-events: none; user-select: none;
   text-shadow: 0 1px 2px #000;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.16), inset 0 -2px 0 rgba(0,0,0,0.62), 0 2px 0 #050506, 0 8px 24px rgba(0,0,0,0.38);
 }
 .pa-hud-bar .pa-hud-cell { display: flex; gap: 5px; align-items: baseline; }
 .pa-hud-bar .pa-hud-label { color: #6f78a8; font-size: 9px; text-transform: uppercase; }
@@ -35,15 +36,15 @@ const CSS = `
   box-sizing: border-box;
   width: min(360px, calc(100% - 224px));
   max-width: calc(100vw - 232px);
-  background: linear-gradient(180deg, rgba(17, 23, 38, 0.94), rgba(8, 10, 18, 0.91));
-  border: 1px solid #4a7dff; border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(29, 26, 24, 0.96), rgba(9, 10, 15, 0.94));
+  border: 2px solid #8f7348; border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,237,190,0.15), inset 0 -2px 0 rgba(0,0,0,0.62);
   padding: 9px 11px; font-family: Verdana, Geneva, sans-serif;
   color: #dfe5ff; pointer-events: none; user-select: none;
   text-shadow: 0 1px 2px #000;
 }
 .pa-guide.hidden { display: none; }
-.pa-guide.warn { border-color: #ff8a3c; background: linear-gradient(180deg, rgba(51, 24, 10, 0.95), rgba(18, 10, 7, 0.92)); }
+.pa-guide.warn { border-color: #d88c4d; background: linear-gradient(180deg, rgba(51, 24, 10, 0.95), rgba(18, 10, 7, 0.92)); }
 .pa-guide-title { font-size: 11px; font-weight: bold; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; }
 .pa-guide-body { margin-top: 4px; font-size: 10px; line-height: 1.45; color: #b9c5f5; }
 .pa-guide.warn .pa-guide-body { color: #ffd9c4; }

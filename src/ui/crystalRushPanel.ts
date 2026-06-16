@@ -16,32 +16,43 @@ const CSS = `
 .pa-rush {
   position: absolute; right: 14px; top: 14px; z-index: 55; width: min(360px, calc(100vw - 28px));
   color: #dfe5ff; font-family: Verdana, Geneva, sans-serif; user-select: none;
-  background: linear-gradient(180deg, rgba(13,16,30,0.92), rgba(8,10,18,0.96));
-  border: 1px solid rgba(255, 215, 119, 0.34); border-radius: 8px;
-  box-shadow: 0 18px 52px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.08);
+  background:
+    linear-gradient(180deg, rgba(45, 37, 30, 0.24), transparent 24%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.024) 0 1px, transparent 1px 8px),
+    linear-gradient(180deg, rgba(13,14,19,0.94), rgba(6,7,11,0.97));
+  border: 2px solid rgba(217, 168, 92, 0.42); border-radius: 6px;
+  box-shadow: 0 18px 52px rgba(0,0,0,0.66), inset 0 1px 0 rgba(255,237,190,0.14), inset 0 -2px 0 rgba(0,0,0,0.62);
   padding: 12px;
 }
 .pa-rush-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .pa-rush-title { font-size: 13px; letter-spacing: 3px; color: #fff; text-transform: uppercase; font-weight: bold; }
 .pa-rush-clock { font-size: 10px; color: #ffd95e; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
-.pa-rush-goal { margin: -2px 0 8px; color: #bfc7ee; font-size: 10px; line-height: 1.35; }
+.pa-rush-goal { margin: -2px 0 8px; color: #d2cab7; font-size: 10px; line-height: 1.35; }
+.pa-rush-intent { margin: 0 0 9px; padding: 7px 8px; border: 1px solid rgba(255,217,94,0.38); border-radius: 4px;
+  background: linear-gradient(180deg, rgba(104, 70, 28, 0.44), rgba(17, 12, 8, 0.84));
+  color: #fff2c9; font-size: 9px; line-height: 1.35; text-shadow: 0 1px 0 #000; }
+.pa-rush-intent b { display: block; margin-bottom: 2px; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
 .pa-rush-you { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 9px; color: #8d96c8; font-size: 9px; line-height: 1.25; }
 .pa-rush-you b { color: #fff; letter-spacing: 1px; text-transform: uppercase; }
 .pa-rush-swatch { display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
 .pa-rush-stat { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 9px; }
-.pa-rush-stat div { background: rgba(5,7,13,0.74); border: 1px solid #2e3252; border-radius: 5px; padding: 7px 6px; }
+.pa-rush-stat div { background: rgba(5,7,13,0.74); border: 2px solid #282018; border-radius: 4px; padding: 7px 6px;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.1), inset 0 -2px 0 rgba(0,0,0,0.58); }
 .pa-rush-stat span { display: block; color: #7680ad; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
 .pa-rush-stat strong { display: block; margin-top: 3px; color: #fff; font-size: 14px; font-variant-numeric: tabular-nums; }
 .pa-rush-label { margin: 10px 0 5px; color: #8d96c8; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
 .pa-rush-plans, .pa-rush-ups { display: grid; gap: 6px; }
 .pa-rush-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .pa-rush-btn {
-  min-height: 36px; border: 1px solid #343a63; border-radius: 5px; color: #cfd6ff;
-  background: linear-gradient(180deg, #1b1f38, #101321); cursor: pointer;
+  min-height: 36px; border: 2px solid #282018; border-radius: 4px; color: #d8cfba;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,229,170,0.1), transparent 42%),
+    linear-gradient(180deg, #2a2f42, #10121b); cursor: pointer;
   font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.14), inset 0 -3px 0 rgba(0,0,0,0.68), 0 2px 0 #050506;
 }
-.pa-rush-btn:hover { border-color: #6ea7ff; color: #fff; }
-.pa-rush-btn.sel { border-color: #ffd95e; color: #fff7d1; background: linear-gradient(180deg, #67431d, #27170d); }
+.pa-rush-btn:hover { border-color: #c99b57; color: #fff8e6; filter: brightness(1.08); }
+.pa-rush-btn.sel { border-color: #ffd95e; color: #fff7d1; background: linear-gradient(180deg, #75522d, #20140d); }
 .pa-rush-btn:disabled { opacity: 0.42; cursor: not-allowed; filter: grayscale(0.55); }
 .pa-rush-plan {
   min-height: 88px; padding: 8px 6px; text-align: left; border-color: #465074;
@@ -51,12 +62,14 @@ const CSS = `
 .pa-rush-plan span { display: block; color: #aeb7e8; font-size: 8px; line-height: 1.25; letter-spacing: 0; text-transform: none; font-weight: normal; }
 .pa-rush-plan em { display: block; color: #ffd95e; font-size: 9px; font-style: normal; letter-spacing: 1px; }
 .pa-rush-pressure { display: grid; grid-template-columns: 1fr; gap: 5px; }
-.pa-rush-meter { background: rgba(5,7,13,0.72); border: 1px solid #252a47; border-radius: 5px; padding: 6px; }
+.pa-rush-meter { background: rgba(5,7,13,0.72); border: 2px solid #282018; border-radius: 4px; padding: 6px;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.08), inset 0 -2px 0 rgba(0,0,0,0.58); }
 .pa-rush-meter-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; font-size: 9px; color: #aeb7e8; text-transform: uppercase; letter-spacing: 1px; }
 .pa-rush-meter-bar { display: flex; height: 8px; overflow: hidden; border-radius: 4px; background: #111522; }
 .pa-rush-meter-seg { min-width: 2px; }
 .pa-rush-up { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px;
-  border: 1px solid #2e3252; border-radius: 5px; background: rgba(10,12,23,0.82); }
+  border: 2px solid #282018; border-radius: 4px; background: linear-gradient(180deg, rgba(20,22,32,0.9), rgba(8,9,14,0.9));
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.08), inset 0 -2px 0 rgba(0,0,0,0.54); }
 .pa-rush-up b { display: block; font-size: 10px; letter-spacing: 1px; color: #fff; text-transform: uppercase; }
 .pa-rush-up span { display: block; margin-top: 3px; font-size: 9px; color: #8d96c8; }
 .pa-rush-up button { min-width: 72px; }
@@ -117,6 +130,7 @@ export class CrystalRushPanel {
         <div class="pa-rush-clock"></div>
       </div>
       <div class="pa-rush-goal">Hold the crystal to fund your army. Break enemy bases to eliminate them.</div>
+      <div class="pa-rush-intent js-intent"></div>
       <div class="pa-rush-you"><span class="js-you"></span><span>Move map: WASD / arrows / right-drag / wheel</span></div>
       <div class="pa-rush-stat">
         <div><span>Crystals</span><strong class="js-credits"></strong></div>
@@ -191,6 +205,7 @@ export class CrystalRushPanel {
     this.setText('.js-credits', String(p.credits));
     this.setText('.js-income', `+${crp.incomeRate}/s`);
     this.setText('.js-auto-wave', `${waveCd}s`);
+    this.setText('.js-intent', this.intentText(crp.stance, deployTicksLeft, p.credits, deployCost));
     this.setText('.js-crystal-yours', `${crystalCounts[this.me] ?? 0} yours`);
     this.setText('.js-base-race', `You ${myBaseHp}% · Enemy ${enemyBaseHp}%`);
     const crystalBar = this.el.querySelector('.js-crystal-bar') as HTMLElement;
@@ -238,6 +253,19 @@ export class CrystalRushPanel {
   private setText(selector: string, value: string): void {
     const el = this.el.querySelector(selector);
     if (el !== null) el.textContent = value;
+  }
+
+  private intentText(
+    stance: CrystalRushStance,
+    deployTicksLeft: number,
+    credits: number,
+    deployCost: number,
+  ): string {
+    if (deployTicksLeft > 0) return 'Orders committed. Your next manual wave is forming.';
+    if (credits < deployCost) return `Earn ${deployCost - credits} more crystals, then choose a battle plan.`;
+    if (stance === 'greedy') return 'Ready: Claim Crystal sends your next wave to secure income.';
+    if (stance === 'aggressive') return 'Ready: Break Base sends your next wave to eliminate a rival.';
+    return 'Ready: Balanced Push splits your next wave between income and pressure.';
   }
 
   private crystalPresence(state: GameState): number[] {

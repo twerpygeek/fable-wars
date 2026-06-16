@@ -66,6 +66,11 @@ const CSS = `
 .pa-faction-tile span { position: absolute; left: 10px; bottom: 9px; z-index: 1; color: #fff; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
   text-shadow: 0 2px 8px #000; }
 .pa-command-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 10px; align-items: stretch; }
+.pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
+  margin: 18px -10px -18px; padding: 12px 10px 10px;
+  background: linear-gradient(180deg, rgba(8, 9, 14, 0.08), rgba(8, 9, 14, 0.94) 28%, rgba(8, 9, 14, 0.98));
+  border-top: 1px solid rgba(255, 220, 150, 0.2); box-shadow: 0 -18px 28px rgba(5,6,10,0.62); }
+.pa-lobby-actions .pa-btn { min-height: 54px; }
 .pa-mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
 .pa-mode-choice { min-height: 54px; padding: 10px 12px; border: 2px solid #2b241d; border-radius: 4px;
   position: relative; overflow: hidden;
@@ -119,6 +124,11 @@ const CSS = `
 .pa-fcard:hover { border-color: #b99052; filter: brightness(1.08); }
 .pa-fcard.sel { border-color: var(--fc, #d8a35f); box-shadow: inset 0 2px 0 rgba(255,229,170,0.26), inset 0 -3px 0 rgba(0,0,0,0.74), 0 0 18px color-mix(in srgb, var(--fc) 50%, transparent); }
 .pa-fcard .pa-fc-emblem { font-size: 28px; text-align: center; }
+.pa-fc-emblem { width: 42px; height: 42px; margin: 0 auto 6px; display: grid; place-items: center; color: #fff5d8;
+  border: 2px solid #2a231d; border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--fc, #d8a35f) 54%, #ffffff 12%), rgba(15,12,9,0.95) 68%);
+  box-shadow: inset 0 2px 0 rgba(255,237,190,0.22), inset 0 -4px 0 rgba(0,0,0,0.62), 0 0 18px color-mix(in srgb, var(--fc, #d8a35f) 35%, transparent);
+  font-size: 15px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 2px 0 #000; }
 .pa-fcard .pa-fc-name { font-size: 12px; font-weight: bold; text-align: center; letter-spacing: 1px; margin: 4px 0; color: #fff; }
 .pa-fcard .pa-fc-blurb { font-size: 9px; color: #9aa3cf; line-height: 1.5; min-height: 40px; }
 .pa-fcard .pa-fc-roster { font-size: 8px; color: #6f78a8; margin-top: 6px; line-height: 1.4; }
@@ -218,6 +228,7 @@ const CSS = `
   .pa-faction-tile { min-height: 52px; }
   .pa-faction-tile span { left: 6px; bottom: 5px; font-size: 7px; letter-spacing: 1px; }
   .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
+  .pa-lobby-actions { position: sticky; bottom: -12px; grid-template-columns: 1fr; margin: 12px -4px -8px; padding: 10px 4px 6px; }
   .pa-mode-pick { grid-template-columns: 1fr; gap: 6px; }
   .pa-mode-choice { min-height: 42px; }
   .pa-btn { min-height: 40px; font-size: 11px; letter-spacing: 2px; }
@@ -227,7 +238,7 @@ const CSS = `
 }
 `;
 
-const FACTION_EMBLEMS: Record<FactionId, string> = { scorch: '🔥', tide: '🌊', verdant: '🌿' };
+const FACTION_EMBLEMS: Record<FactionId, string> = { scorch: 'SL', tide: 'TD', verdant: 'VS' };
 const LOBBY_KEY = 'pa-lobby'; // persisted lobby settings (everything except seed)
 const SCROLL_RATE_KEY = 'pa-scrollRate'; // px/s at zoom 1 — input.ts re-reads this live
 
@@ -537,7 +548,7 @@ export class MenuManager {
       row.className = 'pa-svc-row';
       const badge = `<span class="pa-svc-badge ${r.victory ? 'win' : 'lose'}">${r.victory ? 'W' : 'L'}</span>`;
       row.innerHTML = `<span class="pa-svc-date">${dateLabel}</span>
-        <span class="pa-svc-sum">${FACTION_EMBLEMS[human.faction] ?? ''} ${facName} vs ${aiPlayers.length} AI (${diffs})</span>
+        <span class="pa-svc-sum">${facName} vs ${aiPlayers.length} AI (${diffs})</span>
         ${badge}
         <span class="pa-svc-num" title="Score">★ ${human.stats.score.toLocaleString()}</span>
         <span class="pa-svc-num" title="Duration">${formatDuration(r.durationSec)}</span>`;
@@ -692,12 +703,12 @@ export class MenuManager {
       this.ais.forEach((ai, i) => {
         const row = document.createElement('div');
         row.className = 'pa-ai-row';
-        row.innerHTML = `<span class="pa-ai-name">🤖 AI ${i + 1}</span>`;
+        row.innerHTML = `<span class="pa-ai-name">Rival Army ${i + 1}</span>`;
         const fSel = document.createElement('select');
         fSel.innerHTML =
-          `<option value="random">🎲 Random</option>` +
+          `<option value="random">Random Faction</option>` +
           Object.values(DATA.factions)
-            .map((f) => `<option value="${f.id}" ${ai.faction === f.id ? 'selected' : ''}>${FACTION_EMBLEMS[f.id]} ${f.name}</option>`)
+            .map((f) => `<option value="${f.id}" ${ai.faction === f.id ? 'selected' : ''}>${f.name}</option>`)
             .join('');
         fSel.value = ai.faction;
         fSel.addEventListener('change', () => {
@@ -753,7 +764,7 @@ export class MenuManager {
     seedInput.addEventListener('change', () => (this.seed = Math.abs(Number(seedInput.value) | 0) || 1));
     const dice = document.createElement('div');
     dice.className = 'pa-small-btn';
-    dice.textContent = '🎲 Randomize';
+    dice.textContent = 'Randomize';
     dice.addEventListener('click', () => {
       this.seed = Math.floor(Math.random() * 1e6);
       seedInput.value = String(this.seed);
@@ -762,11 +773,11 @@ export class MenuManager {
     panel.append(sizeRow, waterRow, cratesRow, seedRow);
 
     // start
-    const start = btn('⚔ Start Operation', () => this.launch(), true);
-    start.style.width = '340px';
-    start.style.marginTop = '20px';
-    panel.appendChild(start);
-    panel.appendChild(btn('Back', () => this.showMainMenu()));
+    const actions = document.createElement('div');
+    actions.className = 'pa-lobby-actions';
+    const start = btn('Start Operation', () => this.launch(), true);
+    actions.append(start, btn('Back', () => this.showMainMenu()));
+    panel.appendChild(actions);
     el.appendChild(panel);
   }
 
@@ -841,10 +852,10 @@ export class MenuManager {
     this.overlayEl = ov;
     const tipEl = inner.querySelector('.pa-load-tip') as HTMLElement;
     let t = Math.floor(Math.random() * TIPS.length);
-    tipEl.textContent = '💡 ' + TIPS[t];
+    tipEl.textContent = 'Intel: ' + TIPS[t];
     this.tipTimer = window.setInterval(() => {
       t = (t + 1) % TIPS.length;
-      tipEl.textContent = '💡 ' + TIPS[t];
+      tipEl.textContent = 'Intel: ' + TIPS[t];
     }, 3200);
   }
 
@@ -913,7 +924,7 @@ export class MenuManager {
       `<div class="pa-score-time">Operation time ${formatDuration(result.durationSec)}</div>`,
     );
 
-    const again = btn('⚔ Play Again', () => {
+    const again = btn('Play Again', () => {
       ov.remove();
       onPlayAgain();
     }, true);
