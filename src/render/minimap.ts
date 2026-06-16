@@ -235,35 +235,43 @@ export class Minimap {
   }
 
   private drawNoSignal(cw: number, ch: number): void {
-    // animated static (cosmetic randomness is fine on the render side)
+    // Subtle offline interference. Keep it dark so the minimap reads like a
+    // powered-down radar pane instead of a broken image.
     const d = this.noiseImg.data;
     for (let i = 0; i < d.length; i += 4) {
-      const v = (Math.random() * 70) | 0;
+      const v = 8 + ((Math.random() * 28) | 0);
       d[i] = v;
-      d[i + 1] = v + 2;
-      d[i + 2] = v + 6;
+      d[i + 1] = v + 3;
+      d[i + 2] = v + 10;
       d[i + 3] = 255;
     }
     this.noiseCtx.putImageData(this.noiseImg, 0, 0);
     this.ctx.imageSmoothingEnabled = false;
-    this.ctx.globalAlpha = 0.8;
+    this.ctx.globalAlpha = 0.46;
     this.ctx.drawImage(this.noise, 0, 0, 64, 48, 0, 0, cw, ch);
     this.ctx.globalAlpha = 1;
+
+    const g = this.ctx.createLinearGradient(0, 0, cw, ch);
+    g.addColorStop(0, 'rgba(255,214,115,0.12)');
+    g.addColorStop(0.42, 'rgba(20,24,38,0.52)');
+    g.addColorStop(1, 'rgba(0,0,0,0.78)');
+    this.ctx.fillStyle = g;
+    this.ctx.fillRect(0, 0, cw, ch);
 
     // rolling scanline
     const t = performance.now();
     const sy = (t * 0.04) % ch;
-    this.ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    this.ctx.fillRect(0, sy, cw, 3);
+    this.ctx.fillStyle = 'rgba(255,220,150,0.08)';
+    this.ctx.fillRect(0, sy, cw, 2);
 
-    // blinking NO SIGNAL
+    // blinking offline label
     const blink = 0.55 + 0.45 * Math.sin(t * 0.004);
     this.ctx.globalAlpha = blink;
-    this.ctx.fillStyle = '#c8d2e0';
-    this.ctx.font = `bold ${Math.max(10, Math.floor(cw / 9))}px Verdana, Geneva, sans-serif`;
+    this.ctx.fillStyle = '#d8c7a1';
+    this.ctx.font = `bold ${Math.max(9, Math.floor(cw / 12))}px Verdana, Geneva, sans-serif`;
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
-    this.ctx.fillText('NO SIGNAL', cw / 2, ch / 2);
+    this.ctx.fillText('RADAR OFFLINE', cw / 2, ch / 2);
     this.ctx.globalAlpha = 1;
     this.ctx.textAlign = 'start';
     this.ctx.textBaseline = 'alphabetic';

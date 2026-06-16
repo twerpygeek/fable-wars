@@ -422,11 +422,11 @@ class Atlas implements SpriteAtlas {
     const ck = `${t}|${variant % 3}`;
     let c = this.terrainCache.get(ck);
     if (c) return c;
-    // Generated crystal/obstacle tiles carried square base art that broke the
-    // iso read when repeated. Keep generated natural terrain, but use the
-    // engine's clean diamond painter for resource fields and blockers.
+    // Some generated terrain tiles carried baked square borders that broke the
+    // iso read when repeated. Keep the best natural overrides, but use the
+    // engine's clean diamond painter for resource fields, blockers, and dirt.
     const key =
-      t === Terrain.CRYSTAL || t === Terrain.ROCK || t === Terrain.TREE
+      t === Terrain.CRYSTAL || t === Terrain.ROCK || t === Terrain.TREE || t === Terrain.DIRT
         ? undefined
         : TERRAIN_KEYS[t];
     const img = key ? this.ov?.terrain.get(`${key}_${variant % 3}`) : undefined;
@@ -1750,30 +1750,30 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
     const bottomY = baseY + TILE_H;
     const lg = ctx.createLinearGradient(0, midY, TILE_W / 2, bottomY);
     lg.addColorStop(0, left);
-    lg.addColorStop(1, 'rgba(0,0,0,0.26)');
+    lg.addColorStop(1, 'rgba(0,0,0,0.16)');
     ctx.fillStyle = lg;
     ctx.beginPath();
     ctx.moveTo(0, midY);
     ctx.lineTo(TILE_W / 2, bottomY);
-    ctx.lineTo(TILE_W / 2, bottomY - 4);
-    ctx.lineTo(5, midY);
+    ctx.lineTo(TILE_W / 2, bottomY - 2.5);
+    ctx.lineTo(4, midY);
     ctx.closePath();
     ctx.fill();
 
     const rg = ctx.createLinearGradient(TILE_W, midY, TILE_W / 2, bottomY);
     rg.addColorStop(0, right);
-    rg.addColorStop(1, 'rgba(0,0,0,0.34)');
+    rg.addColorStop(1, 'rgba(0,0,0,0.20)');
     ctx.fillStyle = rg;
     ctx.beginPath();
     ctx.moveTo(TILE_W, midY);
     ctx.lineTo(TILE_W / 2, bottomY);
-    ctx.lineTo(TILE_W / 2, bottomY - 4);
-    ctx.lineTo(TILE_W - 5, midY);
+    ctx.lineTo(TILE_W / 2, bottomY - 2.5);
+    ctx.lineTo(TILE_W - 4, midY);
     ctx.closePath();
     ctx.fill();
 
     ctx.strokeStyle = lip;
-    ctx.lineWidth = 0.8;
+    ctx.lineWidth = 0.55;
     ctx.beginPath();
     ctx.moveTo(7, midY);
     ctx.lineTo(TILE_W / 2, baseY + 4);
@@ -1786,24 +1786,24 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
     case Terrain.GRASS: {
       fillBase(shade('#5aa44a', 0.08 + variant * 0.03), shade('#34712b', variant * 0.02));
       speckle(['#7ccf62', '#2f6728', '#9ad879', '#496f35'], 34);
-      bevel('rgba(31,75,34,0.34)', 'rgba(20,50,31,0.42)');
+      bevel('rgba(31,75,34,0.18)', 'rgba(20,50,31,0.22)', 'rgba(255,255,255,0.055)');
       break;
     }
     case Terrain.DIRT: {
       fillBase(shade('#92714a', 0.07 + variant * 0.03), '#62482e');
       speckle(['#b08a5c', '#4e3926', '#80623f', '#c59b66'], 30);
-      bevel('rgba(72,48,30,0.38)', 'rgba(43,31,24,0.48)');
+      bevel('rgba(72,48,30,0.18)', 'rgba(43,31,24,0.24)', 'rgba(255,228,176,0.055)');
       break;
     }
     case Terrain.SAND: {
       fillBase(shade('#dbc48c', 0.08 + variant * 0.03), '#b9975e');
       speckle(['#f1dcaa', '#a7834f', '#c9ad76'], 24);
-      bevel('rgba(128,98,55,0.3)', 'rgba(93,70,45,0.38)', 'rgba(255,238,184,0.12)');
+      bevel('rgba(128,98,55,0.16)', 'rgba(93,70,45,0.20)', 'rgba(255,238,184,0.075)');
       break;
     }
     case Terrain.WATER: {
       fillBase(shade('#2387b6', 0.11 + variant * 0.04), '#103b64');
-      bevel('rgba(24,98,126,0.26)', 'rgba(8,42,73,0.38)', 'rgba(152,229,255,0.14)');
+      bevel('rgba(24,98,126,0.14)', 'rgba(8,42,73,0.22)', 'rgba(152,229,255,0.09)');
       // wave hints
       ctx.save();
       diamond();
@@ -1824,7 +1824,7 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
     case Terrain.CRYSTAL: {
       fillBase('#7c5b42', '#4b382c');
       speckle(['#9a7352', '#4a3127', '#b98b64'], 18);
-      bevel('rgba(67,43,32,0.44)', 'rgba(34,26,26,0.52)', 'rgba(255,189,232,0.16)');
+      bevel('rgba(67,43,32,0.22)', 'rgba(34,26,26,0.28)', 'rgba(255,189,232,0.09)');
       // candy gems
       const n = 5 + variant;
       for (let i = 0; i < n; i++) {

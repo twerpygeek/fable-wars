@@ -253,6 +253,7 @@ export class Renderer {
     this.drawBloom(vw, vh);
     this.drawAmbient(state, humanPlayer, nowMs, vw, vh);
     this.drawFog(state, humanPlayer);
+    this.drawOutOfBoundsMask(state, vw, vh);
     this.drawOverlays(state, ui, humanPlayer, nowMs, vw, vh);
     this.drawVignette(vw, vh);
     this.effects.drawScreenFlashes(ctx, nowMs, vw, vh);
@@ -1288,6 +1289,40 @@ export class Renderer {
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(fogCanvas, 0, 0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  /**
+   * Hide antialiased terrain-cache edges outside the playable iso diamond.
+   * Without this, panning near map corners can reveal thin diagonal tile-edge
+   * lines against the black shroud, which reads like a debug artifact.
+   */
+  private drawOutOfBoundsMask(state: GameState, vw: number, vh: number): void {
+    const m = state.map;
+    const ctx = this.ctx;
+    const p0 = { x: this.projX(0, 0), y: this.projY(0, 0) };
+    const p1 = { x: this.projX(m.w, 0), y: this.projY(m.w, 0) };
+    const p2 = { x: this.projX(m.w, m.h), y: this.projY(m.w, m.h) };
+    const p3 = { x: this.projX(0, m.h), y: this.projY(0, m.h) };
+    ctx.save();
+    ctx.fillStyle = BG_COLOR;
+    ctx.beginPath();
+    ctx.rect(0, 0, vw, vh);
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+    ctx.fill('evenodd');
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+    ctx.strokeStyle = BG_COLOR;
+    ctx.lineWidth = Math.max(3, 5 * this.zoom);
+    ctx.stroke();
+    ctx.restore();
   }
 
   // --- overlays ------------------------------------------------------------------------
