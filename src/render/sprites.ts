@@ -124,7 +124,7 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
 
 const DIR_NAMES = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'] as const;
 const MIRROR_DIR: Record<string, string> = { e: 'w', se: 'sw', ne: 'nw' };
-const USE_GENERATED_UNIT_OVERRIDES = false;
+const USE_GENERATED_UNIT_OVERRIDES = true;
 
 /** Expected building override canvas box for a footprint (see SPRITES.md). */
 export function buildingSpriteBox(fw: number, fh: number, kind: string): { w: number; h: number } {
