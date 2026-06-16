@@ -1342,6 +1342,8 @@ export class Renderer {
     const ctx = this.ctx;
     const z = this.zoom;
 
+    this.drawCrystalRushClarity(state, humanPlayer, nowMs);
+
     // health bars + vet chevrons + rally for on-screen entities (reuse culled lists)
     this.drawEntityBadges(this.groundList, state, ui, humanPlayer, nowMs);
     this.drawEntityBadges(this.airList, state, ui, humanPlayer, nowMs);
@@ -1412,6 +1414,112 @@ export class Renderer {
     }
     void vw;
     void vh;
+  }
+
+  private drawCrystalRushClarity(state: GameState, humanPlayer: PlayerId, nowMs: number): void {
+    const mode = state.crystalRush;
+    if (state.config.mode !== 'crystalRush' || mode === undefined) return;
+    const ctx = this.ctx;
+    const z = this.zoom;
+    const pulse = 0.5 + Math.sin(nowMs * 0.004) * 0.5;
+    const objSx = this.projX(mode.objective.x, mode.objective.y);
+    const objSy = this.projY(mode.objective.x, mode.objective.y);
+    const rx = 112 * z;
+    const ry = 48 * z;
+
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+    ctx.strokeStyle = `rgba(105, 226, 255, ${0.5 + pulse * 0.3})`;
+    ctx.lineWidth = Math.max(2, 3 * z);
+    ctx.beginPath();
+    ctx.ellipse(objSx, objSy + 8 * z, rx, ry, 0, 0, TAU);
+    ctx.stroke();
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#68e4ff';
+    ctx.beginPath();
+    ctx.ellipse(objSx, objSy + 8 * z, rx * 0.72, ry * 0.72, 0, 0, TAU);
+    ctx.fill();
+
+    this.drawCrystalSpire(objSx, objSy - 12 * z, z, pulse);
+    this.drawWorldLabel(objSx, objSy - 112 * z, 'CENTRAL CRYSTAL', 'Hold this for income', '#80edff');
+
+    const base = [...state.entities.values()].find(
+      (e) => e.owner === humanPlayer && e.kind === 'building' && this.data.buildings[e.defId]?.isConYard,
+    );
+    if (base) {
+      const def = this.data.buildings[base.defId];
+      const bx = this.projX(base.pos.x + (def?.footprint.w ?? 2) / 2, base.pos.y + (def?.footprint.h ?? 2) / 2);
+      const by = this.projY(base.pos.x + (def?.footprint.w ?? 2) / 2, base.pos.y + (def?.footprint.h ?? 2) / 2);
+      const color = PLAYER_COLORS[state.players[humanPlayer]?.colorIdx ?? 0]?.hex ?? '#ffffff';
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, 3 * z);
+      ctx.beginPath();
+      ctx.ellipse(bx, by + 12 * z, 62 * z, 26 * z, 0, 0, TAU);
+      ctx.stroke();
+      this.drawWorldLabel(bx, by - 92 * z, 'YOUR CITADEL', 'Your waves spawn here', color);
+    }
+    ctx.restore();
+  }
+
+  private drawCrystalSpire(sx: number, sy: number, z: number, pulse: number): void {
+    const ctx = this.ctx;
+    const h = 92 * z;
+    const w = 46 * z;
+    ctx.save();
+    ctx.shadowColor = '#60e8ff';
+    ctx.shadowBlur = 18 * z + pulse * 10 * z;
+    const g = ctx.createLinearGradient(sx - w, sy - h, sx + w, sy + 20 * z);
+    g.addColorStop(0, '#f7feff');
+    g.addColorStop(0.38, '#79e9ff');
+    g.addColorStop(0.72, '#cf75ff');
+    g.addColorStop(1, '#452d7a');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - h);
+    ctx.lineTo(sx + w * 0.8, sy - 18 * z);
+    ctx.lineTo(sx + w * 0.34, sy + 28 * z);
+    ctx.lineTo(sx - w * 0.36, sy + 28 * z);
+    ctx.lineTo(sx - w * 0.82, sy - 18 * z);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.78)';
+    ctx.lineWidth = Math.max(1, 1.8 * z);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - h + 6 * z);
+    ctx.lineTo(sx, sy + 21 * z);
+    ctx.moveTo(sx - w * 0.58, sy - 16 * z);
+    ctx.lineTo(sx + w * 0.66, sy - 16 * z);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  private drawWorldLabel(sx: number, sy: number, title: string, body: string, color: string): void {
+    const ctx = this.ctx;
+    const z = this.zoom;
+    const w = Math.max(138, 160 * z);
+    const h = Math.max(38, 42 * z);
+    const x = sx - w / 2;
+    const y = sy - h / 2;
+    ctx.save();
+    ctx.globalAlpha = 0.94;
+    ctx.fillStyle = 'rgba(7, 10, 20, 0.82)';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.max(10, 11 * z)}px Verdana, Geneva, sans-serif`;
+    ctx.fillText(title, sx, y + h * 0.38);
+    ctx.fillStyle = '#bfc7ee';
+    ctx.font = `${Math.max(8, 9 * z)}px Verdana, Geneva, sans-serif`;
+    ctx.fillText(body, sx, y + h * 0.7);
+    ctx.restore();
   }
 
   private drawEntityBadges(

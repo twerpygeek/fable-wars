@@ -422,7 +422,13 @@ class Atlas implements SpriteAtlas {
     const ck = `${t}|${variant % 3}`;
     let c = this.terrainCache.get(ck);
     if (c) return c;
-    const key = TERRAIN_KEYS[t];
+    // Generated crystal/obstacle tiles carried square base art that broke the
+    // iso read when repeated. Keep generated natural terrain, but use the
+    // engine's clean diamond painter for resource fields and blockers.
+    const key =
+      t === Terrain.CRYSTAL || t === Terrain.ROCK || t === Terrain.TREE
+        ? undefined
+        : TERRAIN_KEYS[t];
     const img = key ? this.ov?.terrain.get(`${key}_${variant % 3}`) : undefined;
     if (img) {
       const [cv, ctx] = canvas(img.width, img.height);

@@ -24,6 +24,7 @@ import { clampCamera, tileToScreen } from './render/camera';
 import { Sidebar } from './ui/sidebar';
 import { HUD } from './ui/hud';
 import { InputController } from './ui/input';
+import { CameraControls } from './ui/cameraControls';
 import { MenuManager } from './ui/menu';
 import { WorldTooltip } from './ui/tooltip';
 import { CrystalRushPanel } from './ui/crystalRushPanel';
@@ -152,6 +153,8 @@ function runMatch(state: GameState): void {
   const minimap = sidebar === null ? null : new Minimap(sidebar.minimapCanvas);
   const hud = new HUD(matchRoot, DATA, ui);
   const input = crystalRush ? null : new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
+  const cameraControls = crystalRush ? new CameraControls(canvas, cam, () => state.map) : null;
+  cameraControls?.enable();
   if (input !== null && sidebar !== null && minimap !== null) {
     input.bindMinimap(sidebar.minimapCanvas, minimap);
     input.onCommandFeedback = (kind, pos) => {
@@ -204,16 +207,13 @@ function runMatch(state: GameState): void {
     };
   }
 
-  // Center camera on the main objective in Crystal Rush, otherwise the human ConYard.
+  // Start on the human base. Crystal Rush labels and command cards point the
+  // player toward the center objective, but first contact should answer
+  // "which side is mine?"
   const ownConYard = [...state.entities.values()].find(
     (e) => e.owner === humanPlayer && e.kind === 'building' && DATA.buildings[e.defId]?.isConYard
   );
-  const cameraTarget =
-    state.crystalRush !== undefined
-      ? state.crystalRush.objective
-      : ownConYard
-        ? { x: ownConYard.pos.x + 1.5, y: ownConYard.pos.y + 1.5 }
-        : null;
+  const cameraTarget = ownConYard ? { x: ownConYard.pos.x + 1.5, y: ownConYard.pos.y + 1.5 } : null;
   if (cameraTarget !== null) {
     const { sx, sy } = tileToScreen({ x: 0, y: 0, zoom: cam.zoom }, cameraTarget.x, cameraTarget.y);
     cam.x = sx - canvas.width / 2;
@@ -238,6 +238,7 @@ function runMatch(state: GameState): void {
     window.removeEventListener('resize', resize);
     window.removeEventListener('keydown', onCrystalRushKey);
     input?.disable();
+    cameraControls?.disable();
     tooltip?.destroy();
     rushPanel?.destroy();
     sidebar?.destroy();
@@ -424,6 +425,7 @@ function runMatch(state: GameState): void {
     }
 
     input?.update(dt, canvas.width, canvas.height);
+    cameraControls?.update(dt, canvas.width, canvas.height, ui.paused);
     clampCamera(cam, state.map, canvas.width, canvas.height);
     const alpha = Math.min(1, acc / TICK_MS);
     renderer.render(state, cam, ui, humanPlayer, now, alpha);
@@ -447,6 +449,7 @@ function runMatch(state: GameState): void {
     ui,
     cam,
     input,
+    cameraControls,
     quitToMenu,
     // QA: advance the sim n ticks synchronously (rAF is suspended in hidden tabs).
     pump(n: number) {

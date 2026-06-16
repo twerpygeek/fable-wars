@@ -24,7 +24,10 @@ const CSS = `
 .pa-rush-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .pa-rush-title { font-size: 13px; letter-spacing: 3px; color: #fff; text-transform: uppercase; font-weight: bold; }
 .pa-rush-clock { font-size: 10px; color: #ffd95e; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
-.pa-rush-goal { margin: -2px 0 10px; color: #bfc7ee; font-size: 10px; line-height: 1.35; }
+.pa-rush-goal { margin: -2px 0 8px; color: #bfc7ee; font-size: 10px; line-height: 1.35; }
+.pa-rush-you { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 9px; color: #8d96c8; font-size: 9px; line-height: 1.25; }
+.pa-rush-you b { color: #fff; letter-spacing: 1px; text-transform: uppercase; }
+.pa-rush-swatch { display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
 .pa-rush-stat { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 9px; }
 .pa-rush-stat div { background: rgba(5,7,13,0.74); border: 1px solid #2e3252; border-radius: 5px; padding: 7px 6px; }
 .pa-rush-stat span { display: block; color: #7680ad; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
@@ -114,6 +117,7 @@ export class CrystalRushPanel {
         <div class="pa-rush-clock"></div>
       </div>
       <div class="pa-rush-goal">Hold the crystal to fund your army. Break enemy bases to eliminate them.</div>
+      <div class="pa-rush-you"><span class="js-you"></span><span>Move map: WASD / arrows / right-drag / wheel</span></div>
       <div class="pa-rush-stat">
         <div><span>Crystals</span><strong class="js-credits"></strong></div>
         <div><span>Income</span><strong class="js-income"></strong></div>
@@ -179,6 +183,11 @@ export class CrystalRushPanel {
     const enemyBaseHp = this.enemyBaseHealthPercent(state);
 
     this.setText('.pa-rush-clock', `${mins}:${String(secs).padStart(2, '0')}`);
+    const color = PLAYER_COLORS[p.colorIdx]?.hex ?? '#ffffff';
+    const you = this.el.querySelector('.js-you') as HTMLElement | null;
+    if (you !== null) {
+      you.innerHTML = `<i class="pa-rush-swatch" style="background:${color};color:${color}"></i><b>You</b> ${p.name}`;
+    }
     this.setText('.js-credits', String(p.credits));
     this.setText('.js-income', `+${crp.incomeRate}/s`);
     this.setText('.js-auto-wave', `${waveCd}s`);

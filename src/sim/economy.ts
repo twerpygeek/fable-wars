@@ -38,6 +38,7 @@ import {
 } from '../core/constants';
 import { isGroundPassable } from '../map/terrain';
 import { orderMove } from './movement';
+import { findPath } from './pathfinding';
 import { buildingsOf, entitiesOf } from './entity';
 
 // --- harvester claim registry (derived cache, not part of serialized state) ----
@@ -176,6 +177,8 @@ function pickCrystalTarget(
         const dry = y - rc.y;
         score += REFINERY_BIAS * Math.sqrt(drx * drx + dry * dry);
       }
+      if (score >= bestScore) continue;
+      if (!canHarvesterReachCrystal(state, u, x, y)) continue;
       if (score < bestScore) {
         bestScore = score;
         bestX = x;
@@ -191,6 +194,26 @@ function pickCrystalTarget(
   reg.nextSearchTick.delete(u.id);
   claimTile(reg, u, tileIndex(map, bestX, bestY));
   return { x: bestX, y: bestY };
+}
+
+function canHarvesterReachCrystal(state: GameState, u: Entity, x: number, y: number): boolean {
+  const from = { x: Math.floor(u.pos.x), y: Math.floor(u.pos.y) };
+  if (Math.max(Math.abs(from.x - x), Math.abs(from.y - y)) <= 1) return true;
+  const blocked = (tx: number, ty: number): boolean => {
+    const ids = state.occupancy.get(ty * state.map.w + tx);
+    if (ids === undefined) return false;
+    for (const id of ids) {
+      if (id === u.id) continue;
+      const e = state.entities.get(id);
+      if (e !== undefined && e.hp > 0 && e.kind === 'building') return true;
+    }
+    return false;
+  };
+  const path = findPath(state.map, MoveDomain.GROUND, from, { x, y }, blocked);
+  if (path === null) return false;
+  if (path.length === 0) return true;
+  const last = path[path.length - 1];
+  return Math.max(Math.abs(last.x - x), Math.abs(last.y - y)) <= 1;
 }
 
 /** Recompute a player's produced/consumed power from operational buildings.
