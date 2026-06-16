@@ -65,14 +65,14 @@ const CSS = `
 .pa-faction-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.52)); }
 .pa-faction-tile span { position: absolute; left: 10px; bottom: 9px; z-index: 1; color: #fff; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
   text-shadow: 0 2px 8px #000; }
-.pa-command-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 10px; align-items: stretch; }
+.pa-command-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; align-items: stretch; }
 .pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
   margin: 18px -10px -18px; padding: 12px 10px 10px;
   background: linear-gradient(180deg, rgba(8, 9, 14, 0.08), rgba(8, 9, 14, 0.94) 28%, rgba(8, 9, 14, 0.98));
   border-top: 1px solid rgba(255, 220, 150, 0.2); box-shadow: 0 -18px 28px rgba(5,6,10,0.62); }
 .pa-lobby-actions .pa-btn { min-height: 54px; }
-.pa-mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
-.pa-mode-choice { min-height: 54px; padding: 10px 12px; border: 2px solid #2b241d; border-radius: 4px;
+.pa-mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 12px; }
+.pa-mode-choice { min-height: 182px; padding: 0; border: 2px solid #2b241d; border-radius: 4px;
   position: relative; overflow: hidden;
   background:
     linear-gradient(180deg, rgba(95,83,69,0.28), rgba(12,12,16,0.24) 34%, rgba(5,6,10,0.94)),
@@ -87,8 +87,21 @@ const CSS = `
     linear-gradient(180deg, rgba(117, 77, 38, 0.5), rgba(20,14,11,0.42) 36%, rgba(5,6,10,0.94)),
     repeating-linear-gradient(135deg, rgba(255,229,170,0.045) 0 1px, transparent 1px 7px);
   box-shadow: inset 0 2px 0 rgba(255,230,170,0.32), inset 0 -3px 0 rgba(0,0,0,0.78), 0 0 22px rgba(255,142,62,0.34); }
-.pa-mode-choice strong { display: block; color: #fff; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
-.pa-mode-choice span { display: block; margin-top: 5px; color: #b7af9d; font-size: 9px; line-height: 1.35; letter-spacing: 1px; }
+.pa-mode-preview { position: absolute; inset: 0; background-size: cover; background-position: center; filter: saturate(1.05) contrast(1.08); transform: scale(1.01); }
+.pa-mode-preview::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.38) 48%, rgba(0,0,0,0.86)); }
+.pa-mode-copy { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 1; }
+.pa-mode-choice strong { display: block; color: #fff; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 8px #000; }
+.pa-mode-choice span { display: block; margin-top: 6px; color: #d8d0bc; font-size: 9px; line-height: 1.35; letter-spacing: 1px; text-shadow: 0 2px 6px #000; }
+.pa-trailer-overlay { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px;
+  background: rgba(3, 4, 8, 0.78); backdrop-filter: blur(8px); }
+.pa-trailer-frame { width: min(1040px, 94vw); background: #05070c; border: 2px solid #b99052; border-radius: 6px;
+  box-shadow: 0 26px 80px rgba(0,0,0,0.82), inset 0 1px 0 rgba(255,239,190,0.2); overflow: hidden; }
+.pa-trailer-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,220,150,0.24); color: #ffd777; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.pa-trailer-close { cursor: pointer; color: #fff5d8; border: 1px solid rgba(255,220,150,0.5); padding: 7px 11px;
+  background: linear-gradient(180deg, #333849, #11131d); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14); }
+.pa-trailer-frame video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
 .pa-btn { display: flex; align-items: center; justify-content: center; min-height: 58px; padding: 0 18px; text-align: center; font-size: 13px; letter-spacing: 3px;
   position: relative; overflow: hidden;
   background:
@@ -230,7 +243,9 @@ const CSS = `
   .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
   .pa-lobby-actions { position: sticky; bottom: -12px; grid-template-columns: 1fr; margin: 12px -4px -8px; padding: 10px 4px 6px; }
   .pa-mode-pick { grid-template-columns: 1fr; gap: 6px; }
-  .pa-mode-choice { min-height: 42px; }
+  .pa-mode-choice { min-height: 112px; }
+  .pa-mode-copy { left: 10px; right: 10px; bottom: 9px; }
+  .pa-trailer-overlay { padding: 10px; }
   .pa-btn { min-height: 40px; font-size: 11px; letter-spacing: 2px; }
   .pa-btn.primary { min-height: 46px; }
   .pa-launch-footer { justify-content: center; text-align: center; margin-top: 9px; }
@@ -467,8 +482,19 @@ export class MenuManager {
       classic.className = 'pa-mode-choice' + (this.mode === 'classic' ? ' sel' : '');
       rush.className = 'pa-mode-choice' + (this.mode === 'crystalRush' ? ' sel' : '');
     };
-    classic.innerHTML = `<strong>Classic RTS</strong><span>Build bases, harvest crystals, command units directly.</span>`;
-    rush.innerHTML = `<strong>Crystal Rush Beta</strong><span>Command wave pushes, hold the crystal, break enemy bases.</span>`;
+    const modePreview = (src: string, title: string, body: string) => `
+      <div class="pa-mode-preview" style="background-image:url('${src}')"></div>
+      <div class="pa-mode-copy"><strong>${title}</strong><span>${body}</span></div>`;
+    classic.innerHTML = modePreview(
+      '/art/classic-rts-gameplay-preview.png',
+      'Classic RTS',
+      'Build bases, harvest crystals, command units directly.'
+    );
+    rush.innerHTML = modePreview(
+      '/art/crystal-rush-gameplay-preview.png',
+      'Crystal Rush Beta',
+      'Command wave pushes, hold the crystal, break enemy bases.'
+    );
     classic.addEventListener('click', () => {
       this.mode = 'classic';
       paintModes();
@@ -484,9 +510,10 @@ export class MenuManager {
     const commandRow = document.createElement('div');
     commandRow.className = 'pa-command-row';
     const skirmish = btn('Start Match', () => this.showLobby(), true);
+    const trailer = btn('Watch Trailer', () => this.showTrailer());
     const howto = btn('How to Play', () => this.showHowTo());
     const codex = btn('Art Codex', () => this.showArtCodex());
-    commandRow.append(skirmish, howto, codex);
+    commandRow.append(skirmish, trailer, howto, codex);
     panel.appendChild(commandRow);
 
     const record = this.serviceRecordPanel();
@@ -498,6 +525,27 @@ export class MenuManager {
 
     stage.appendChild(panel);
     el.appendChild(stage);
+  }
+
+  private showTrailer(): void {
+    const host = this.menuEl ?? this.screen();
+    host.querySelector('.pa-trailer-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'pa-trailer-overlay';
+    overlay.innerHTML = `<div class="pa-trailer-frame" role="dialog" aria-modal="true" aria-label="Fable Wars trailer">
+      <div class="pa-trailer-head"><span>Fable Wars Hero Trailer</span><button class="pa-trailer-close" type="button">Close</button></div>
+      <video src="/media/fable-wars-hero.mp4" poster="/media/fable-wars-hero-poster.jpg" controls autoplay playsinline></video>
+    </div>`;
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (ev) => {
+      if (ev.target === overlay) close();
+    });
+    overlay.querySelector('.pa-trailer-close')?.addEventListener('click', close);
+    host.appendChild(overlay);
+    const video = overlay.querySelector('video');
+    void video?.play().catch(() => {
+      video.controls = true;
+    });
   }
 
   private showArtCodex(): void {

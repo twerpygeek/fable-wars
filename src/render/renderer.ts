@@ -1459,24 +1459,34 @@ export class Renderer {
     const pulse = 0.5 + Math.sin(nowMs * 0.004) * 0.5;
     const objSx = this.projX(mode.objective.x, mode.objective.y);
     const objSy = this.projY(mode.objective.x, mode.objective.y);
-    const rx = 112 * z;
-    const ry = 48 * z;
+    const rx = 132 * z;
+    const ry = 56 * z;
 
     ctx.save();
-    ctx.globalAlpha = 0.72;
+    const ring = ctx.createRadialGradient(objSx, objSy + 8 * z, 12 * z, objSx, objSy + 8 * z, rx);
+    ring.addColorStop(0, 'rgba(188, 246, 255, 0.24)');
+    ring.addColorStop(0.55, 'rgba(127, 108, 255, 0.12)');
+    ring.addColorStop(1, 'rgba(76, 222, 255, 0)');
+    ctx.fillStyle = ring;
+    ctx.beginPath();
+    ctx.ellipse(objSx, objSy + 8 * z, rx * 1.22, ry * 1.28, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.globalAlpha = 0.78;
     ctx.strokeStyle = `rgba(105, 226, 255, ${0.5 + pulse * 0.3})`;
-    ctx.lineWidth = Math.max(2, 3 * z);
+    ctx.lineWidth = Math.max(2, 3.4 * z);
     ctx.beginPath();
     ctx.ellipse(objSx, objSy + 8 * z, rx, ry, 0, 0, TAU);
     ctx.stroke();
-    ctx.globalAlpha = 0.25;
-    ctx.fillStyle = '#68e4ff';
+    ctx.globalAlpha = 0.34;
+    ctx.strokeStyle = `rgba(232, 100, 255, ${0.28 + pulse * 0.18})`;
+    ctx.lineWidth = Math.max(1, 1.8 * z);
     ctx.beginPath();
-    ctx.ellipse(objSx, objSy + 8 * z, rx * 0.72, ry * 0.72, 0, 0, TAU);
-    ctx.fill();
+    ctx.ellipse(objSx, objSy + 8 * z, rx * 0.72, ry * 0.7, 0, 0, TAU);
+    ctx.stroke();
 
-    this.drawCrystalSpire(objSx, objSy - 12 * z, z, pulse);
-    this.drawWorldLabel(objSx, objSy - 112 * z, 'CENTRAL CRYSTAL', 'Hold this for income', '#80edff');
+    this.drawCrystalSpire(objSx, objSy - 20 * z, z, pulse);
+    this.drawWorldLabel(objSx, objSy - 148 * z, 'CENTRAL CRYSTAL', 'Hold this for income', '#80edff');
 
     const base = [...state.entities.values()].find(
       (e) => e.owner === humanPlayer && e.kind === 'building' && this.data.buildings[e.defId]?.isConYard,
@@ -1486,6 +1496,7 @@ export class Renderer {
       const bx = this.projX(base.pos.x + (def?.footprint.w ?? 2) / 2, base.pos.y + (def?.footprint.h ?? 2) / 2);
       const by = this.projY(base.pos.x + (def?.footprint.w ?? 2) / 2, base.pos.y + (def?.footprint.h ?? 2) / 2);
       const color = PLAYER_COLORS[state.players[humanPlayer]?.colorIdx ?? 0]?.hex ?? '#ffffff';
+      this.drawObjectiveArrow(bx, by, objSx, objSy, color, pulse);
       ctx.globalAlpha = 0.9;
       ctx.strokeStyle = color;
       ctx.lineWidth = Math.max(2, 3 * z);
@@ -1499,11 +1510,18 @@ export class Renderer {
 
   private drawCrystalSpire(sx: number, sy: number, z: number, pulse: number): void {
     const ctx = this.ctx;
-    const h = 92 * z;
-    const w = 46 * z;
+    const h = 132 * z;
+    const w = 66 * z;
     ctx.save();
+    ctx.globalAlpha = 0.36;
+    ctx.fillStyle = '#35e8ff';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy + 42 * z, 82 * z, 30 * z, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.globalAlpha = 0.85;
     ctx.shadowColor = '#60e8ff';
-    ctx.shadowBlur = 18 * z + pulse * 10 * z;
+    ctx.shadowBlur = 26 * z + pulse * 14 * z;
     const g = ctx.createLinearGradient(sx - w, sy - h, sx + w, sy + 20 * z);
     g.addColorStop(0, '#f7feff');
     g.addColorStop(0.38, '#79e9ff');
@@ -1518,7 +1536,27 @@ export class Renderer {
     ctx.lineTo(sx - w * 0.82, sy - 18 * z);
     ctx.closePath();
     ctx.fill();
+
+    const shardColors = ['#69e7ff', '#ff75f6', '#9ef8ff', '#c76dff'];
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * TAU;
+      const px = sx + Math.cos(a) * (44 + (i % 2) * 18) * z;
+      const py = sy + 26 * z + Math.sin(a) * 18 * z;
+      const sh = (30 + (i % 3) * 10) * z;
+      const sw = (10 + (i % 2) * 4) * z;
+      ctx.fillStyle = shardColors[i % shardColors.length];
+      ctx.globalAlpha = 0.78;
+      ctx.beginPath();
+      ctx.moveTo(px, py - sh);
+      ctx.lineTo(px + sw, py + 4 * z);
+      ctx.lineTo(px, py + 13 * z);
+      ctx.lineTo(px - sw, py + 4 * z);
+      ctx.closePath();
+      ctx.fill();
+    }
+
     ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = 'rgba(255,255,255,0.78)';
     ctx.lineWidth = Math.max(1, 1.8 * z);
     ctx.beginPath();
@@ -1527,6 +1565,39 @@ export class Renderer {
     ctx.moveTo(sx - w * 0.58, sy - 16 * z);
     ctx.lineTo(sx + w * 0.66, sy - 16 * z);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  private drawObjectiveArrow(fromX: number, fromY: number, toX: number, toY: number, color: string, pulse: number): void {
+    const ctx = this.ctx;
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const len = Math.hypot(dx, dy);
+    if (len < 80) return;
+    const ux = dx / len;
+    const uy = dy / len;
+    const startX = fromX + ux * 70;
+    const startY = fromY + uy * 32;
+    const endX = toX - ux * 128;
+    const endY = toY - uy * 54;
+    const head = Math.max(10, 14 * this.zoom);
+    ctx.save();
+    ctx.globalAlpha = 0.34 + pulse * 0.16;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, 4 * this.zoom);
+    ctx.setLineDash([14 * this.zoom, 9 * this.zoom]);
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX - ux * head - uy * head * 0.55, endY - uy * head + ux * head * 0.55);
+    ctx.lineTo(endX - ux * head + uy * head * 0.55, endY - uy * head - ux * head * 0.55);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
   }
 
