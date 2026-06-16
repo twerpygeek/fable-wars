@@ -60,7 +60,7 @@ export function setupCrystalRush(state: GameState, data: GameData): void {
       economyLevel: 1,
       defenseLevel: 0,
       nextWaveTick: FIRST_WAVE_DELAY + i * secondsToTicks(2),
-      nextDeployTick: secondsToTicks(12),
+      nextDeployTick: 0,
     })),
   };
 
@@ -114,6 +114,7 @@ export function applyCrystalRushCommand(
       buyUpgrade(state, data, c.player, c.upgrade, events);
       return true;
     case 'crystalRushDeployWave':
+      if (c.stance !== undefined) crp.stance = c.stance;
       deployManualWave(state, data, c.player, events);
       return true;
     case 'surrender':
@@ -162,10 +163,6 @@ export function getCrystalRushDeployCost(state: GameState, player: PlayerId): nu
   const crp = state.crystalRush?.player[player];
   if (crp === undefined) return MANUAL_DEPLOY_COST_BASE;
   return MANUAL_DEPLOY_COST_BASE + Math.max(0, crp.waveLevel - 1) * 70;
-}
-
-export function getCrystalRushDeployCooldownTicks(): number {
-  return MANUAL_DEPLOY_COOLDOWN;
 }
 
 function sculptCenterCrystal(state: GameState, center: Vec2): void {

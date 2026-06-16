@@ -424,7 +424,7 @@ export class MenuManager {
       rush.className = 'pa-mode-choice' + (this.mode === 'crystalRush' ? ' sel' : '');
     };
     classic.innerHTML = `<strong>Classic RTS</strong><span>Build bases, harvest crystals, command units directly.</span>`;
-    rush.innerHTML = `<strong>Crystal Rush Beta</strong><span>Auto waves, center crystal income, macro stance upgrades.</span>`;
+    rush.innerHTML = `<strong>Crystal Rush Beta</strong><span>Command wave pushes, hold the crystal, break enemy bases.</span>`;
     classic.addEventListener('click', () => {
       this.mode = 'classic';
       paintModes();

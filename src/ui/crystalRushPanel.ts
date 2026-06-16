@@ -14,7 +14,7 @@ import {
 const STYLE_ID = 'pa-style-crystal-rush';
 const CSS = `
 .pa-rush {
-  position: absolute; right: 14px; top: 14px; z-index: 55; width: min(310px, calc(100vw - 28px));
+  position: absolute; right: 14px; top: 14px; z-index: 55; width: min(360px, calc(100vw - 28px));
   color: #dfe5ff; font-family: Verdana, Geneva, sans-serif; user-select: none;
   background: linear-gradient(180deg, rgba(13,16,30,0.92), rgba(8,10,18,0.96));
   border: 1px solid rgba(255, 215, 119, 0.34); border-radius: 8px;
@@ -24,19 +24,14 @@ const CSS = `
 .pa-rush-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .pa-rush-title { font-size: 13px; letter-spacing: 3px; color: #fff; text-transform: uppercase; font-weight: bold; }
 .pa-rush-clock { font-size: 10px; color: #ffd95e; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
-.pa-rush-stat { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.pa-rush-goal { margin: -2px 0 10px; color: #bfc7ee; font-size: 10px; line-height: 1.35; }
+.pa-rush-stat { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 9px; }
 .pa-rush-stat div { background: rgba(5,7,13,0.74); border: 1px solid #2e3252; border-radius: 5px; padding: 7px 6px; }
 .pa-rush-stat span { display: block; color: #7680ad; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
 .pa-rush-stat strong { display: block; margin-top: 3px; color: #fff; font-size: 14px; font-variant-numeric: tabular-nums; }
 .pa-rush-label { margin: 10px 0 5px; color: #8d96c8; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
-.pa-rush-stances, .pa-rush-ups { display: grid; gap: 6px; }
-.pa-rush-stances { grid-template-columns: repeat(3, 1fr); }
-.pa-rush-deploy {
-  width: 100%; min-height: 48px; margin: 0 0 9px; border-color: #ffb15d;
-  color: #fff7d1; background: linear-gradient(180deg, #8c3b29 0%, #442018 100%);
-  box-shadow: 0 0 18px rgba(255, 101, 56, 0.24), inset 0 1px 0 rgba(255,255,255,0.14);
-}
-.pa-rush-deploy:disabled { border-color: #343a63; background: linear-gradient(180deg, #1b1f38, #101321); box-shadow: none; color: #8d96c8; }
+.pa-rush-plans, .pa-rush-ups { display: grid; gap: 6px; }
+.pa-rush-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .pa-rush-btn {
   min-height: 36px; border: 1px solid #343a63; border-radius: 5px; color: #cfd6ff;
   background: linear-gradient(180deg, #1b1f38, #101321); cursor: pointer;
@@ -45,6 +40,18 @@ const CSS = `
 .pa-rush-btn:hover { border-color: #6ea7ff; color: #fff; }
 .pa-rush-btn.sel { border-color: #ffd95e; color: #fff7d1; background: linear-gradient(180deg, #67431d, #27170d); }
 .pa-rush-btn:disabled { opacity: 0.42; cursor: not-allowed; filter: grayscale(0.55); }
+.pa-rush-plan {
+  min-height: 88px; padding: 8px 6px; text-align: left; border-color: #465074;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 5px;
+}
+.pa-rush-plan b { display: block; color: #fff; font-size: 10px; letter-spacing: 1px; }
+.pa-rush-plan span { display: block; color: #aeb7e8; font-size: 8px; line-height: 1.25; letter-spacing: 0; text-transform: none; font-weight: normal; }
+.pa-rush-plan em { display: block; color: #ffd95e; font-size: 9px; font-style: normal; letter-spacing: 1px; }
+.pa-rush-pressure { display: grid; grid-template-columns: 1fr; gap: 5px; }
+.pa-rush-meter { background: rgba(5,7,13,0.72); border: 1px solid #252a47; border-radius: 5px; padding: 6px; }
+.pa-rush-meter-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; font-size: 9px; color: #aeb7e8; text-transform: uppercase; letter-spacing: 1px; }
+.pa-rush-meter-bar { display: flex; height: 8px; overflow: hidden; border-radius: 4px; background: #111522; }
+.pa-rush-meter-seg { min-width: 2px; }
 .pa-rush-up { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px;
   border: 1px solid #2e3252; border-radius: 5px; background: rgba(10,12,23,0.82); }
 .pa-rush-up b { display: block; font-size: 10px; letter-spacing: 1px; color: #fff; text-transform: uppercase; }
@@ -56,15 +63,15 @@ const CSS = `
 @media (max-width: 680px) {
   .pa-rush { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; padding: 10px; }
   .pa-rush-stat strong { font-size: 12px; }
-  .pa-rush-stances { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pa-rush-plan { min-height: 78px; }
   .pa-rush-up { padding: 6px; }
 }
 `;
 
-const STANCES: { id: CrystalRushStance; label: string }[] = [
-  { id: 'greedy', label: 'Greedy' },
-  { id: 'aggressive', label: 'Aggro' },
-  { id: 'split', label: 'Split' },
+const PLANS: { id: CrystalRushStance; label: string; desc: string }[] = [
+  { id: 'greedy', label: 'Claim Crystal', desc: 'Send troops center. More control means more income.' },
+  { id: 'aggressive', label: 'Break Base', desc: 'Send troops at enemy bases. Destroy bases to win.' },
+  { id: 'split', label: 'Balanced Push', desc: 'Half contest crystal, half pressure bases.' },
 ];
 
 const UPGRADES: { id: CrystalRushUpgradeId; label: string; desc: string }[] = [
@@ -92,11 +99,67 @@ export class CrystalRushPanel {
     this.el = document.createElement('div');
     this.el.className = 'pa-rush';
     root.appendChild(this.el);
+    this.buildShell();
     this.update();
   }
 
   destroy(): void {
     this.el.remove();
+  }
+
+  private buildShell(): void {
+    this.el.innerHTML = `
+      <div class="pa-rush-head">
+        <div class="pa-rush-title">Crystal Rush</div>
+        <div class="pa-rush-clock"></div>
+      </div>
+      <div class="pa-rush-goal">Hold the crystal to fund your army. Break enemy bases to eliminate them.</div>
+      <div class="pa-rush-stat">
+        <div><span>Crystals</span><strong class="js-credits"></strong></div>
+        <div><span>Income</span><strong class="js-income"></strong></div>
+        <div><span>Auto Wave</span><strong class="js-auto-wave"></strong></div>
+      </div>
+      <div class="pa-rush-pressure">
+        <div class="pa-rush-meter">
+          <div class="pa-rush-meter-top"><span>Crystal Fight</span><span class="js-crystal-yours"></span></div>
+          <div class="pa-rush-meter-bar js-crystal-bar"></div>
+        </div>
+        <div class="pa-rush-meter">
+          <div class="pa-rush-meter-top"><span>Base Race</span><span class="js-base-race"></span></div>
+          <div class="pa-rush-meter-bar js-base-bar"></div>
+        </div>
+      </div>
+      <div class="pa-rush-label">Battle Plan</div>
+      <div class="pa-rush-plans"></div>
+      <div class="pa-rush-label">Upgrades</div>
+      <div class="pa-rush-ups"></div>
+      <div class="pa-rush-factions"></div>`;
+
+    const planHost = this.el.querySelector('.pa-rush-plans') as HTMLElement;
+    for (const plan of PLANS) {
+      const btn = document.createElement('button');
+      btn.className = 'pa-rush-btn pa-rush-plan';
+      btn.dataset.plan = plan.id;
+      btn.addEventListener('click', () =>
+        this.dispatch({ type: 'crystalRushDeployWave', player: this.me, stance: plan.id }),
+      );
+      planHost.appendChild(btn);
+    }
+
+    const upgradeHost = this.el.querySelector('.pa-rush-ups') as HTMLElement;
+    for (const upgrade of UPGRADES) {
+      const row = document.createElement('div');
+      row.className = 'pa-rush-up';
+      row.innerHTML = `<div><b>${upgrade.label}</b><span>${upgrade.desc}</span></div>`;
+      const btn = document.createElement('button');
+      btn.className = 'pa-rush-btn';
+      btn.dataset.upgrade = upgrade.id;
+      btn.addEventListener('click', () =>
+        this.dispatch({ type: 'crystalRushBuyUpgrade', player: this.me, upgrade: upgrade.id }),
+      );
+      row.appendChild(btn);
+      upgradeHost.appendChild(row);
+    }
   }
 
   update(): void {
@@ -106,57 +169,54 @@ export class CrystalRushPanel {
     if (p === undefined || crp === undefined) return;
     const mins = Math.floor(state.tick / 15 / 60);
     const secs = Math.floor(state.tick / 15) % 60;
-    this.el.innerHTML = `
-      <div class="pa-rush-head">
-        <div class="pa-rush-title">Crystal Rush</div>
-        <div class="pa-rush-clock">${mins}:${String(secs).padStart(2, '0')}</div>
-      </div>
-      <div class="pa-rush-stat">
-        <div><span>Crystals</span><strong>${p.credits}</strong></div>
-        <div><span>Income</span><strong>+${crp.incomeRate}/s</strong></div>
-        <div><span>Wave</span><strong>Lv ${crp.waveLevel}</strong></div>
-      </div>
-      <button class="pa-rush-btn pa-rush-deploy"></button>
-      <div class="pa-rush-label">Wave Stance</div>
-      <div class="pa-rush-stances"></div>
-      <div class="pa-rush-label">Upgrades</div>
-      <div class="pa-rush-ups"></div>
-      <div class="pa-rush-factions"></div>`;
-
-    const deployBtn = this.el.querySelector('.pa-rush-deploy') as HTMLButtonElement;
     const deployCost = getCrystalRushDeployCost(state, this.me);
-    const ticksLeft = Math.max(0, crp.nextDeployTick - state.tick);
-    const cd = Math.ceil(ticksLeft / 15);
-    deployBtn.disabled = ticksLeft > 0 || p.credits < deployCost;
-    deployBtn.textContent = ticksLeft > 0 ? `Deploy Wave ${cd}s` : `Deploy Wave ${deployCost}`;
-    deployBtn.title = 'Send an extra wave immediately using the selected stance.';
-    deployBtn.addEventListener('click', () => this.dispatch({ type: 'crystalRushDeployWave', player: this.me }));
+    const deployTicksLeft = Math.max(0, crp.nextDeployTick - state.tick);
+    const deployCd = Math.ceil(deployTicksLeft / 15);
+    const waveCd = Math.max(0, Math.ceil((crp.nextWaveTick - state.tick) / 15));
+    const crystalCounts = this.crystalPresence(state);
+    const totalPresence = Math.max(1, crystalCounts.reduce((sum, count) => sum + count, 0));
+    const myBaseHp = this.baseHealthPercent(state, this.me);
+    const enemyBaseHp = this.enemyBaseHealthPercent(state);
 
-    const stanceHost = this.el.querySelector('.pa-rush-stances') as HTMLElement;
-    for (const stance of STANCES) {
-      const btn = document.createElement('button');
-      btn.className = 'pa-rush-btn' + (crp.stance === stance.id ? ' sel' : '');
-      btn.textContent = stance.label;
-      btn.addEventListener('click', () => this.dispatch({ type: 'crystalRushSetStance', player: this.me, stance: stance.id }));
-      stanceHost.appendChild(btn);
+    this.setText('.pa-rush-clock', `${mins}:${String(secs).padStart(2, '0')}`);
+    this.setText('.js-credits', String(p.credits));
+    this.setText('.js-income', `+${crp.incomeRate}/s`);
+    this.setText('.js-auto-wave', `${waveCd}s`);
+    this.setText('.js-crystal-yours', `${crystalCounts[this.me] ?? 0} yours`);
+    this.setText('.js-base-race', `You ${myBaseHp}% · Enemy ${enemyBaseHp}%`);
+    const crystalBar = this.el.querySelector('.js-crystal-bar') as HTMLElement;
+    crystalBar.innerHTML = crystalCounts
+      .map((count, i) => {
+        const width = Math.max(0, (count / totalPresence) * 100);
+        const color = PLAYER_COLORS[state.players[i]?.colorIdx ?? 0]?.hex ?? '#777';
+        return `<i class="pa-rush-meter-seg" style="width:${width}%;background:${color}"></i>`;
+      })
+      .join('');
+    const baseBar = this.el.querySelector('.js-base-bar') as HTMLElement;
+    baseBar.innerHTML = `<i class="pa-rush-meter-seg" style="width:${myBaseHp}%;background:${
+      PLAYER_COLORS[p.colorIdx]?.hex ?? '#65d86e'
+    }"></i><i class="pa-rush-meter-seg" style="width:${enemyBaseHp}%;background:#d95b52"></i>`;
+
+    for (const plan of PLANS) {
+      const btn = this.el.querySelector(`.pa-rush-plan[data-plan="${plan.id}"]`) as HTMLButtonElement | null;
+      if (btn === null) continue;
+      btn.className = 'pa-rush-btn pa-rush-plan' + (crp.stance === plan.id ? ' sel' : '');
+      btn.disabled = deployTicksLeft > 0 || p.credits < deployCost;
+      btn.innerHTML = `<b>${plan.label}</b><span>${plan.desc}</span><em>${
+        deployTicksLeft > 0 ? `${deployCd}s` : `${deployCost}c`
+      }</em>`;
     }
 
-    const upgradeHost = this.el.querySelector('.pa-rush-ups') as HTMLElement;
     for (const upgrade of UPGRADES) {
       const cost = getCrystalRushUpgradeCost(state, this.me, upgrade.id);
-      const row = document.createElement('div');
-      row.className = 'pa-rush-up';
-      row.innerHTML = `<div><b>${upgrade.label}</b><span>${upgrade.desc}</span></div>`;
-      const btn = document.createElement('button');
-      btn.className = 'pa-rush-btn';
+      const btn = this.el.querySelector(`.pa-rush-btn[data-upgrade="${upgrade.id}"]`) as HTMLButtonElement | null;
+      if (btn === null) continue;
       btn.textContent = String(cost);
       btn.disabled = p.credits < cost;
-      btn.addEventListener('click', () => this.dispatch({ type: 'crystalRushBuyUpgrade', player: this.me, upgrade: upgrade.id }));
-      row.appendChild(btn);
-      upgradeHost.appendChild(row);
     }
 
     const factionHost = this.el.querySelector('.pa-rush-factions') as HTMLElement;
+    factionHost.innerHTML = '';
     for (const player of state.players) {
       const dot = document.createElement('div');
       dot.className = 'pa-rush-dot' + (player.eliminated ? ' dead' : '');
@@ -164,5 +224,39 @@ export class CrystalRushPanel {
       dot.title = player.name;
       factionHost.appendChild(dot);
     }
+  }
+
+  private setText(selector: string, value: string): void {
+    const el = this.el.querySelector(selector);
+    if (el !== null) el.textContent = value;
+  }
+
+  private crystalPresence(state: GameState): number[] {
+    const mode = state.crystalRush;
+    const counts = new Array(state.players.length).fill(0) as number[];
+    if (mode === undefined) return counts;
+    for (const e of state.entities.values()) {
+      if (e.kind !== 'unit' || e.hp <= 0) continue;
+      const player = state.players[e.owner];
+      if (player === undefined || player.eliminated) continue;
+      if (Math.hypot(e.pos.x - mode.objective.x, e.pos.y - mode.objective.y) <= mode.radius) counts[e.owner]++;
+    }
+    return counts;
+  }
+
+  private baseHealthPercent(state: GameState, player: PlayerId): number {
+    for (const e of state.entities.values()) {
+      if (e.owner === player && e.kind === 'building' && e.defId.endsWith('_conyard') && e.maxHp > 0) {
+        return Math.max(0, Math.round((e.hp / e.maxHp) * 100));
+      }
+    }
+    return state.players[player]?.eliminated ? 0 : 100;
+  }
+
+  private enemyBaseHealthPercent(state: GameState): number {
+    const liveEnemies = state.players.filter((p) => p.id !== this.me && !p.eliminated);
+    if (liveEnemies.length === 0) return 0;
+    const total = liveEnemies.reduce((sum, p) => sum + this.baseHealthPercent(state, p.id), 0);
+    return Math.round(total / liveEnemies.length);
   }
 }

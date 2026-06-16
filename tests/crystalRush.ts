@@ -3,6 +3,7 @@ import { DATA } from '../src/data/index';
 import type { GameConfig } from '../src/core/types';
 import { TICK_RATE } from '../src/core/constants';
 import { createGame, tickGame } from '../src/sim/game';
+import { entitiesOf } from '../src/sim/entity';
 
 const cfg: GameConfig = {
   mode: 'crystalRush',
@@ -33,4 +34,23 @@ console.log(
   `Crystal Rush winner=${state.winner} duration=${Math.round(state.tick / TICK_RATE)}s income=${state.players
     .map((p) => p.stats.creditsHarvested)
     .join(',')}`,
+);
+
+const humanCfg: GameConfig = {
+  ...cfg,
+  seed: 989898,
+  players: cfg.players.map((p, i) => ({ ...p, isHuman: i === 0, name: i === 0 ? 'Human Commander' : p.name })),
+};
+const humanState = createGame(humanCfg, DATA);
+humanState.tick = TICK_RATE * 12;
+humanState.players[0].credits = 1000;
+const beforeUnits = entitiesOf(humanState, 0).filter((e) => e.kind === 'unit').length;
+tickGame(humanState, DATA, [{ type: 'crystalRushDeployWave', player: 0, stance: 'aggressive' }]);
+const afterUnits = entitiesOf(humanState, 0).filter((e) => e.kind === 'unit');
+
+assert.equal(humanState.crystalRush?.player[0]?.stance, 'aggressive', 'manual deploy should set the chosen plan');
+assert.ok(afterUnits.length > beforeUnits, 'manual deploy should spawn an immediate player wave');
+assert.ok(
+  afterUnits.some((e) => e.orders[0]?.kind === 'attack'),
+  'aggressive deploy should send at least one unit toward an enemy base',
 );

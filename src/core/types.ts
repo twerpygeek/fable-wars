@@ -370,7 +370,7 @@ export type Command =
   | { type: 'setPrimary'; player: PlayerId; buildingId: EntityId }
   | { type: 'crystalRushSetStance'; player: PlayerId; stance: CrystalRushStance }
   | { type: 'crystalRushBuyUpgrade'; player: PlayerId; upgrade: CrystalRushUpgradeId }
-  | { type: 'crystalRushDeployWave'; player: PlayerId }
+  | { type: 'crystalRushDeployWave'; player: PlayerId; stance?: CrystalRushStance }
   | { type: 'surrender'; player: PlayerId };
 
 // --- Events (sim -> UI / audio / AI) ------------------------------------------
