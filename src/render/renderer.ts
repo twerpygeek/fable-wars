@@ -880,6 +880,7 @@ export class Renderer {
     const cyc = air ? sy - 26 * z + bob : sy - 4 * z - walkBob;
     const dxp = sx - dw / 2;
     const dyp = cyc - dh / 2;
+    this.drawUnitModelPresence(spr, dxp, dyp, dw, dh, z, air);
     ctx.drawImage(spr, dxp, dyp, dw, dh);
 
     // combat hit-flicker: brief white flash composited over the sprite
@@ -888,6 +889,36 @@ export class Renderer {
       if (nowMs < until) this.drawSpriteFlash(spr, dxp, dyp, dw, dh);
       else this.flicker.delete(e.id);
     }
+  }
+
+  /**
+   * Pre-rendered RTS sprites need a little ground separation at game zoom.
+   * A tiny dark silhouette plus top-left rim keeps detailed 64px art readable
+   * without adding cartoony labels or heavy per-pixel processing.
+   */
+  private drawUnitModelPresence(
+    spr: HTMLCanvasElement,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+    z: number,
+    air: boolean
+  ): void {
+    if (z < 0.38) return;
+    const ctx = this.ctx;
+    const edge = Math.max(0.75, 1.35 * z);
+    ctx.save();
+    ctx.filter = 'brightness(0) saturate(0)';
+    ctx.globalAlpha = air ? 0.2 : 0.34;
+    ctx.drawImage(spr, dx + edge, dy + edge * 1.2, dw, dh);
+    ctx.globalAlpha = air ? 0.12 : 0.22;
+    ctx.drawImage(spr, dx - edge * 0.55, dy + edge * 0.8, dw, dh);
+
+    ctx.filter = 'brightness(1.85) saturate(1.15)';
+    ctx.globalAlpha = air ? 0.08 : 0.14;
+    ctx.drawImage(spr, dx - edge * 0.65, dy - edge * 0.8, dw, dh);
+    ctx.restore();
   }
 
   private drawBuilding(e: Entity, state: GameState, nowMs: number): void {
