@@ -155,8 +155,10 @@ const CSS = `
   box-shadow: inset 0 2px 0 rgba(255,237,190,0.22), inset 0 -4px 0 rgba(0,0,0,0.62), 0 0 18px color-mix(in srgb, var(--fc, #d8a35f) 35%, transparent);
   font-size: 15px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 2px 0 #000; }
 .pa-fcard .pa-fc-name { font-size: 12px; font-weight: bold; text-align: center; letter-spacing: 1px; margin: 4px 0; color: #fff; }
+.pa-fcard .pa-fc-role { text-align: center; color: #ffd777; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
 .pa-fcard .pa-fc-blurb { font-size: 9px; color: #9aa3cf; line-height: 1.5; min-height: 40px; }
 .pa-fcard .pa-fc-roster { font-size: 8px; color: #6f78a8; margin-top: 6px; line-height: 1.4; }
+.pa-fcard .pa-faction-stats { margin: 8px 0 6px; }
 .pa-seg { display: flex; gap: 3px; }
 .pa-seg .pa-seg-opt { padding: 7px 14px; font-size: 10px; letter-spacing: 1px; background: linear-gradient(180deg, #343a4c, #11141e);
   border: 2px solid #2a231d; box-shadow: inset 0 1px 0 rgba(255,237,190,0.14), inset 0 -2px 0 rgba(0,0,0,0.72);
@@ -345,6 +347,15 @@ const ART_CODEX = [
   },
 ];
 
+function factionStatBars(stats: { label: string; value: number }[]): string {
+  return stats
+    .map(
+      (s) =>
+        `<div class="pa-faction-stat"><span>${s.label}</span><div class="pa-faction-bar"><span class="pa-faction-fill" style="width:${s.value}%"></span></div><b>${s.value}</b></div>`
+    )
+    .join('');
+}
+
 export class MenuManager {
   private root: HTMLElement;
   private onStart: (cfg: GameConfig) => void;
@@ -522,11 +533,7 @@ export class MenuManager {
       item.innerHTML = `<div class="pa-faction-copy">
         <div class="pa-faction-title">${tile.label}</div>
         <div class="pa-faction-role">${stats.role}</div>
-        <div class="pa-faction-stats">${stats.stats
-          .map(
-            (s) => `<div class="pa-faction-stat"><span>${s.label}</span><div class="pa-faction-bar"><span class="pa-faction-fill" style="width:${s.value}%"></span></div><b>${s.value}</b></div>`
-          )
-          .join('')}</div>
+        <div class="pa-faction-stats">${factionStatBars(stats.stats)}</div>
       </div>`;
       item.addEventListener('click', () => {
         this.faction = tile.faction;
@@ -754,7 +761,9 @@ export class MenuManager {
     panel.insertAdjacentHTML('beforeend', `<div class="pa-menu-h2">Your Faction</div>`);
     const cards = document.createElement('div');
     cards.className = 'pa-fcards';
-    for (const f of Object.values(DATA.factions)) {
+    const lobbyFactions = Object.values(DATA.factions);
+    for (const f of lobbyFactions) {
+      const stats = FACTION_CLASS_STATS[f.id];
       const roster = Object.values(DATA.units)
         .filter((u) => u.faction === f.id)
         .slice(0, 5)
@@ -765,15 +774,22 @@ export class MenuManager {
       card.style.setProperty('--fc', f.themeColor);
       card.innerHTML = `<div class="pa-fc-emblem">${FACTION_EMBLEMS[f.id]}</div>
         <div class="pa-fc-name" style="color:${f.themeColor}">${f.name}</div>
+        <div class="pa-fc-role">${stats.role}</div>
+        <div class="pa-faction-stats">${factionStatBars(stats.stats)}</div>
         <div class="pa-fc-blurb">${f.blurb}</div><div class="pa-fc-roster">${roster}…</div>`;
       card.addEventListener('click', () => {
         this.faction = f.id;
         this.persistLobby();
-        cards.querySelectorAll('.pa-fcard').forEach((c) => c.classList.remove('sel'));
-        card.classList.add('sel');
+        paintLobbyFactions();
       });
       cards.appendChild(card);
     }
+    const paintLobbyFactions = () => {
+      cards.querySelectorAll<HTMLElement>('.pa-fcard').forEach((card, i) => {
+        card.classList.toggle('sel', lobbyFactions[i]?.id === this.faction);
+      });
+    };
+    paintLobbyFactions();
     panel.appendChild(cards);
 
     // color row

@@ -10,6 +10,8 @@ assert.match(source, /Watch Trailer/);
 assert.match(source, /showTrailer/);
 assert.match(source, /FACTION_CLASS_STATS/);
 assert.match(source, /paintFactions/);
+assert.match(source, /paintLobbyFactions/);
+assert.match(source, /factionStatBars/);
 assert.match(source, /pa-faction-stat/);
 assert.match(source, /Assault/);
 
