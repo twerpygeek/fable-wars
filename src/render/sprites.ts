@@ -28,6 +28,7 @@ export interface SpriteAtlas {
   getBuildingSprite(key: string, colorIdx: number, constructed: boolean): HTMLCanvasElement;
   getTerrainTile(t: Terrain, variant: number): HTMLCanvasElement;
   getProjectileSprite(weaponClass: WeaponClass, element: Element): HTMLCanvasElement;
+  getObjectiveSprite(key: string): HTMLCanvasElement | null;
   getIcon(key: string): HTMLCanvasElement;
 }
 
@@ -45,12 +46,14 @@ export interface SpriteOverrides {
   units: Map<string, UnitOverride>;
   buildings: Map<string, HTMLImageElement>;
   terrain: Map<string, HTMLImageElement>;
+  objectives: Map<string, HTMLImageElement>;
 }
 
 interface SpriteManifest {
   units?: Record<string, { facings: string[]; frames?: number }>;
   buildings?: string[];
   terrain?: Record<string, { variants?: number }>;
+  objectives?: string[];
 }
 
 const TERRAIN_KEYS: Record<number, string> = {
@@ -82,7 +85,7 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
   } catch {
     return null;
   }
-  const out: SpriteOverrides = { units: new Map(), buildings: new Map(), terrain: new Map() };
+  const out: SpriteOverrides = { units: new Map(), buildings: new Map(), terrain: new Map(), objectives: new Map() };
   const jobs: Promise<void>[] = [];
   for (const [id, spec] of Object.entries(manifest.units ?? {})) {
     const frames = Math.max(1, Math.min(4, spec.frames ?? 1));
@@ -115,8 +118,19 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
       );
     }
   }
+  for (const id of manifest.objectives ?? []) {
+    jobs.push(
+      loadImage(`${base}/objectives/${id}.png`).then((img) => {
+        if (img) out.objectives.set(id, img);
+      }),
+    );
+  }
   await Promise.all(jobs);
-  const total = [...out.units.values()].reduce((s, u) => s + u.imgs.size, 0) + out.buildings.size;
+  const total =
+    [...out.units.values()].reduce((s, u) => s + u.imgs.size, 0) +
+    out.buildings.size +
+    out.terrain.size +
+    out.objectives.size;
   if (total === 0) return null;
   console.info(`[sprites] loaded ${total} custom sprite images`);
   return out;
@@ -307,6 +321,7 @@ class Atlas implements SpriteAtlas {
   private unitCache = new Map<string, HTMLCanvasElement>();
   private buildingCache = new Map<string, HTMLCanvasElement>();
   private terrainCache = new Map<string, HTMLCanvasElement>();
+  private objectiveCache = new Map<string, HTMLCanvasElement>();
   private projCache = new Map<string, HTMLCanvasElement>();
   private iconCache = new Map<string, HTMLCanvasElement>();
 
@@ -375,6 +390,19 @@ class Atlas implements SpriteAtlas {
     const [cv, ctx] = canvas(64, 64);
     drawCreature(ctx, cfg, f, fr, PLAYER_COLORS[colorIdx]?.hex ?? '#ffffff', key);
     this.unitCache.set(ck, cv);
+    return cv;
+  }
+
+  // --- objectives -----------------------------------------------------------------
+
+  getObjectiveSprite(key: string): HTMLCanvasElement | null {
+    let c = this.objectiveCache.get(key);
+    if (c) return c;
+    const img = this.ov?.objectives.get(key);
+    if (!img) return null;
+    const [cv, ctx] = canvas(img.width, img.height);
+    ctx.drawImage(img, 0, 0);
+    this.objectiveCache.set(key, cv);
     return cv;
   }
 

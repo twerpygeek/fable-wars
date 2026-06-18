@@ -1547,6 +1547,25 @@ export class Renderer {
 
   private drawCrystalSpire(sx: number, sy: number, z: number, pulse: number): void {
     const ctx = this.ctx;
+    const art = this.atlas.getObjectiveSprite('central_crystal');
+    if (art) {
+      const targetW = 218 * z;
+      const scale = targetW / art.width;
+      const dw = targetW;
+      const dh = art.height * scale;
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#35e8ff';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 52 * z, 88 * z, 30 * z, 0, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 0.9;
+      ctx.shadowColor = '#60e8ff';
+      ctx.shadowBlur = 22 * z + pulse * 12 * z;
+      ctx.drawImage(art, sx - dw / 2, sy + 68 * z - dh, dw, dh);
+      ctx.restore();
+      return;
+    }
     const h = 132 * z;
     const w = 66 * z;
     ctx.save();

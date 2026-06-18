@@ -69,10 +69,23 @@ then tier-3 showpieces (groudonn / kyogrre / snorlux).
 Ids are `<faction>_<key>` for all three factions — 45 total, e.g. `scorch_conyard`,
 `tide_refinery`, `verdant_def_aa`. Get every exact name + size from `/?spritelab`.
 
+## Objectives — `public/sprites/objectives/<id>.png`
+
+- `central_crystal.png` replaces the Crystal Rush center objective art.
+- Use a transparent PNG. If GPT Images gives a flat chroma-key background, import it with:
+
+```bash
+node scripts/import-objective-asset.mjs central_crystal /path/to/generated-crystal.png --chroma
+```
+
+- Keep the art in the same pre-rendered 3D isometric style as the units/buildings.
+- Do not bake labels, arrows, UI rings, or tutorial text into the image.
+
 ## manifest.json
 
 ```json
 {
+  "objectives": ["central_crystal"],
   "units": {
     "scorch_peekachoo": { "facings": ["s", "sw", "w", "nw", "n"], "frames": 2 },
     "verdant_snorlux":  { "facings": ["s"], "frames": 1 }
