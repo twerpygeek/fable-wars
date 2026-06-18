@@ -111,9 +111,21 @@ const CSS = `
   box-shadow: 0 26px 80px rgba(0,0,0,0.82), inset 0 1px 0 rgba(255,239,190,0.2); overflow: hidden; }
 .pa-trailer-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px 12px;
   border-bottom: 1px solid rgba(255,220,150,0.24); color: #ffd777; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.pa-trailer-title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pa-trailer-close { cursor: pointer; color: #fff5d8; border: 1px solid rgba(255,220,150,0.5); padding: 7px 11px;
   background: linear-gradient(180deg, #333849, #11131d); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14); }
 .pa-trailer-frame video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.pa-trailer-tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; background: linear-gradient(180deg, #0d1019, #05070c);
+  border-top: 1px solid rgba(255,220,150,0.12); }
+.pa-trailer-tab { min-height: 44px; cursor: pointer; border: 1px solid rgba(185,144,82,0.36); border-radius: 3px; color: #cfd6ff;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,234,178,0.11), transparent 54%),
+    linear-gradient(180deg, #242838, #0b0d14);
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), inset 0 -3px 0 rgba(0,0,0,0.58); }
+.pa-trailer-tab.sel { color: #fff4d6; border-color: #f0b35c;
+  background: linear-gradient(180deg, #5b3724, #171018);
+  box-shadow: inset 0 1px 0 rgba(255,229,170,0.24), inset 0 -3px 0 rgba(0,0,0,0.68), 0 0 20px rgba(240,179,92,0.2); }
 .pa-btn { display: flex; align-items: center; justify-content: center; min-height: 58px; padding: 0 18px; text-align: center; font-size: 13px; letter-spacing: 3px;
   position: relative; overflow: hidden;
   background:
@@ -366,6 +378,21 @@ const ART_CODEX = [
     src: '/art/world-map-sheet.webp',
   },
 ];
+
+const TRAILERS = [
+  {
+    label: 'Cinematic',
+    title: 'Fable Wars Cinematic Trailer',
+    src: '/media/fable-wars-cinematic-trailer.mp4',
+    poster: '/media/fable-wars-cinematic-trailer-poster.jpg',
+  },
+  {
+    label: 'Gameplay',
+    title: 'Fable Wars Hero Trailer',
+    src: '/media/fable-wars-hero.mp4',
+    poster: '/media/fable-wars-hero-poster.jpg',
+  },
+] as const;
 
 function factionStatBars(stats: { label: string; value: number }[]): string {
   return stats
@@ -707,9 +734,13 @@ export class MenuManager {
     host.querySelector('.pa-trailer-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.className = 'pa-trailer-overlay';
+    const first = TRAILERS[0];
     overlay.innerHTML = `<div class="pa-trailer-frame" role="dialog" aria-modal="true" aria-label="Fable Wars trailer">
-      <div class="pa-trailer-head"><span>Fable Wars Hero Trailer</span><button class="pa-trailer-close" type="button">Close</button></div>
-      <video src="/media/fable-wars-hero.mp4" poster="/media/fable-wars-hero-poster.jpg" controls autoplay playsinline></video>
+      <div class="pa-trailer-head"><span class="pa-trailer-title">${first.title}</span><button class="pa-trailer-close" type="button">Close</button></div>
+      <video src="${first.src}" poster="${first.poster}" controls autoplay playsinline></video>
+      <div class="pa-trailer-tabs">
+        ${TRAILERS.map((trailer, i) => `<button class="pa-trailer-tab${i === 0 ? ' sel' : ''}" type="button" data-trailer="${i}">${trailer.label}</button>`).join('')}
+      </div>
     </div>`;
     const close = () => overlay.remove();
     overlay.addEventListener('click', (ev) => {
@@ -718,6 +749,24 @@ export class MenuManager {
     overlay.querySelector('.pa-trailer-close')?.addEventListener('click', close);
     host.appendChild(overlay);
     const video = overlay.querySelector('video');
+    const title = overlay.querySelector<HTMLElement>('.pa-trailer-title');
+    overlay.querySelectorAll<HTMLButtonElement>('.pa-trailer-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const index = Number(tab.dataset.trailer ?? 0);
+        const trailer = TRAILERS[index] ?? first;
+        overlay.querySelectorAll('.pa-trailer-tab').forEach((button, i) => button.classList.toggle('sel', i === index));
+        if (title) title.textContent = trailer.title;
+        if (video) {
+          video.pause();
+          video.src = trailer.src;
+          video.poster = trailer.poster;
+          video.load();
+          void video.play().catch(() => {
+            video.controls = true;
+          });
+        }
+      });
+    });
     void video?.play().catch(() => {
       video.controls = true;
     });
