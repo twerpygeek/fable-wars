@@ -1748,6 +1748,18 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
   };
 
   const fillBase = (a: string, b: string) => {
+    // Seal antialiased diamond edges before the visible paint pass. Without
+    // this tiny overscan, neighbouring transparent tile edges can expose the
+    // black terrain cache and read as cracks in the battlefield.
+    ctx.fillStyle = b;
+    ctx.beginPath();
+    ctx.moveTo(TILE_W / 2, baseY - 1.25);
+    ctx.lineTo(TILE_W + 2, baseY + TILE_HALF_H);
+    ctx.lineTo(TILE_W / 2, baseY + TILE_H + 1.25);
+    ctx.lineTo(-2, baseY + TILE_HALF_H);
+    ctx.closePath();
+    ctx.fill();
+
     const g = ctx.createLinearGradient(0, baseY, TILE_W, baseY + TILE_H);
     g.addColorStop(0, a);
     g.addColorStop(1, b);
@@ -1941,8 +1953,8 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
   }
 
   // soft edge highlight (NW light)
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(255,255,255,0.065)';
+  ctx.lineWidth = 0.8;
   ctx.beginPath();
   ctx.moveTo(0, baseY + TILE_HALF_H);
   ctx.lineTo(TILE_W / 2, baseY);
