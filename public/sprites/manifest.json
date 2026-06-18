@@ -329,5 +329,8 @@
     "tree": {
       "variants": 3
     }
-  }
+  },
+  "objectives": [
+    "central_crystal"
+  ]
 }
