@@ -178,6 +178,13 @@ const CSS = `
 .pa-small-btn { font-size: 10px; letter-spacing: 1px; padding: 7px 13px; background: linear-gradient(180deg, #343a4c, #11141e); border: 2px solid #2a231d;
   border-radius: 4px; cursor: pointer; color: #c9c0aa; text-transform: uppercase; font-weight: bold; box-shadow: inset 0 1px 0 rgba(255,237,190,0.14), inset 0 -2px 0 rgba(0,0,0,0.7), 0 2px 0 #050506; }
 .pa-small-btn:hover { color: #fff8e6; border-color: #c99b57; }
+.pa-battle-code { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; margin: 10px 0 4px;
+  padding: 9px; border: 1px solid rgba(255, 220, 150, 0.22); border-radius: 4px;
+  background: linear-gradient(180deg, rgba(30, 27, 24, 0.64), rgba(8, 9, 14, 0.86)); box-shadow: inset 0 1px 0 rgba(255,237,190,0.08); }
+.pa-battle-code input { min-width: 0; background: linear-gradient(180deg, #11131b, #05060a); color: #ffd777; border: 2px solid #2a231d; border-radius: 3px;
+  padding: 8px 9px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; letter-spacing: 1px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,237,190,0.08); }
+.pa-code-status { grid-column: 1 / -1; min-height: 12px; color: #8790bf; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
 .pa-overlay { position: absolute; inset: 0; z-index: 140; display: flex; align-items: center; justify-content: center;
   background: rgba(5, 6, 12, 0.82); font-family: Verdana, Geneva, sans-serif; }
 .pa-go-banner { font-size: 52px; font-weight: bold; letter-spacing: 12px; text-align: center; margin-bottom: 8px; }
@@ -259,6 +266,8 @@ const CSS = `
   .pa-faction-stat { grid-template-columns: 42px 1fr 16px; gap: 4px; font-size: 6px; }
   .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
   .pa-lobby-actions { position: sticky; bottom: -12px; grid-template-columns: 1fr; margin: 12px -4px -8px; padding: 10px 4px 6px; }
+  .pa-battle-code { grid-template-columns: 1fr; }
+  .pa-battle-code .pa-small-btn { text-align: center; }
   .pa-mode-pick { grid-template-columns: 1fr; gap: 6px; }
   .pa-mode-choice { min-height: 112px; }
   .pa-mode-copy { left: 10px; right: 10px; bottom: 9px; }
@@ -315,6 +324,17 @@ interface LobbySettings {
   water: 'low' | 'medium' | 'high';
   crates: boolean;
 }
+interface BattleCodePayload {
+  v: 1;
+  mode: GameMode;
+  faction: FactionId;
+  color: number;
+  seed: number;
+  map: 'S' | 'M' | 'L';
+  water: 'low' | 'medium' | 'high';
+  crates: boolean;
+  ais: { faction: FactionId | 'random'; difficulty: AIDifficulty }[];
+}
 const TIPS = [
   'First minute: power, refinery, barracks. Then scout before the first raid.',
   'Right-click crystals with harvesters to claim a Candy field deliberately.',
@@ -354,6 +374,56 @@ function factionStatBars(stats: { label: string; value: number }[]): string {
         `<div class="pa-faction-stat"><span>${s.label}</span><div class="pa-faction-bar"><span class="pa-faction-fill" style="width:${s.value}%"></span></div><b>${s.value}</b></div>`
     )
     .join('');
+}
+
+function encodeBattleCode(payload: BattleCodePayload): string {
+  const raw = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  return `FW1-${raw}`;
+}
+
+function decodeBattleCode(code: string): BattleCodePayload | null {
+  const raw = code.trim().replace(/^FW1-/i, '').replace(/-/g, '+').replace(/_/g, '/');
+  if (!raw) return null;
+  try {
+    const padded = raw.padEnd(Math.ceil(raw.length / 4) * 4, '=');
+    const parsed = JSON.parse(atob(padded)) as Partial<BattleCodePayload>;
+    const factionIds: FactionId[] = ['scorch', 'tide', 'verdant'];
+    const difficulties: AIDifficulty[] = ['easy', 'medium', 'hard'];
+    const ais = Array.isArray(parsed.ais)
+      ? parsed.ais
+          .filter((a): a is BattleCodePayload['ais'][number] => !!a && typeof a === 'object')
+          .map((a) => ({
+            faction: (factionIds as string[]).includes(a.faction) ? a.faction : ('random' as const),
+            difficulty: difficulties.includes(a.difficulty) ? a.difficulty : ('medium' as const),
+          }))
+          .slice(0, 3)
+      : [];
+    if (
+      parsed.v !== 1 ||
+      (parsed.mode !== 'classic' && parsed.mode !== 'crystalRush') ||
+      !factionIds.includes(parsed.faction as FactionId) ||
+      (parsed.map !== 'S' && parsed.map !== 'M' && parsed.map !== 'L') ||
+      (parsed.water !== 'low' && parsed.water !== 'medium' && parsed.water !== 'high')
+    ) {
+      return null;
+    }
+    return {
+      v: 1,
+      mode: parsed.mode,
+      faction: parsed.faction as FactionId,
+      color:
+        typeof parsed.color === 'number' && parsed.color >= 0 && parsed.color < PLAYER_COLORS.length
+          ? parsed.color | 0
+          : 0,
+      seed: typeof parsed.seed === 'number' ? Math.max(1, Math.abs(parsed.seed | 0)) : 1,
+      map: parsed.map,
+      water: parsed.water,
+      crates: parsed.crates === true,
+      ais: ais.length > 0 ? ais : [{ faction: 'random', difficulty: 'medium' }],
+    };
+  } catch {
+    return null;
+  }
 }
 
 export class MenuManager {
@@ -461,6 +531,35 @@ export class MenuManager {
     } catch {
       // Corrupted settings — keep defaults.
     }
+  }
+
+  private currentBattleCode(): string {
+    return encodeBattleCode({
+      v: 1,
+      mode: this.mode,
+      faction: this.faction,
+      color: this.colorIdx,
+      seed: this.seed,
+      map: this.mapSize,
+      water: this.water,
+      crates: this.crates,
+      ais: this.ais.map((ai) => ({ faction: ai.faction, difficulty: ai.difficulty })),
+    });
+  }
+
+  private applyBattleCode(code: string): boolean {
+    const payload = decodeBattleCode(code);
+    if (!payload) return false;
+    this.mode = payload.mode;
+    this.faction = payload.faction;
+    this.colorIdx = payload.color;
+    this.seed = payload.seed;
+    this.mapSize = payload.map;
+    this.water = payload.water;
+    this.crates = payload.crates;
+    this.ais = payload.ais;
+    this.persistLobby();
+    return true;
   }
 
   private screen(): HTMLElement {
@@ -756,6 +855,7 @@ export class MenuManager {
     panel.style.width = '660px';
     panel.innerHTML = `<h1 class="pa-title" style="font-size:26px;letter-spacing:5px;">SKIRMISH</h1>
       <div class="pa-subtitle" style="margin-bottom:14px">Operation Setup</div>`;
+    let refreshBattleCode = () => {};
 
     // faction cards
     panel.insertAdjacentHTML('beforeend', `<div class="pa-menu-h2">Your Faction</div>`);
@@ -781,6 +881,7 @@ export class MenuManager {
         this.faction = f.id;
         this.persistLobby();
         paintLobbyFactions();
+        refreshBattleCode();
       });
       cards.appendChild(card);
     }
@@ -807,6 +908,7 @@ export class MenuManager {
         this.persistLobby();
         swatches.forEach((s) => s.classList.remove('sel'));
         sw.classList.add('sel');
+        refreshBattleCode();
       });
       swatches.push(sw);
       colorRow.appendChild(sw);
@@ -826,6 +928,7 @@ export class MenuManager {
         this.ais.push({ faction: 'random', difficulty: 'medium' });
         this.persistLobby();
         renderAIs();
+        refreshBattleCode();
       }
     });
     panel.appendChild(addBtn);
@@ -847,6 +950,7 @@ export class MenuManager {
         fSel.addEventListener('change', () => {
           ai.faction = fSel.value as FactionId | 'random';
           this.persistLobby();
+          refreshBattleCode();
         });
         const dSel = document.createElement('select');
         dSel.innerHTML = `<option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>`;
@@ -854,6 +958,7 @@ export class MenuManager {
         dSel.addEventListener('change', () => {
           ai.difficulty = dSel.value as AIDifficulty;
           this.persistLobby();
+          refreshBattleCode();
         });
         row.append(fSel, dSel);
         if (this.ais.length > 1) {
@@ -865,6 +970,7 @@ export class MenuManager {
             this.ais.splice(i, 1);
             this.persistLobby();
             renderAIs();
+            refreshBattleCode();
           });
           row.appendChild(x);
         }
@@ -878,14 +984,17 @@ export class MenuManager {
     const sizeRow = segRow('Map Size', ['S', 'M', 'L'], this.mapSize, (v) => {
       this.mapSize = v as 'S' | 'M' | 'L';
       this.persistLobby();
+      refreshBattleCode();
     });
     const waterRow = segRow('Water', ['low', 'medium', 'high'], this.water, (v) => {
       this.water = v as 'low' | 'medium' | 'high';
       this.persistLobby();
+      refreshBattleCode();
     });
     const cratesRow = segRow('Crates', ['on', 'off'], this.crates ? 'on' : 'off', (v) => {
       this.crates = v === 'on';
       this.persistLobby();
+      refreshBattleCode();
     });
     const seedRow = document.createElement('div');
     seedRow.className = 'pa-row';
@@ -894,16 +1003,63 @@ export class MenuManager {
     seedInput.type = 'number';
     seedInput.value = String(this.seed);
     seedInput.style.width = '110px';
-    seedInput.addEventListener('change', () => (this.seed = Math.abs(Number(seedInput.value) | 0) || 1));
+    seedInput.addEventListener('change', () => {
+      this.seed = Math.abs(Number(seedInput.value) | 0) || 1;
+      seedInput.value = String(this.seed);
+      refreshBattleCode();
+    });
     const dice = document.createElement('div');
     dice.className = 'pa-small-btn';
     dice.textContent = 'Randomize';
     dice.addEventListener('click', () => {
       this.seed = Math.floor(Math.random() * 1e6);
       seedInput.value = String(this.seed);
+      refreshBattleCode();
     });
     seedRow.append(seedInput, dice);
     panel.append(sizeRow, waterRow, cratesRow, seedRow);
+
+    const codeBox = document.createElement('div');
+    codeBox.className = 'pa-battle-code';
+    const codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.spellcheck = false;
+    codeInput.value = this.currentBattleCode();
+    codeInput.title = 'Battle code for sharing this exact setup';
+    const copyCode = document.createElement('div');
+    copyCode.className = 'pa-small-btn';
+    copyCode.textContent = 'Copy Code';
+    const importCode = document.createElement('div');
+    importCode.className = 'pa-small-btn';
+    importCode.textContent = 'Import';
+    const codeStatus = document.createElement('div');
+    codeStatus.className = 'pa-code-status';
+    codeStatus.textContent = 'Share this setup with a friend for the same seed and battle rules.';
+    refreshBattleCode = () => {
+      codeInput.value = this.currentBattleCode();
+    };
+    copyCode.addEventListener('click', () => {
+      const code = this.currentBattleCode();
+      codeInput.value = code;
+      codeInput.select();
+      void navigator.clipboard
+        ?.writeText(code)
+        .then(() => (codeStatus.textContent = 'Battle code copied.'))
+        .catch(() => {
+          document.execCommand('copy');
+          codeStatus.textContent = 'Battle code selected for copying.';
+        });
+    });
+    importCode.addEventListener('click', () => {
+      if (!this.applyBattleCode(codeInput.value)) {
+        codeStatus.textContent = 'Invalid battle code.';
+        return;
+      }
+      codeStatus.textContent = 'Battle code imported.';
+      this.showLobby();
+    });
+    codeBox.append(codeInput, copyCode, importCode, codeStatus);
+    panel.appendChild(codeBox);
 
     // start
     const actions = document.createElement('div');
