@@ -111,12 +111,16 @@ const CSS = `
     linear-gradient(180deg, rgba(117, 77, 38, 0.5), rgba(20,14,11,0.42) 36%, rgba(5,6,10,0.94)),
     repeating-linear-gradient(135deg, rgba(255,229,170,0.045) 0 1px, transparent 1px 7px);
   box-shadow: inset 0 2px 0 rgba(255,230,170,0.32), inset 0 -3px 0 rgba(0,0,0,0.78), 0 0 22px rgba(255,142,62,0.34); }
-.pa-mode-preview { position: absolute; inset: 0; background-size: cover; background-position: center; filter: saturate(1.05) contrast(1.08); transform: scale(1.01); }
+.pa-mode-preview { position: absolute; inset: 0; background-size: cover; background-position: center; filter: brightness(1.18) saturate(1.24) contrast(1.08); transform: scale(1.01); }
 .pa-mode-preview::after { content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.38) 48%, rgba(0,0,0,0.86)); }
+  background:
+    radial-gradient(ellipse at 50% 18%, rgba(255, 229, 162, 0.13), transparent 45%),
+    linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.16) 46%, rgba(0,0,0,0.7)); }
 .pa-mode-copy { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 1; }
-.pa-mode-choice strong { display: block; color: #fff; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 8px #000; }
-.pa-mode-choice span { display: block; margin-top: 6px; color: #d8d0bc; font-size: 9px; line-height: 1.35; letter-spacing: 1px; text-shadow: 0 2px 6px #000; }
+.pa-mode-copy::before { content: ''; position: absolute; left: -8px; right: -8px; bottom: -8px; height: 78px; z-index: -1;
+  background: linear-gradient(180deg, rgba(4,5,8,0), rgba(4,5,8,0.72) 38%, rgba(4,5,8,0.92)); pointer-events: none; }
+.pa-mode-choice strong { display: block; color: #fff; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 8px #000, 0 0 12px rgba(255,225,170,0.28); }
+.pa-mode-choice span { display: block; margin-top: 6px; color: #f0e4cf; font-size: 9px; line-height: 1.35; letter-spacing: 1px; text-shadow: 0 2px 6px #000; }
 .pa-trailer-overlay { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px;
   background: rgba(3, 4, 8, 0.78); backdrop-filter: blur(8px); }
 .pa-trailer-frame { width: min(1040px, 94vw); background: #05070c; border: 2px solid #b99052; border-radius: 6px;
@@ -160,6 +164,8 @@ const CSS = `
   box-shadow: inset 0 2px 0 rgba(255,239,190,0.36), inset 0 -4px 0 rgba(55,15,10,0.88), 0 3px 0 #120806, 0 0 26px rgba(255, 101, 56, 0.28); }
 .pa-btn.primary:hover { box-shadow: inset 0 2px 0 rgba(255,239,190,0.42), inset 0 -4px 0 rgba(55,15,10,0.88), 0 3px 0 #120806, 0 0 32px rgba(255, 136, 58, 0.5); }
 .pa-launch-footer { display: flex; justify-content: space-between; gap: 18px; margin-top: 14px; color: #727ca9; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.pa-launch-footer a { color: #b7c1f0; text-decoration: none; }
+.pa-launch-footer a:hover { color: #ffd777; text-decoration: underline; text-underline-offset: 3px; }
 .pa-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .pa-row { display: flex; gap: 10px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
 .pa-label { font-size: 10px; letter-spacing: 2px; color: #8d96c8; text-transform: uppercase; min-width: 90px; }
@@ -302,8 +308,7 @@ const CSS = `
   .pa-trailer-overlay { padding: 10px; }
   .pa-btn { min-height: 40px; font-size: 11px; letter-spacing: 2px; }
   .pa-btn.primary { min-height: 46px; }
-  .pa-launch-footer { justify-content: center; text-align: center; margin-top: 9px; }
-  .pa-launch-footer span:first-child { display: none; }
+  .pa-launch-footer { display: grid; justify-content: stretch; text-align: center; gap: 5px; margin-top: 9px; }
 }
 `;
 
@@ -654,8 +659,8 @@ export class MenuManager {
     panel.className = 'pa-panel pa-panel--main';
     panel.innerHTML = `<h1 class="pa-sr-only">Fable Wars</h1>
       <div class="pa-launch-top">
-        <div class="pa-launch-label">Crystal Rift Campaign</div>
-        <div class="pa-launch-status">Hero video online · Skirmish build ready</div>
+        <div class="pa-launch-label">Fable Wars</div>
+        <div class="pa-launch-status">Harvest crystals · Defend the rift · Crush enemy waves</div>
       </div>`;
 
     const factionSection = document.createElement('section');
@@ -752,7 +757,7 @@ export class MenuManager {
     if (record) panel.appendChild(record);
     const footer = document.createElement('div');
     footer.className = 'pa-launch-footer';
-    footer.innerHTML = `<span>Scorch · Tide · Verdant</span><span>Browser RTS prototype · AI skirmish mode</span>`;
+    footer.innerHTML = `<span>Fantasy browser RTS · Build, harvest, and command armies</span><span>Made by <a href="https://iangoh.com" target="_blank" rel="noopener noreferrer">iangoh.com</a> · <a href="https://github.com/iangoh" target="_blank" rel="noopener noreferrer">github.com/iangoh</a></span>`;
     panel.appendChild(footer);
 
     stage.appendChild(panel);
