@@ -59,7 +59,19 @@ const CSS = `
 .pa-launch-top { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 14px; }
 .pa-launch-label { font-size: 10px; letter-spacing: 3px; color: #ffd777; text-transform: uppercase; }
 .pa-launch-status { font-size: 9px; letter-spacing: 2px; color: #8790bf; text-transform: uppercase; }
-.pa-faction-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+.pa-choice-section { position: relative; padding: 14px 12px 12px; margin-bottom: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 226, 171, 0.035), rgba(255,255,255,0.008) 42%, rgba(0,0,0,0.22)),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 8px);
+  border: 1px solid rgba(185, 144, 82, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 235, 190, 0.08), inset 0 -2px 0 rgba(0,0,0,0.42); }
+.pa-choice-section::before { content: ''; position: absolute; left: 12px; right: 12px; top: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 119, 0.72), transparent); pointer-events: none; }
+.pa-section-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin: 0 0 10px; }
+.pa-section-title { color: #fff4d6; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: bold;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 12px rgba(255, 215, 119, 0.18); }
+.pa-section-note { color: #8f98c7; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; text-align: right; }
+.pa-faction-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
 .pa-faction-tile { min-height: 156px; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; overflow: hidden; position: relative;
   background-size: cover; background-position: center; cursor: pointer;
   box-shadow: inset 0 -82px 58px rgba(0,0,0,0.76), inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 0 #050506; }
@@ -83,7 +95,7 @@ const CSS = `
   background: linear-gradient(180deg, rgba(8, 9, 14, 0.08), rgba(8, 9, 14, 0.94) 28%, rgba(8, 9, 14, 0.98));
   border-top: 1px solid rgba(255, 220, 150, 0.2); box-shadow: 0 -18px 28px rgba(5,6,10,0.62); }
 .pa-lobby-actions .pa-btn { min-height: 54px; }
-.pa-mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 12px; }
+.pa-mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
 .pa-mode-choice { min-height: 182px; padding: 0; border: 2px solid #2b241d; border-radius: 4px;
   position: relative; overflow: hidden;
   background:
@@ -252,7 +264,7 @@ const CSS = `
 .pa-codex-card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #05060a; }
 .pa-codex-card div { padding: 9px 10px; font-size: 10px; letter-spacing: 2px; color: #cfd6ff; text-transform: uppercase; }
 @media (max-width: 760px) {
-  .pa-menu-root { padding: 10px; min-height: 100svh; }
+  .pa-menu-root { align-items: flex-start; padding: 10px; min-height: 100svh; overflow-y: auto; }
   .pa-menu-root::before {
     background:
       radial-gradient(ellipse at 50% 32%, rgba(223, 70, 190, 0.18) 0%, rgba(4,5,8,0.08) 30%, rgba(4,5,8,0.66) 88%),
@@ -263,15 +275,19 @@ const CSS = `
       linear-gradient(180deg, rgba(255,255,255,0.05), transparent 20%, transparent 80%, rgba(0,0,0,0.54)),
       repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px);
   }
-  .pa-title-stage { width: 100%; min-height: 100svh; padding: max(10px, env(safe-area-inset-top)) 0 max(10px, env(safe-area-inset-bottom)); }
+  .pa-title-stage { width: 100%; min-height: 100svh; justify-content: flex-start; padding: max(10px, env(safe-area-inset-top)) 0 max(10px, env(safe-area-inset-bottom)); }
   .pa-panel--main { width: 100%; padding: 12px; background: linear-gradient(180deg, rgba(12,14,24,0.34), rgba(8,10,18,0.76)); backdrop-filter: blur(5px); }
-  .pa-logo-wrap { width: min(300px, 66vw); margin-bottom: auto; padding-top: clamp(6px, 2vh, 14px); }
+  .pa-logo-wrap { width: min(300px, 66vw); margin: 0 auto 8px; padding-top: clamp(6px, 2vh, 14px); }
   .pa-title { font-size: 34px; letter-spacing: 4px; }
   .pa-codex-grid { grid-template-columns: 1fr; }
   .pa-launch-top { margin-bottom: 9px; }
   .pa-launch-status { display: none; }
-  .pa-faction-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
-  .pa-faction-tile { min-height: 118px; }
+  .pa-choice-section { padding: 10px 8px 8px; margin-bottom: 9px; }
+  .pa-section-head { display: block; margin-bottom: 7px; }
+  .pa-section-title { font-size: 9px; letter-spacing: 2px; }
+  .pa-section-note { margin-top: 3px; font-size: 7px; letter-spacing: 1px; text-align: left; }
+  .pa-faction-strip { grid-template-columns: 1fr; gap: 7px; }
+  .pa-faction-tile { min-height: 96px; }
   .pa-faction-copy { left: 8px; right: 8px; bottom: 7px; }
   .pa-faction-title { font-size: 9px; letter-spacing: 1px; }
   .pa-faction-role { font-size: 7px; letter-spacing: 1px; }
@@ -642,6 +658,12 @@ export class MenuManager {
         <div class="pa-launch-status">Hero video online · Skirmish build ready</div>
       </div>`;
 
+    const factionSection = document.createElement('section');
+    factionSection.className = 'pa-choice-section';
+    factionSection.innerHTML = `<div class="pa-section-head">
+      <div class="pa-section-title">Choose Army</div>
+      <div class="pa-section-note">Faction identity and combat style</div>
+    </div>`;
     const factionStrip = document.createElement('div');
     factionStrip.className = 'pa-faction-strip';
     const factionTiles = [
@@ -674,8 +696,15 @@ export class MenuManager {
       });
     };
     paintFactions();
-    panel.appendChild(factionStrip);
+    factionSection.appendChild(factionStrip);
+    panel.appendChild(factionSection);
 
+    const modeSection = document.createElement('section');
+    modeSection.className = 'pa-choice-section pa-choice-section--mode';
+    modeSection.innerHTML = `<div class="pa-section-head">
+      <div class="pa-section-title">Choose Battle</div>
+      <div class="pa-section-note">Classic control or faster crystal war</div>
+    </div>`;
     const modePick = document.createElement('div');
     modePick.className = 'pa-mode-pick';
     const classic = document.createElement('div');
@@ -707,7 +736,8 @@ export class MenuManager {
     });
     paintModes();
     modePick.append(classic, rush);
-    panel.appendChild(modePick);
+    modeSection.appendChild(modePick);
+    panel.appendChild(modeSection);
 
     const commandRow = document.createElement('div');
     commandRow.className = 'pa-command-row';
