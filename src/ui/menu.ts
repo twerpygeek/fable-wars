@@ -814,9 +814,9 @@ export class MenuManager {
       <div class="pa-subtitle" style="margin-bottom:16px">Crystal Rush Multiplayer Alpha</div>
       <div class="pa-online-grid">
         <div class="pa-online-card">
-          <div class="pa-online-status${endpoint ? ' ready' : ''}">${endpoint ? 'Online rooms ready' : 'Online rooms preparing'}</div>
+          <div class="pa-online-status${endpoint ? ' ready' : ''}">${endpoint ? 'Online rooms ready' : 'Play now · friend rooms next'}</div>
           <h2>Play With Friends</h2>
-          <p>Crystal Rush is being wired for friend matches first. You will share a room code, both commanders ready up, then the game syncs wave commands through the room.</p>
+          <p>Crystal Rush launches immediately as a playable commander-vs-AI match. Friend rooms are the next online step: share a room code, ready up, then command waves together.</p>
           <div class="pa-online-roadmap">
             <div class="pa-online-step"><b>1</b>Create room</div>
             <div class="pa-online-step"><b>2</b>Friend joins</div>
@@ -827,9 +827,9 @@ export class MenuManager {
             <label>Room Code <input class="js-online-room" maxlength="16" value="${room}"></label>
           </div>
           <div class="pa-online-actions">
-            <button class="pa-btn primary js-online-host" type="button">Host Room</button>
+            <button class="pa-btn primary js-online-host" type="button">${endpoint ? 'Host Room' : 'Start Crystal Rush'}</button>
             <button class="pa-btn js-online-copy" type="button">Copy Invite</button>
-            <button class="pa-btn js-online-practice" type="button">Practice Rush</button>
+            <button class="pa-btn js-online-practice" type="button">Skirmish Lobby</button>
             <button class="pa-btn js-online-docs" type="button">Setup Notes</button>
           </div>
         </div>
@@ -847,18 +847,17 @@ export class MenuManager {
       const invite = roomUrl(code);
       note.innerHTML = endpoint
         ? `Room relay found at <code>${escapeHtml(endpoint)}</code>. Invite link: <code>${escapeHtml(invite)}</code>.`
-        : `The Vercel lobby is live. The realtime relay is the next deployment step, so invite links can be copied now but live friend matches stay locked until <code>VITE_MULTIPLAYER_WS</code> is set.`;
+        : `Online Battle now starts Crystal Rush immediately. Invite links can still be copied, and live friend rooms will unlock when the realtime relay endpoint is connected.`;
       roomInput.value = code;
       return { code, ws, invite };
     };
     roomInput.addEventListener('change', refreshNote);
     const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
-    host.disabled = !endpoint;
-    host.classList.toggle('pa-online-muted', !endpoint);
     host.addEventListener('click', () => {
       const { ws } = refreshNote();
       if (!ws) {
-        note.innerHTML = `Friend matches unlock after the realtime relay is deployed. Use Practice Rush for now.`;
+        this.mode = 'crystalRush';
+        this.launch();
         return;
       }
       note.innerHTML = `Room reserved for ${escapeHtml(nameInput.value || 'Commander')}. Connection target: <code>${escapeHtml(ws)}</code>.`;
