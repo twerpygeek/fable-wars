@@ -451,12 +451,21 @@ class Atlas implements SpriteAtlas {
     const ck = `${t}|${variant % 3}`;
     let c = this.terrainCache.get(ck);
     if (c) return c;
-    // Dirt changes dynamically when crystals deplete; keep it procedural so it
-    // blends with the regional terrain cache. Other terrain props may use the
-    // GPT-generated alpha sprite overrides in public/sprites/terrain/.
+    // Repeated blocker/resource fields need the engine's seamless diamond base.
+    // Full generated terrain plates create visible slab seams when tiled, so
+    // crystal/tree/rock overrides are treated as prop cutouts over that base.
+    const isPropCutout = t === Terrain.CRYSTAL || t === Terrain.ROCK || t === Terrain.TREE;
     const key = t === Terrain.DIRT ? undefined : TERRAIN_KEYS[t];
     const img = key ? this.ov?.terrain.get(`${key}_${variant % 3}`) : undefined;
     if (img) {
+      if (isPropCutout) {
+        const base = drawTerrain(t, variant % 3, false);
+        const [cv, ctx] = canvas(Math.max(base.width, img.width), Math.max(base.height, img.height));
+        ctx.drawImage(base, (cv.width - base.width) / 2, cv.height - base.height);
+        ctx.drawImage(img, (cv.width - img.width) / 2, cv.height - img.height);
+        this.terrainCache.set(ck, cv);
+        return cv;
+      }
       const [cv, ctx] = canvas(img.width, img.height);
       ctx.drawImage(img, 0, 0);
       this.terrainCache.set(ck, cv);
@@ -1728,7 +1737,7 @@ function drawConstructionSite(ctx: Ctx, theme: Theme, fw: number, fh: number, bv
 // Terrain painter
 // =============================================================================
 
-function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
+function drawTerrain(t: Terrain, variant: number, withProps = true): HTMLCanvasElement {
   const tall = t === Terrain.TREE || t === Terrain.ROCK;
   const H = tall ? 64 : TILE_H;
   const [c, ctx] = canvas(TILE_W, H);
@@ -1882,6 +1891,7 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
         ctx.stroke();
       }
       ctx.restore();
+      if (!withProps) break;
       const n = 3 + variant;
       for (let i = 0; i < n; i++) {
         const gx = 14 + rnd() * (TILE_W - 28);
@@ -1950,6 +1960,7 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
       ctx.fillStyle = ground;
       ctx.fillRect(0, baseY, TILE_W, TILE_H);
       ctx.restore();
+      if (!withProps) break;
       for (let i = 0; i < n; i++) {
         const bx = 13 + rnd() * (TILE_W - 26);
         const by = baseY + 17 + rnd() * (TILE_H - 21);
@@ -1995,6 +2006,7 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
       fillBase('#284f2e', '#172f22');
       speckle(['#3e7038', '#1a3824', '#284f2d'], 10);
       bevel('rgba(12,39,22,0.48)', 'rgba(7,25,19,0.56)', 'rgba(198,239,183,0.04)');
+      if (!withProps) break;
       const n = 3 + (variant % 2);
       for (let i = 0; i < n; i++) {
         const tx = 14 + rnd() * (TILE_W - 28);
