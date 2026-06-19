@@ -1863,90 +1863,152 @@ function drawTerrain(t: Terrain, variant: number): HTMLCanvasElement {
       break;
     }
     case Terrain.CRYSTAL: {
-      fillBase('#7c5b42', '#4b382c');
-      speckle(['#9a7352', '#4a3127', '#b98b64'], 18);
-      bevel('rgba(67,43,32,0.22)', 'rgba(34,26,26,0.28)', 'rgba(255,189,232,0.09)');
-      // candy gems
-      const n = 5 + variant;
+      fillBase('#554437', '#2f2726');
+      speckle(['#7b604d', '#2f2424', '#9b755d', '#594236'], 16);
+      bevel('rgba(44,31,29,0.3)', 'rgba(21,18,20,0.36)', 'rgba(180,232,255,0.08)');
+      ctx.save();
+      diamond();
+      ctx.clip();
+      const stain = ctx.createRadialGradient(TILE_W / 2, baseY + TILE_HALF_H, 4, TILE_W / 2, baseY + TILE_HALF_H, 42);
+      stain.addColorStop(0, 'rgba(98, 41, 120, 0.36)');
+      stain.addColorStop(0.62, 'rgba(43, 24, 56, 0.2)');
+      stain.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = stain;
+      ctx.fillRect(0, baseY, TILE_W, TILE_H);
+      ctx.restore();
+      const n = 4 + variant;
       for (let i = 0; i < n; i++) {
         const gx = 12 + rnd() * (TILE_W - 24);
-        const gy = baseY + 8 + rnd() * (TILE_H - 14);
-        const r = 4.5 + rnd() * 4.5;
+        const gy = baseY + 8 + rnd() * (TILE_H - 15);
+        const r = 5.5 + rnd() * 5;
+        const h = r * (1.9 + rnd() * 1.0);
         const pink = rnd() < 0.6;
-        const col = pink ? '#ff7ae0' : '#5ee0ff';
-        const g = ctx.createLinearGradient(gx - r, gy - r, gx + r, gy + r);
-        g.addColorStop(0, shade(col, 0.5));
-        g.addColorStop(1, shade(col, -0.3));
+        const col = pink ? '#d85fff' : '#4fdcff';
+        ctx.globalAlpha = 0.38;
+        ctx.fillStyle = 'rgba(5, 10, 18, 0.62)';
+        ctx.beginPath();
+        ctx.ellipse(gx + 2.5, gy + 2, r * 1.25, r * 0.42, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        const g = ctx.createLinearGradient(gx - r, gy - h, gx + r, gy + r);
+        g.addColorStop(0, '#f4ffff');
+        g.addColorStop(0.35, shade(col, 0.2));
+        g.addColorStop(0.78, shade(col, -0.18));
+        g.addColorStop(1, '#2e2351');
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.moveTo(gx, gy - r * 1.4);
-        ctx.lineTo(gx + r, gy - r * 0.2);
-        ctx.lineTo(gx + r * 0.5, gy + r * 0.6);
-        ctx.lineTo(gx - r * 0.5, gy + r * 0.6);
-        ctx.lineTo(gx - r, gy - r * 0.2);
+        ctx.moveTo(gx, gy - h);
+        ctx.lineTo(gx + r * 0.78, gy - r * 0.22);
+        ctx.lineTo(gx + r * 0.42, gy + r * 0.58);
+        ctx.lineTo(gx - r * 0.52, gy + r * 0.5);
+        ctx.lineTo(gx - r * 0.88, gy - r * 0.14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(210, 249, 255, 0.7)';
+        ctx.lineWidth = 0.75;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.28)';
+        ctx.beginPath();
+        ctx.moveTo(gx, gy - h + 1.8);
+        ctx.lineTo(gx + r * 0.28, gy - r * 0.1);
+        ctx.lineTo(gx - r * 0.06, gy + r * 0.42);
+        ctx.lineTo(gx - r * 0.48, gy - r * 0.1);
         ctx.closePath();
         ctx.fill();
         ctx.shadowColor = col;
-        ctx.shadowBlur = 6;
-        ctx.strokeStyle = shade(col, -0.5);
-        ctx.lineWidth = 0.8;
+        ctx.shadowBlur = 8;
+        ctx.globalAlpha = 0.36;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.4;
         ctx.stroke();
         ctx.shadowBlur = 0;
-        // specular glint
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
         ctx.beginPath();
-        ctx.ellipse(gx - r * 0.3, gy - r * 0.7, r * 0.22, r * 0.4, -0.5, 0, Math.PI * 2);
+        ctx.ellipse(gx - r * 0.22, gy - h * 0.72, r * 0.12, r * 0.34, -0.45, 0, Math.PI * 2);
         ctx.fill();
       }
       break;
     }
     case Terrain.ROCK: {
-      fillBase('#4e8f3e', '#346c30');
-      speckle(['#63b54e', '#2f6228'], 14);
-      bevel('rgba(31,65,31,0.36)', 'rgba(20,42,30,0.44)');
-      // boulder cluster (overhangs upward)
-      const n = 2 + variant;
+      fillBase('#345f34', '#1f4229');
+      speckle(['#5c8d4a', '#243f27', '#3e6535'], 12);
+      bevel('rgba(18,40,26,0.44)', 'rgba(12,28,23,0.5)', 'rgba(214,236,196,0.05)');
+      const n = 4 + variant;
       for (let i = 0; i < n; i++) {
-        const bx = 16 + rnd() * (TILE_W - 32);
-        const by = baseY + 6 + rnd() * (TILE_H - 16);
-        const r = 7 + rnd() * 7;
-        const g = ctx.createRadialGradient(bx - r * 0.3, by - r * 0.5, 1, bx, by, r * 1.3);
-        g.addColorStop(0, '#a8acb8');
-        g.addColorStop(1, '#5c606e');
+        const bx = 12 + rnd() * (TILE_W - 24);
+        const by = baseY + 11 + rnd() * (TILE_H - 17);
+        const r = 5.5 + rnd() * 8.5;
+        ctx.globalAlpha = 0.32;
+        ctx.fillStyle = 'rgba(4, 8, 10, 0.68)';
+        ctx.beginPath();
+        ctx.ellipse(bx + r * 0.22, by + r * 0.18, r * 1.15, r * 0.42, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        const g = ctx.createRadialGradient(bx - r * 0.45, by - r * 0.9, 1, bx + r * 0.2, by, r * 1.55);
+        g.addColorStop(0, '#d3d5ce');
+        g.addColorStop(0.35, '#8d948d');
+        g.addColorStop(1, '#3a403f');
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.moveTo(bx - r, by);
-        ctx.quadraticCurveTo(bx - r * 0.8, by - r * 1.3, bx, by - r * 1.15);
-        ctx.quadraticCurveTo(bx + r * 0.9, by - r * 1.0, bx + r, by);
-        ctx.quadraticCurveTo(bx, by + r * 0.5, bx - r, by);
+        ctx.moveTo(bx - r * 1.05, by - r * 0.1);
+        ctx.lineTo(bx - r * 0.48, by - r * 1.05);
+        ctx.lineTo(bx + r * 0.25, by - r * 1.22);
+        ctx.lineTo(bx + r * 1.04, by - r * 0.38);
+        ctx.lineTo(bx + r * 0.78, by + r * 0.42);
+        ctx.lineTo(bx - r * 0.25, by + r * 0.5);
+        ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = '#3c404c';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(20, 24, 26, 0.8)';
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath();
+        ctx.moveTo(bx - r * 0.5, by - r * 0.72);
+        ctx.lineTo(bx + r * 0.14, by - r * 1.0);
+        ctx.lineTo(bx + r * 0.68, by - r * 0.34);
         ctx.stroke();
       }
       break;
     }
     case Terrain.TREE: {
-      fillBase('#4e8f3e', '#346c30');
-      speckle(['#63b54e', '#2f6228'], 14);
-      bevel('rgba(31,65,31,0.36)', 'rgba(20,42,30,0.44)');
-      const n = 1 + (variant % 2);
+      fillBase('#2f6733', '#1e4728');
+      speckle(['#4f8c42', '#1f4a28', '#365f31'], 10);
+      bevel('rgba(17,47,25,0.44)', 'rgba(9,28,21,0.52)', 'rgba(198,239,183,0.05)');
+      const n = 2 + (variant % 2);
       for (let i = 0; i < n; i++) {
-        const tx = 20 + rnd() * (TILE_W - 40) + (i === 1 ? 10 : 0);
-        const ty = baseY + 10 + rnd() * (TILE_H - 18);
-        // trunk
-        ctx.fillStyle = '#6b4a2e';
-        ctx.fillRect(tx - 2.4, ty - 16, 4.8, 17);
-        // layered canopy
+        const tx = 15 + rnd() * (TILE_W - 30);
+        const ty = baseY + 16 + rnd() * (TILE_H - 20);
+        const height = 32 + rnd() * 12;
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = 'rgba(2, 10, 8, 0.74)';
+        ctx.beginPath();
+        ctx.ellipse(tx + 5, ty + 1, 13, 4.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        const trunk = ctx.createLinearGradient(tx - 3, ty - 18, tx + 3, ty);
+        trunk.addColorStop(0, '#9b6a42');
+        trunk.addColorStop(1, '#3e2a1e');
+        ctx.fillStyle = trunk;
+        ctx.fillRect(tx - 2.2, ty - 18, 4.4, 19);
         for (let l = 0; l < 3; l++) {
-          const r = 13 - l * 3.4;
-          const ly = ty - 18 - l * 8;
-          const g = ctx.createRadialGradient(tx - 3, ly - 3, 1, tx, ly, r);
-          g.addColorStop(0, '#6cc455');
-          g.addColorStop(1, '#2e6e28');
+          const r = 13.5 - l * 3.1;
+          const ly = ty - 10 - l * (height / 4.2);
+          const g = ctx.createLinearGradient(tx - r, ly - r, tx + r, ly + r);
+          g.addColorStop(0, '#7fd46a');
+          g.addColorStop(0.38, '#2f7a37');
+          g.addColorStop(1, '#123f25');
           ctx.fillStyle = g;
-          tri(ctx, tx, ly - r, r, r * 1.6);
+          tri(ctx, tx, ly - r * 1.1, r, r * 1.7);
+          ctx.strokeStyle = 'rgba(9, 29, 17, 0.52)';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
         }
+        ctx.strokeStyle = 'rgba(213,255,191,0.18)';
+        ctx.beginPath();
+        ctx.moveTo(tx - 3, ty - height + 5);
+        ctx.lineTo(tx - 9, ty - 12);
+        ctx.stroke();
       }
       break;
     }
