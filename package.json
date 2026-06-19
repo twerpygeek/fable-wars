@@ -3,6 +3,24 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "A fantasy browser RTS with base building, crystal economies, cinematic skirmishes, and Crystal Rush battles.",
+  "homepage": "https://fablewars.vercel.app/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/twerpygeek/fable-wars.git"
+  },
+  "bugs": {
+    "url": "https://github.com/twerpygeek/fable-wars/issues"
+  },
+  "keywords": [
+    "browser-game",
+    "rts",
+    "strategy",
+    "canvas",
+    "typescript",
+    "vite",
+    "fable-wars"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
