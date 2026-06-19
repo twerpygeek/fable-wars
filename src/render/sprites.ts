@@ -451,13 +451,10 @@ class Atlas implements SpriteAtlas {
     const ck = `${t}|${variant % 3}`;
     let c = this.terrainCache.get(ck);
     if (c) return c;
-    // Some generated terrain tiles carried baked square borders that broke the
-    // iso read when repeated. Keep the best natural overrides, but use the
-    // engine's clean diamond painter for resource fields, blockers, and dirt.
-    const key =
-      t === Terrain.CRYSTAL || t === Terrain.ROCK || t === Terrain.TREE || t === Terrain.DIRT
-        ? undefined
-        : TERRAIN_KEYS[t];
+    // Dirt changes dynamically when crystals deplete; keep it procedural so it
+    // blends with the regional terrain cache. Other terrain props may use the
+    // GPT-generated alpha sprite overrides in public/sprites/terrain/.
+    const key = t === Terrain.DIRT ? undefined : TERRAIN_KEYS[t];
     const img = key ? this.ov?.terrain.get(`${key}_${variant % 3}`) : undefined;
     if (img) {
       const [cv, ctx] = canvas(img.width, img.height);

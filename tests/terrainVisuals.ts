@@ -5,6 +5,8 @@ const source = readFileSync(new URL('../src/render/sprites.ts', import.meta.url)
 
 assert.match(source, /Seal antialiased diamond edges/);
 assert.match(source, /black terrain cache/);
+assert.match(source, /GPT-generated alpha sprite overrides/);
+assert.match(source, /const key = t === Terrain\.DIRT \? undefined : TERRAIN_KEYS\[t\]/);
 assert.match(source, /baseY - 1\.25/);
 assert.match(source, /TILE_W \+ 2/);
 assert.match(source, /rgba\(255,255,255,0\.065\)/);
