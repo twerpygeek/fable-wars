@@ -13,6 +13,13 @@ import {
   SCROLL_RATE_TICKS,
 } from '../core/constants';
 import { DATA } from '../data/index';
+import {
+  multiplayerEndpoint,
+  normalizeRoomCode,
+  randomRoomCode,
+  roomSocketUrl,
+  roomUrl,
+} from '../net/multiplayer';
 import { clearHistory, getHistory } from './history';
 import type { MatchResult } from './history';
 
@@ -89,7 +96,27 @@ const CSS = `
   font-size: 7px; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 1px 3px #000; }
 .pa-faction-bar { height: 4px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 2px rgba(0,0,0,0.8); }
 .pa-faction-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--fc, #f0b35c), #fff1a4); box-shadow: 0 0 8px color-mix(in srgb, var(--fc, #f0b35c) 60%, transparent); }
-.pa-command-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; align-items: stretch; }
+.pa-command-row { display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr 1fr; gap: 10px; align-items: stretch; }
+.pa-online-grid { display: grid; gap: 12px; }
+.pa-online-card { border: 1px solid rgba(255, 220, 150, 0.24); border-radius: 4px; padding: 12px;
+  background:
+    linear-gradient(180deg, rgba(40, 34, 26, 0.56), rgba(8, 9, 14, 0.88)),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 8px);
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.08), inset 0 -2px 0 rgba(0,0,0,0.48); }
+.pa-online-card h2 { margin: 0 0 7px; color: #fff4d6; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; }
+.pa-online-card p { margin: 0 0 9px; color: #aeb7e8; font-size: 10px; line-height: 1.55; letter-spacing: 1px; }
+.pa-online-status { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #ffd777;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
+.pa-online-status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #e8453c; box-shadow: 0 0 12px #e8453c; }
+.pa-online-status.ready::before { background: #65d86e; box-shadow: 0 0 12px #65d86e; }
+.pa-online-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pa-online-form label { display: grid; gap: 4px; color: #8d96c8; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; }
+.pa-online-form input { min-width: 0; background: linear-gradient(180deg, #11131b, #05060a); color: #ffd777; border: 2px solid #2a231d; border-radius: 3px;
+  padding: 8px 9px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 1px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,237,190,0.08); }
+.pa-online-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.pa-online-note { color: #8790bf; font-size: 9px; line-height: 1.55; letter-spacing: 1px; }
+.pa-online-note code { color: #ffd777; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
   margin: 18px -10px -18px; padding: 12px 10px 10px;
   background: linear-gradient(180deg, rgba(8, 9, 14, 0.08), rgba(8, 9, 14, 0.94) 28%, rgba(8, 9, 14, 0.98));
@@ -301,6 +328,7 @@ const CSS = `
   .pa-faction-role { font-size: 7px; letter-spacing: 1px; }
   .pa-faction-stat { grid-template-columns: 42px 1fr 16px; gap: 4px; font-size: 6px; }
   .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
+  .pa-online-form, .pa-online-actions { grid-template-columns: 1fr; }
   .pa-lobby-actions { position: sticky; bottom: -12px; grid-template-columns: 1fr; margin: 12px -4px -8px; padding: 10px 4px 6px; }
   .pa-battle-code { grid-template-columns: 1fr; }
   .pa-battle-code .pa-small-btn { text-align: center; }
@@ -750,10 +778,11 @@ export class MenuManager {
     const commandRow = document.createElement('div');
     commandRow.className = 'pa-command-row';
     const skirmish = btn('Start Match', () => this.showLobby(), true);
+    const online = btn('Online Battle', () => this.showOnlineBattle());
     const trailer = btn('Watch Trailer', () => this.showTrailer());
     const howto = btn('How to Play', () => this.showHowTo());
     const codex = btn('Art Codex', () => this.showArtCodex());
-    commandRow.append(skirmish, trailer, howto, codex);
+    commandRow.append(skirmish, online, trailer, howto, codex);
     panel.appendChild(commandRow);
 
     const record = this.serviceRecordPanel();
@@ -765,6 +794,70 @@ export class MenuManager {
 
     stage.appendChild(panel);
     el.appendChild(stage);
+  }
+
+  private showOnlineBattle(): void {
+    const el = this.screen();
+    const endpoint = multiplayerEndpoint();
+    const roomFromUrl = new URLSearchParams(location.search).get('room');
+    const room = normalizeRoomCode(roomFromUrl ?? randomRoomCode());
+    const panel = document.createElement('div');
+    panel.className = 'pa-panel';
+    panel.style.width = 'min(720px, calc(100vw - 24px))';
+    panel.innerHTML = `<h1 class="pa-title" style="font-size:24px;letter-spacing:4px;">ONLINE BATTLE</h1>
+      <div class="pa-subtitle" style="margin-bottom:16px">Crystal Rush Multiplayer Alpha</div>
+      <div class="pa-online-grid">
+        <div class="pa-online-card">
+          <div class="pa-online-status${endpoint ? ' ready' : ''}">${endpoint ? 'Room server configured' : 'Room server needed'}</div>
+          <h2>Play With Friends</h2>
+          <p>Vercel hosts this game and lobby. Live battles need a WebSocket room server for player presence and command relay. Crystal Rush is the first online mode because it uses clean macro commands: deploy wave, choose stance, buy upgrades.</p>
+          <div class="pa-online-form">
+            <label>Commander Name <input class="js-online-name" maxlength="20" value="Commander"></label>
+            <label>Room Code <input class="js-online-room" maxlength="16" value="${room}"></label>
+          </div>
+          <div class="pa-online-actions">
+            <button class="pa-btn primary js-online-host" type="button">Host Room</button>
+            <button class="pa-btn js-online-copy" type="button">Copy Invite</button>
+          </div>
+        </div>
+        <div class="pa-online-card">
+          <h2>Current Build</h2>
+          <p class="pa-online-note js-online-note"></p>
+        </div>
+      </div>`;
+    const nameInput = panel.querySelector<HTMLInputElement>('.js-online-name')!;
+    const roomInput = panel.querySelector<HTMLInputElement>('.js-online-room')!;
+    const note = panel.querySelector<HTMLElement>('.js-online-note')!;
+    const refreshNote = () => {
+      const code = normalizeRoomCode(roomInput.value);
+      const ws = roomSocketUrl(code, endpoint);
+      const invite = roomUrl(code);
+      note.innerHTML = endpoint
+        ? `Ready to connect to <code>${escapeHtml(endpoint)}</code>. Invite link: <code>${escapeHtml(invite)}</code>. The next implementation step wires this room to the deterministic Crystal Rush command stream.`
+        : `Set <code>VITE_MULTIPLAYER_WS</code> on Vercel after deploying the realtime room server. Invite links already work as room deep-links, but live play stays disabled until that server exists.`;
+      roomInput.value = code;
+      return { code, ws, invite };
+    };
+    roomInput.addEventListener('change', refreshNote);
+    const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
+    host.addEventListener('click', () => {
+      const { ws } = refreshNote();
+      if (!ws) {
+        note.innerHTML = `Realtime server is not configured yet. Deploy the room server, then set <code>VITE_MULTIPLAYER_WS</code> in Vercel.`;
+        return;
+      }
+      note.innerHTML = `Room reserved for ${escapeHtml(nameInput.value || 'Commander')}. Connection target: <code>${escapeHtml(ws)}</code>.`;
+    });
+    panel.querySelector<HTMLButtonElement>('.js-online-copy')!.addEventListener('click', () => {
+      const { invite } = refreshNote();
+      void navigator.clipboard
+        ?.writeText(invite)
+        .then(() => (note.innerHTML = `Invite copied: <code>${escapeHtml(invite)}</code>`))
+        .catch(() => (note.innerHTML = `Invite link: <code>${escapeHtml(invite)}</code>`));
+    });
+    panel.appendChild(btn('Back', () => this.showMainMenu()));
+    refreshNote();
+    el.appendChild(panel);
   }
 
   private showTrailer(): void {
