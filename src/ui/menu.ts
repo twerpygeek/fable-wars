@@ -109,6 +109,10 @@ const CSS = `
   font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
 .pa-online-status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #e8453c; box-shadow: 0 0 12px #e8453c; }
 .pa-online-status.ready::before { background: #65d86e; box-shadow: 0 0 12px #65d86e; }
+.pa-online-roadmap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0 10px; }
+.pa-online-step { padding: 8px; border: 1px solid rgba(255, 220, 150, 0.16); background: rgba(5,7,13,0.42);
+  color: #aeb7e8; font-size: 8px; line-height: 1.35; letter-spacing: 1px; text-transform: uppercase; }
+.pa-online-step b { display: block; margin-bottom: 4px; color: #fff4d6; font-size: 9px; letter-spacing: 2px; }
 .pa-online-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pa-online-form label { display: grid; gap: 4px; color: #8d96c8; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; }
 .pa-online-form input { min-width: 0; background: linear-gradient(180deg, #11131b, #05060a); color: #ffd777; border: 2px solid #2a231d; border-radius: 3px;
@@ -117,6 +121,7 @@ const CSS = `
 .pa-online-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .pa-online-note { color: #8790bf; font-size: 9px; line-height: 1.55; letter-spacing: 1px; }
 .pa-online-note code { color: #ffd777; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.pa-online-muted { opacity: 0.46; filter: grayscale(0.45); pointer-events: none; }
 .pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
   margin: 18px -10px -18px; padding: 12px 10px 10px;
   background: linear-gradient(180deg, rgba(8, 9, 14, 0.08), rgba(8, 9, 14, 0.94) 28%, rgba(8, 9, 14, 0.98));
@@ -328,6 +333,7 @@ const CSS = `
   .pa-faction-role { font-size: 7px; letter-spacing: 1px; }
   .pa-faction-stat { grid-template-columns: 42px 1fr 16px; gap: 4px; font-size: 6px; }
   .pa-command-row { grid-template-columns: 1fr; gap: 7px; }
+  .pa-online-roadmap { grid-template-columns: 1fr; }
   .pa-online-form, .pa-online-actions { grid-template-columns: 1fr; }
   .pa-lobby-actions { position: sticky; bottom: -12px; grid-template-columns: 1fr; margin: 12px -4px -8px; padding: 10px 4px 6px; }
   .pa-battle-code { grid-template-columns: 1fr; }
@@ -808,9 +814,14 @@ export class MenuManager {
       <div class="pa-subtitle" style="margin-bottom:16px">Crystal Rush Multiplayer Alpha</div>
       <div class="pa-online-grid">
         <div class="pa-online-card">
-          <div class="pa-online-status${endpoint ? ' ready' : ''}">${endpoint ? 'Room server configured' : 'Room server needed'}</div>
+          <div class="pa-online-status${endpoint ? ' ready' : ''}">${endpoint ? 'Online rooms ready' : 'Online rooms preparing'}</div>
           <h2>Play With Friends</h2>
-          <p>Vercel hosts this game and lobby. Live battles need a WebSocket room server for player presence and command relay. Crystal Rush is the first online mode because it uses clean macro commands: deploy wave, choose stance, buy upgrades.</p>
+          <p>Crystal Rush is being wired for friend matches first. You will share a room code, both commanders ready up, then the game syncs wave commands through the room.</p>
+          <div class="pa-online-roadmap">
+            <div class="pa-online-step"><b>1</b>Create room</div>
+            <div class="pa-online-step"><b>2</b>Friend joins</div>
+            <div class="pa-online-step"><b>3</b>Command waves</div>
+          </div>
           <div class="pa-online-form">
             <label>Commander Name <input class="js-online-name" maxlength="20" value="Commander"></label>
             <label>Room Code <input class="js-online-room" maxlength="16" value="${room}"></label>
@@ -818,10 +829,12 @@ export class MenuManager {
           <div class="pa-online-actions">
             <button class="pa-btn primary js-online-host" type="button">Host Room</button>
             <button class="pa-btn js-online-copy" type="button">Copy Invite</button>
+            <button class="pa-btn js-online-practice" type="button">Practice Rush</button>
+            <button class="pa-btn js-online-docs" type="button">Setup Notes</button>
           </div>
         </div>
         <div class="pa-online-card">
-          <h2>Current Build</h2>
+          <h2>Alpha Status</h2>
           <p class="pa-online-note js-online-note"></p>
         </div>
       </div>`;
@@ -833,17 +846,19 @@ export class MenuManager {
       const ws = roomSocketUrl(code, endpoint);
       const invite = roomUrl(code);
       note.innerHTML = endpoint
-        ? `Ready to connect to <code>${escapeHtml(endpoint)}</code>. Invite link: <code>${escapeHtml(invite)}</code>. The next implementation step wires this room to the deterministic Crystal Rush command stream.`
-        : `Set <code>VITE_MULTIPLAYER_WS</code> on Vercel after deploying the realtime room server. Invite links already work as room deep-links, but live play stays disabled until that server exists.`;
+        ? `Room relay found at <code>${escapeHtml(endpoint)}</code>. Invite link: <code>${escapeHtml(invite)}</code>.`
+        : `The Vercel lobby is live. The realtime relay is the next deployment step, so invite links can be copied now but live friend matches stay locked until <code>VITE_MULTIPLAYER_WS</code> is set.`;
       roomInput.value = code;
       return { code, ws, invite };
     };
     roomInput.addEventListener('change', refreshNote);
     const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
+    host.disabled = !endpoint;
+    host.classList.toggle('pa-online-muted', !endpoint);
     host.addEventListener('click', () => {
       const { ws } = refreshNote();
       if (!ws) {
-        note.innerHTML = `Realtime server is not configured yet. Deploy the room server, then set <code>VITE_MULTIPLAYER_WS</code> in Vercel.`;
+        note.innerHTML = `Friend matches unlock after the realtime relay is deployed. Use Practice Rush for now.`;
         return;
       }
       note.innerHTML = `Room reserved for ${escapeHtml(nameInput.value || 'Commander')}. Connection target: <code>${escapeHtml(ws)}</code>.`;
@@ -854,6 +869,13 @@ export class MenuManager {
         ?.writeText(invite)
         .then(() => (note.innerHTML = `Invite copied: <code>${escapeHtml(invite)}</code>`))
         .catch(() => (note.innerHTML = `Invite link: <code>${escapeHtml(invite)}</code>`));
+    });
+    panel.querySelector<HTMLButtonElement>('.js-online-practice')!.addEventListener('click', () => {
+      this.mode = 'crystalRush';
+      this.showLobby();
+    });
+    panel.querySelector<HTMLButtonElement>('.js-online-docs')!.addEventListener('click', () => {
+      note.innerHTML = `Deploy <code>realtime/partykit</code>, then set <code>VITE_MULTIPLAYER_WS</code> in Vercel. The repo includes the room relay and protocol notes.`;
     });
     panel.appendChild(btn('Back', () => this.showMainMenu()));
     refreshNote();
