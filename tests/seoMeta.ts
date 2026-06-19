@@ -10,6 +10,8 @@ assert.match(html, /property="og:title" content="Fable Wars - Browser RTS Skirmi
 assert.match(html, /property="og:image" content="https:\/\/fablewars\.vercel\.app\/social\/fable-wars-og\.jpg"/);
 assert.match(html, /name="twitter:card" content="summary_large_image"/);
 assert.match(html, /"@type": "VideoGame"/);
+assert.match(html, /"codeRepository": "https:\/\/github\.com\/twerpygeek\/fable-wars"/);
+assert.match(html, /"sameAs": \["https:\/\/github\.com\/twerpygeek\/fable-wars", "https:\/\/iangoh\.com\/"\]/);
 assert.equal(existsSync(new URL('../public/social/fable-wars-og.jpg', import.meta.url)), true);
 
 console.log('PASS SEO meta');

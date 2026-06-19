@@ -163,8 +163,10 @@ const CSS = `
   border-color: #f1b15e; color: #fff5d8; font-weight: bold;
   box-shadow: inset 0 2px 0 rgba(255,239,190,0.36), inset 0 -4px 0 rgba(55,15,10,0.88), 0 3px 0 #120806, 0 0 26px rgba(255, 101, 56, 0.28); }
 .pa-btn.primary:hover { box-shadow: inset 0 2px 0 rgba(255,239,190,0.42), inset 0 -4px 0 rgba(55,15,10,0.88), 0 3px 0 #120806, 0 0 32px rgba(255, 136, 58, 0.5); }
-.pa-launch-footer { display: flex; justify-content: space-between; gap: 18px; margin-top: 14px; color: #727ca9; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
-.pa-launch-footer a { color: #b7c1f0; text-decoration: none; }
+.pa-launch-footer { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 14px; padding-top: 11px;
+  border-top: 1px solid rgba(255, 220, 150, 0.14); color: #7d88bc; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.pa-launch-credit { display: inline-flex; gap: 6px; align-items: center; color: #8f98c7; white-space: nowrap; }
+.pa-launch-footer a { color: #d2dbff; text-decoration: none; text-shadow: 0 0 10px rgba(160,180,255,0.16); }
 .pa-launch-footer a:hover { color: #ffd777; text-decoration: underline; text-underline-offset: 3px; }
 .pa-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .pa-row { display: flex; gap: 10px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
@@ -309,6 +311,7 @@ const CSS = `
   .pa-btn { min-height: 40px; font-size: 11px; letter-spacing: 2px; }
   .pa-btn.primary { min-height: 46px; }
   .pa-launch-footer { display: grid; justify-content: stretch; text-align: center; gap: 5px; margin-top: 9px; }
+  .pa-launch-credit { justify-content: center; white-space: normal; }
 }
 `;
 
@@ -757,7 +760,7 @@ export class MenuManager {
     if (record) panel.appendChild(record);
     const footer = document.createElement('div');
     footer.className = 'pa-launch-footer';
-    footer.innerHTML = `<span>Fantasy browser RTS · Build, harvest, and command armies</span><span>Made by <a href="https://iangoh.com" target="_blank" rel="noopener noreferrer">iangoh.com</a> · <a href="https://github.com/iangoh" target="_blank" rel="noopener noreferrer">github.com/iangoh</a></span>`;
+    footer.innerHTML = `<span>Fantasy browser RTS · Build, harvest, and command armies</span><span class="pa-launch-credit">Made by <a href="https://iangoh.com" target="_blank" rel="noopener noreferrer">iangoh.com</a> · <a href="https://github.com/twerpygeek/fable-wars" target="_blank" rel="noopener noreferrer">github.com/twerpygeek/fable-wars</a></span>`;
     panel.appendChild(footer);
 
     stage.appendChild(panel);
