@@ -139,25 +139,8 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
 const DIR_NAMES = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'] as const;
 const MIRROR_DIR: Record<string, string> = { e: 'w', se: 'sw', ne: 'nw' };
 const USE_GENERATED_UNIT_OVERRIDES = true;
-const BLOCKED_LEGACY_PARODY_OVERRIDES = new Set<string>([
-  'scorch_peekachoo',
-  'scorch_prof_cinder',
-  'tide_blastoyse',
-  'tide_gyarrados',
-  'tide_horsean',
-  'tide_kyogrre',
-  'tide_pelipperator',
-  'tide_polywrath',
-  'tide_prof_brine',
-  'tide_squirtul',
-  'tide_wingullet',
-  'verdant_bulbasore',
-  'verdant_butterfrei',
-  'verdant_lotadder',
-  'verdant_ludicolossus',
-  'verdant_oddishooter',
-  'verdant_pidgeottoh',
-  'verdant_prof_oakley',
+const APPROVED_GENERATED_UNIT_OVERRIDES = new Set<string>([
+  'scorch_charmandar',
 ]);
 
 /** Expected building override canvas box for a footprint (see SPRITES.md). */
@@ -292,7 +275,7 @@ const WORLD_CREATURES: Record<string, CreatureCfg> = {
   scorch_peekachoo: { arch: 'machine', base: '#241f25', accent: '#ffcf3c', size: 34, magnets: true },
   scorch_magmarr: { arch: 'biped', base: '#33242a', belly: '#ff7a28', accent: '#ffcf5a', size: 39, flameHead: true, horn: true },
   scorch_prof_cinder: { arch: 'prof', base: '#3a2528', accent: '#ff8c32', size: 34, flameHead: true },
-  scorch_torkoala: { arch: 'turtle', base: '#30282a', belly: '#ff6a22', accent: '#ffb13c', size: 38, shellCannons: true },
+  scorch_torkoala: { arch: 'machine', base: '#30282a', belly: '#ff6a22', accent: '#ffb13c', size: 40, magnets: true },
   scorch_ryhorrn: { arch: 'quad', base: '#312a2e', belly: '#5a4246', accent: '#ff6a22', size: 40, horn: true },
   scorch_arcanyne: { arch: 'quad', base: '#35262a', belly: '#ff8c32', accent: '#141015', size: 37, tail: 'flame', horn: true },
   scorch_magnetonn: { arch: 'machine', base: '#393238', accent: '#ffcf3c', size: 35, magnets: true },
@@ -372,7 +355,7 @@ class Atlas implements SpriteAtlas {
   getUnitSprite(key: string, facing8: number, frame: number, colorIdx: number): HTMLCanvasElement {
     const f = ((facing8 % 8) + 8) % 8;
     const ovUnit =
-      USE_GENERATED_UNIT_OVERRIDES && !BLOCKED_LEGACY_PARODY_OVERRIDES.has(key) ? this.ov?.units.get(key) : undefined;
+      USE_GENERATED_UNIT_OVERRIDES && APPROVED_GENERATED_UNIT_OVERRIDES.has(key) ? this.ov?.units.get(key) : undefined;
     const fr = ovUnit ? ((frame % ovUnit.frames) + ovUnit.frames) % ovUnit.frames : frame & 1;
     const ck = `${key}|${f}|${fr}|${colorIdx}`;
     let c = this.unitCache.get(ck);
