@@ -13,73 +13,121 @@
     },
     "scorch_peekachoo": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_prof_cinder": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_magmarr": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_ryhorrn": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_torkoala": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_arcanyne": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_magnetonn": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_groudonn": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_zubattler": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_moltrez": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_magcarggo": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "scorch_slugmariner": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
@@ -95,79 +143,131 @@
     },
     "tide_horsean": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_prof_brine": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_polywrath": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_vaporeonix": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_krabber": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_starmiez": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_blastoyse": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_kyogrre": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_wingullet": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_pelipperator": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_tentacrush": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_sharpeedo": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "tide_gyarrados": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
@@ -183,79 +283,131 @@
     },
     "verdant_beedrillz": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_oddishooter": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_prof_oakley": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_scytherr": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_sceptilash": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_torterrar": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_tanglevine": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_venosore": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_snorlux": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_pidgeottoh": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_butterfrei": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_lotadder": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     },
     "verdant_ludicolossus": {
       "facings": [
-        "s"
+        "s",
+        "sw",
+        "w",
+        "nw",
+        "n"
       ],
       "frames": 1
     }

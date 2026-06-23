@@ -157,6 +157,23 @@ function canvas(w: number, h: number): [HTMLCanvasElement, Ctx] {
   return [c, ctx];
 }
 
+function solidifyUnitOverride(ctx: Ctx, w: number, h: number): void {
+  const img = ctx.getImageData(0, 0, w, h);
+  const data = img.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a <= 18) {
+      data[i + 3] = 0;
+      continue;
+    }
+    data[i + 3] = Math.min(255, Math.max(a, Math.round(80 + a * 1.35)));
+    data[i] = Math.min(255, Math.round((data[i] - 118) * 1.08 + 126));
+    data[i + 1] = Math.min(255, Math.round((data[i + 1] - 118) * 1.08 + 126));
+    data[i + 2] = Math.min(255, Math.round((data[i + 2] - 118) * 1.08 + 126));
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
 function shade(hex: string, f: number): string {
   // f>0 lighten toward white, f<0 darken toward black
   const n = parseInt(hex.slice(1), 16);
@@ -368,6 +385,7 @@ class Atlas implements SpriteAtlas {
         }
         ctx.drawImage(img, (64 - dw) / 2, 64 - dh - 6, dw, dh); // feet land near y=52
         ctx.restore();
+        solidifyUnitOverride(ctx, cv.width, cv.height);
         drawPlayerBand(ctx, 32, 48, 10, PLAYER_COLORS[colorIdx]?.hex ?? '#ffffff');
         this.unitCache.set(ck, cv);
         return cv;
