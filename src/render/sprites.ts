@@ -140,9 +140,8 @@ const DIR_NAMES = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'] as const;
 const MIRROR_DIR: Record<string, string> = { e: 'w', se: 'sw', ne: 'nw' };
 const USE_GENERATED_UNIT_OVERRIDES = true;
 const APPROVED_GENERATED_UNIT_OVERRIDES = new Set<string>([
-  // This pass keeps only the original Fable Wars kaiju-style infantry sheet.
-  // The older parody placeholder pack is deliberately bypassed until each unit
-  // receives a fresh original GPT/Magnific render.
+  // Keep only the sheet that matches the original Fable Wars kaiju direction.
+  // The rest of the old generated pack is too derivative and needs replacement.
   'scorch_charmandar',
 ]);
 
@@ -413,7 +412,12 @@ class Atlas implements SpriteAtlas {
 
     const cfg = WORLD_CREATURES[key] ?? CREATURES[key] ?? { arch: 'blob' as Archetype, base: '#c0c0c0', size: 32 };
     const [cv, ctx] = canvas(64, 64);
+    ctx.save();
+    ctx.translate(32, 54);
+    ctx.scale(1.16, 1.16);
+    ctx.translate(-32, -54);
     drawCreature(ctx, cfg, f, fr, PLAYER_COLORS[colorIdx]?.hex ?? '#ffffff', key);
+    ctx.restore();
     this.unitCache.set(ck, cv);
     return cv;
   }
