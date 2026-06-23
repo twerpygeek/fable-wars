@@ -139,6 +139,26 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
 const DIR_NAMES = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'] as const;
 const MIRROR_DIR: Record<string, string> = { e: 'w', se: 'sw', ne: 'nw' };
 const USE_GENERATED_UNIT_OVERRIDES = true;
+const BLOCKED_LEGACY_PARODY_OVERRIDES = new Set<string>([
+  'scorch_peekachoo',
+  'scorch_prof_cinder',
+  'tide_blastoyse',
+  'tide_gyarrados',
+  'tide_horsean',
+  'tide_kyogrre',
+  'tide_pelipperator',
+  'tide_polywrath',
+  'tide_prof_brine',
+  'tide_squirtul',
+  'tide_wingullet',
+  'verdant_bulbasore',
+  'verdant_butterfrei',
+  'verdant_lotadder',
+  'verdant_ludicolossus',
+  'verdant_oddishooter',
+  'verdant_pidgeottoh',
+  'verdant_prof_oakley',
+]);
 
 /** Expected building override canvas box for a footprint (see SPRITES.md). */
 export function buildingSpriteBox(fw: number, fh: number, kind: string): { w: number; h: number } {
@@ -269,7 +289,7 @@ const CREATURES: Record<string, CreatureCfg> = {
 const WORLD_CREATURES: Record<string, CreatureCfg> = {
   // SCORCH: obsidian bodies, molten cores, brutal silhouettes
   scorch_charmandar: { arch: 'biped', base: '#2a2024', belly: '#ff6a22', accent: '#ffb13c', size: 35, tail: 'flame', horn: true },
-  scorch_peekachoo: { arch: 'machine', base: '#31262a', accent: '#ffcf3c', size: 32, magnets: true },
+  scorch_peekachoo: { arch: 'machine', base: '#241f25', accent: '#ffcf3c', size: 34, magnets: true },
   scorch_magmarr: { arch: 'biped', base: '#33242a', belly: '#ff7a28', accent: '#ffcf5a', size: 39, flameHead: true, horn: true },
   scorch_prof_cinder: { arch: 'prof', base: '#3a2528', accent: '#ff8c32', size: 34, flameHead: true },
   scorch_torkoala: { arch: 'turtle', base: '#30282a', belly: '#ff6a22', accent: '#ffb13c', size: 38, shellCannons: true },
@@ -282,24 +302,24 @@ const WORLD_CREATURES: Record<string, CreatureCfg> = {
   scorch_magcarggo: { arch: 'blob', base: '#2a2024', belly: '#ff5a1f', accent: '#ffb13c', size: 36, boat: true, flameHead: true },
   scorch_slugmariner: { arch: 'blob', base: '#343039', belly: '#ff6a22', accent: '#ffb13c', size: 34, sub: true },
   // TIDE: pale coral armor, aqua cores, predatory sea shapes
-  tide_squirtul: { arch: 'biped', base: '#d9e7e9', belly: '#3fd3e7', accent: '#0b5f72', size: 34, horn: true },
-  tide_horsean: { arch: 'serpent', base: '#79d9e8', belly: '#eafcff', accent: '#23a8c5', size: 36, horn: true },
-  tide_polywrath: { arch: 'biped', base: '#2a6475', belly: '#8ff0f5', accent: '#eafcff', size: 39, horn: true },
+  tide_squirtul: { arch: 'machine', base: '#d9e7e9', belly: '#3fd3e7', accent: '#0b5f72', size: 34, magnets: true },
+  tide_horsean: { arch: 'serpent', base: '#2c7184', belly: '#eafcff', accent: '#23a8c5', size: 38, horn: true },
+  tide_polywrath: { arch: 'machine', base: '#2a6475', belly: '#8ff0f5', accent: '#eafcff', size: 39, magnets: true },
   tide_prof_brine: { arch: 'prof', base: '#2a6475', accent: '#8ff0f5', size: 34 },
   tide_krabber: { arch: 'machine', base: '#cfe7e8', belly: '#7fe6ef', accent: '#1d7c91', size: 35, scythes: true },
   tide_vaporeonix: { arch: 'quad', base: '#5dc7d8', belly: '#eafcff', accent: '#1d7c91', size: 36, tail: 'fin', horn: true },
-  tide_blastoyse: { arch: 'turtle', base: '#e7edf0', belly: '#59d8e8', accent: '#23849a', size: 42, shellCannons: true },
+  tide_blastoyse: { arch: 'machine', base: '#e7edf0', belly: '#59d8e8', accent: '#23849a', size: 42, magnets: true },
   tide_starmiez: { arch: 'machine', base: '#d9e7e9', accent: '#39d8ef', size: 35, magnets: true },
   tide_kyogrre: { arch: 'serpent', base: '#265f75', belly: '#eafcff', accent: '#39d8ef', size: 50, big: true, horn: true },
-  tide_wingullet: { arch: 'bird', base: '#e7edf0', belly: '#92f0f5', accent: '#26788d', size: 32, wings: true },
-  tide_pelipperator: { arch: 'bird', base: '#d9e7e9', belly: '#7fe6ef', accent: '#1d7c91', size: 44, wings: true, big: true },
+  tide_wingullet: { arch: 'machine', base: '#e7edf0', belly: '#92f0f5', accent: '#26788d', size: 32, magnets: true },
+  tide_pelipperator: { arch: 'machine', base: '#d9e7e9', belly: '#7fe6ef', accent: '#1d7c91', size: 44, magnets: true, big: true },
   tide_tentacrush: { arch: 'blob', base: '#34788b', belly: '#8ff0f5', accent: '#eafcff', size: 37, boat: true, scythes: true },
   tide_sharpeedo: { arch: 'blob', base: '#214d64', belly: '#eafcff', accent: '#39d8ef', size: 35, sub: true },
   tide_gyarrados: { arch: 'serpent', base: '#276f89', belly: '#d9fbff', accent: '#39d8ef', size: 52, big: true, boat: true, horn: true },
   // VERDANT: living wood, moss plates, toxic green cores
-  verdant_bulbasore: { arch: 'quad', base: '#5b4a2f', belly: '#4ed66a', accent: '#b8df78', size: 34, bulb: true, horn: true },
+  verdant_bulbasore: { arch: 'biped', base: '#3a3325', belly: '#4ed66a', accent: '#b8df78', size: 35, horn: true, tail: 'leaf' },
   verdant_beedrillz: { arch: 'bird', base: '#5f6f33', belly: '#b8df78', accent: '#d8f277', size: 34, wings: true, scythes: true },
-  verdant_oddishooter: { arch: 'blob', base: '#344a30', belly: '#4ed66a', accent: '#b8df78', size: 31, ears: 'leaf' },
+  verdant_oddishooter: { arch: 'machine', base: '#344a30', belly: '#4ed66a', accent: '#b8df78', size: 32, magnets: true },
   verdant_scytherr: { arch: 'biped', base: '#40522f', belly: '#6ee47a', accent: '#d8f277', size: 40, scythes: true, wings: true, horn: true },
   verdant_prof_oakley: { arch: 'prof', base: '#4b3a2a', accent: '#66df70', size: 34 },
   verdant_torterrar: { arch: 'turtle', base: '#4b3a2a', belly: '#66df70', accent: '#a7d96a', size: 40, bulb: true, shellCannons: true },
@@ -308,9 +328,9 @@ const WORLD_CREATURES: Record<string, CreatureCfg> = {
   verdant_tanglevine: { arch: 'blob', base: '#2d3f2b', belly: '#4ed66a', accent: '#b8df78', size: 34, scythes: true },
   verdant_snorlux: { arch: 'biped', base: '#3f4a32', belly: '#8adf74', accent: '#d8f277', size: 52, big: true, horn: true },
   verdant_pidgeottoh: { arch: 'bird', base: '#55452d', belly: '#84dd72', accent: '#d8f277', size: 34, wings: true, horn: true },
-  verdant_butterfrei: { arch: 'bird', base: '#385232', belly: '#7ee176', accent: '#d8f277', size: 38, wings: true, big: true },
-  verdant_lotadder: { arch: 'blob', base: '#3c5833', belly: '#66df70', accent: '#d8f277', size: 34, boat: true },
-  verdant_ludicolossus: { arch: 'blob', base: '#4b3a2a', belly: '#77df6c', accent: '#d8f277', size: 44, boat: true, big: true, bulb: true },
+  verdant_butterfrei: { arch: 'machine', base: '#385232', belly: '#7ee176', accent: '#d8f277', size: 38, magnets: true, big: true },
+  verdant_lotadder: { arch: 'machine', base: '#3c5833', belly: '#66df70', accent: '#d8f277', size: 34, magnets: true },
+  verdant_ludicolossus: { arch: 'machine', base: '#4b3a2a', belly: '#77df6c', accent: '#d8f277', size: 44, magnets: true, big: true },
 };
 
 // --- faction building themes -----------------------------------------------------
@@ -351,7 +371,8 @@ class Atlas implements SpriteAtlas {
 
   getUnitSprite(key: string, facing8: number, frame: number, colorIdx: number): HTMLCanvasElement {
     const f = ((facing8 % 8) + 8) % 8;
-    const ovUnit = USE_GENERATED_UNIT_OVERRIDES ? this.ov?.units.get(key) : undefined;
+    const ovUnit =
+      USE_GENERATED_UNIT_OVERRIDES && !BLOCKED_LEGACY_PARODY_OVERRIDES.has(key) ? this.ov?.units.get(key) : undefined;
     const fr = ovUnit ? ((frame % ovUnit.frames) + ovUnit.frames) % ovUnit.frames : frame & 1;
     const ck = `${key}|${f}|${fr}|${colorIdx}`;
     let c = this.unitCache.get(ck);
@@ -406,7 +427,12 @@ class Atlas implements SpriteAtlas {
 
     const cfg = WORLD_CREATURES[key] ?? CREATURES[key] ?? { arch: 'blob' as Archetype, base: '#c0c0c0', size: 32 };
     const [cv, ctx] = canvas(64, 64);
+    ctx.save();
+    ctx.translate(32, 54);
+    ctx.scale(1.16, 1.16);
+    ctx.translate(-32, -54);
     drawCreature(ctx, cfg, f, fr, PLAYER_COLORS[colorIdx]?.hex ?? '#ffffff', key);
+    ctx.restore();
     this.unitCache.set(ck, cv);
     return cv;
   }
