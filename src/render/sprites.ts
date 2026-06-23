@@ -139,9 +139,6 @@ export async function loadSpriteOverrides(base = '/sprites'): Promise<SpriteOver
 const DIR_NAMES = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'] as const;
 const MIRROR_DIR: Record<string, string> = { e: 'w', se: 'sw', ne: 'nw' };
 const USE_GENERATED_UNIT_OVERRIDES = true;
-const APPROVED_GENERATED_UNIT_OVERRIDES = new Set<string>([
-  'scorch_charmandar',
-]);
 
 /** Expected building override canvas box for a footprint (see SPRITES.md). */
 export function buildingSpriteBox(fw: number, fh: number, kind: string): { w: number; h: number } {
@@ -354,8 +351,7 @@ class Atlas implements SpriteAtlas {
 
   getUnitSprite(key: string, facing8: number, frame: number, colorIdx: number): HTMLCanvasElement {
     const f = ((facing8 % 8) + 8) % 8;
-    const ovUnit =
-      USE_GENERATED_UNIT_OVERRIDES && APPROVED_GENERATED_UNIT_OVERRIDES.has(key) ? this.ov?.units.get(key) : undefined;
+    const ovUnit = USE_GENERATED_UNIT_OVERRIDES ? this.ov?.units.get(key) : undefined;
     const fr = ovUnit ? ((frame % ovUnit.frames) + ovUnit.frames) % ovUnit.frames : frame & 1;
     const ck = `${key}|${f}|${fr}|${colorIdx}`;
     let c = this.unitCache.get(ck);

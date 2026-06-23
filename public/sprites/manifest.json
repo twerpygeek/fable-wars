@@ -1,5 +1,5 @@
 {
-  "_readme": "GPT Images 2 override pack. Units use 5 real facings and up to 4 walk frames. Terrain uses GPT-generated pre-rendered RTS texture tiles with procedural fallback.",
+  "_readme": "Fable Wars concept-sheet sprite pack. Units are extracted from public/art/source/fable-wars-unit-concept-sheet.png with 5 required facings and 1 frame; terrain/objectives/buildings keep their existing override packs with procedural fallback.",
   "units": {
     "scorch_charmandar": {
       "facings": [
@@ -9,7 +9,7 @@
         "nw",
         "n"
       ],
-      "frames": 4
+      "frames": 1
     },
     "scorch_peekachoo": {
       "facings": [
@@ -139,7 +139,7 @@
         "nw",
         "n"
       ],
-      "frames": 4
+      "frames": 1
     },
     "tide_horsean": {
       "facings": [
@@ -279,7 +279,7 @@
         "nw",
         "n"
       ],
-      "frames": 4
+      "frames": 1
     },
     "verdant_beedrillz": {
       "facings": [
