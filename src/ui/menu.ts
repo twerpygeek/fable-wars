@@ -137,6 +137,18 @@ const CSS = `
 .pa-online-pill { padding: 4px 6px; border: 1px solid rgba(101,216,110,0.48); border-radius: 2px; color: #b9ffbe;
   background: rgba(37,93,43,0.24); font-size: 7px; letter-spacing: 1px; text-transform: uppercase; }
 .pa-online-pill.waiting { border-color: rgba(255,215,119,0.38); color: #ffd777; background: rgba(110,76,25,0.24); }
+.pa-online-chat { margin-top: 10px; border-top: 1px solid rgba(255,220,150,0.14); padding-top: 9px; }
+.pa-online-chat-log { min-height: 72px; max-height: 112px; overflow-y: auto; display: grid; align-content: start; gap: 5px;
+  padding: 8px; border: 1px solid rgba(255,220,150,0.12); border-radius: 3px;
+  background: rgba(4,6,12,0.46); scrollbar-width: thin; }
+.pa-online-chat-line { color: #cfd6ff; font-size: 8px; line-height: 1.4; letter-spacing: 1px; }
+.pa-online-chat-line b { color: #ffd777; font-weight: bold; text-transform: uppercase; }
+.pa-online-chat-line.system { color: #8790bf; text-transform: uppercase; }
+.pa-online-chat-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; margin-top: 7px; }
+.pa-online-chat-form input { min-width: 0; background: linear-gradient(180deg, #11131b, #05060a); color: #fff4d6;
+  border: 2px solid #2a231d; border-radius: 3px; padding: 7px 8px; font-size: 10px; letter-spacing: 1px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,237,190,0.08); }
+.pa-online-chat-form .pa-small-btn { min-width: 78px; }
 .pa-online-muted { opacity: 0.46; filter: grayscale(0.45); pointer-events: none; }
 .pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
   margin: 18px -10px -18px; padding: 12px 10px 10px;
@@ -856,13 +868,33 @@ export class MenuManager {
           <h2>Alpha Status</h2>
           <p class="pa-online-note js-online-note"></p>
           <div class="pa-online-roster js-online-roster"></div>
+          <div class="pa-online-chat">
+            <div class="pa-online-chat-log js-online-chat-log">
+              <div class="pa-online-chat-line system">Connect to a room to open commander chat.</div>
+            </div>
+            <div class="pa-online-chat-form">
+              <input class="js-online-chat" maxlength="140" placeholder="Message your room">
+              <button class="pa-small-btn js-online-chat-send" type="button">Send</button>
+            </div>
+          </div>
         </div>
       </div>`;
     const nameInput = panel.querySelector<HTMLInputElement>('.js-online-name')!;
     const roomInput = panel.querySelector<HTMLInputElement>('.js-online-room')!;
     const note = panel.querySelector<HTMLElement>('.js-online-note')!;
     const roster = panel.querySelector<HTMLElement>('.js-online-roster')!;
+    const chatLog = panel.querySelector<HTMLElement>('.js-online-chat-log')!;
+    const chatInput = panel.querySelector<HTMLInputElement>('.js-online-chat')!;
+    const chatSend = panel.querySelector<HTMLButtonElement>('.js-online-chat-send')!;
     let roomClient: RoomClient | null = null;
+    let roomOpen = false;
+    let roomPlayers: RoomPlayer[] = [];
+    const appendChat = (html: string) => {
+      chatLog.insertAdjacentHTML('beforeend', html);
+      while (chatLog.children.length > 18) chatLog.firstElementChild?.remove();
+      chatLog.scrollTop = chatLog.scrollHeight;
+    };
+    const playerName = (id: string) => roomPlayers.find((player) => player.id === id)?.name ?? id.slice(0, 8);
     const refreshNote = () => {
       const code = normalizeRoomCode(roomInput.value);
       const ws = roomSocketUrl(code, endpoint);
@@ -876,6 +908,20 @@ export class MenuManager {
     };
     roomInput.addEventListener('change', refreshNote);
     roster.innerHTML = renderOnlineRoster([]);
+    const sendChat = () => {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      if (!roomClient || !roomOpen) {
+        appendChat(`<div class="pa-online-chat-line system">Join or host a room before sending chat.</div>`);
+        return;
+      }
+      roomClient.chat(text);
+      chatInput.value = '';
+    };
+    chatSend.addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') sendChat();
+    });
     const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
     host.addEventListener('click', () => {
       const { code, ws } = refreshNote();
@@ -885,19 +931,28 @@ export class MenuManager {
         return;
       }
       roomClient?.close();
+      roomOpen = false;
       roomClient = createRoomClient(ws, {
         onStatus: (status) => {
           if (status === 'connecting') note.innerHTML = `Opening room <code>${escapeHtml(code)}</code>...`;
           else if (status === 'open') {
+            roomOpen = true;
             note.innerHTML = `Connected to room <code>${escapeHtml(code)}</code>. Waiting for the room roster...`;
+            appendChat(`<div class="pa-online-chat-line system">Room connected. Commander chat online.</div>`);
             roomClient?.hello({ name: nameInput.value || 'Commander', faction: this.faction, colorIdx: this.colorIdx });
             roomClient?.ready(true);
           } else if (status === 'closed') {
+            roomOpen = false;
             note.innerHTML = `Room connection closed. Copy the invite and reconnect when your friend is ready.`;
+            roomPlayers = [];
             roster.innerHTML = renderOnlineRoster([]);
+            appendChat(`<div class="pa-online-chat-line system">Room connection closed.</div>`);
           } else if (status === 'error') {
+            roomOpen = false;
             note.innerHTML = `Room connection failed. Check <code>VITE_MULTIPLAYER_WS</code> and the relay deployment.`;
+            roomPlayers = [];
             roster.innerHTML = renderOnlineRoster([]);
+            appendChat(`<div class="pa-online-chat-line system">Room connection failed.</div>`);
           }
         },
         onMessage: (msg) => {
@@ -907,7 +962,11 @@ export class MenuManager {
               break;
             case 'room':
               note.innerHTML = `Room <code>${escapeHtml(msg.room)}</code> online. ${msg.players.length} commander${msg.players.length === 1 ? '' : 's'} present.`;
+              roomPlayers = msg.players;
               roster.innerHTML = renderOnlineRoster(msg.players);
+              break;
+            case 'chat':
+              appendChat(renderOnlineChatLine(playerName(msg.from), msg.text));
               break;
             case 'error':
               note.innerHTML = `Room relay error: ${escapeHtml(msg.message)}`;
@@ -1629,6 +1688,10 @@ function renderOnlineRoster(players: RoomPlayer[]): string {
       </div>`;
     })
     .join('');
+}
+
+function renderOnlineChatLine(name: string, text: string): string {
+  return `<div class="pa-online-chat-line"><b>${escapeHtml(name)}</b>: ${escapeHtml(text)}</div>`;
 }
 
 function btn(label: string, onClick: () => void, primary = false): HTMLElement {

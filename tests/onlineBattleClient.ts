@@ -19,5 +19,11 @@ assert.match(source, /renderOnlineRoster/);
 assert.match(source, /pa-online-player/);
 assert.match(source, /READY/);
 assert.match(source, /WAITING/);
+assert.match(source, /js-online-chat-log/);
+assert.match(source, /js-online-chat-send/);
+assert.match(source, /roomClient\.chat\(text\)/);
+assert.match(source, /case 'chat'/);
+assert.match(source, /renderOnlineChatLine/);
+assert.match(source, /Commander chat online/);
 
 console.log('PASS online battle client');
