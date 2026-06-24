@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — AI opponent (the entire skirmish brain).
+// FABLE WARS — AI opponent (the entire skirmish brain).
 //
 // aiThink(state, data, player) is called by the main loop every
 // AI_THINK_INTERVAL[difficulty] ticks and returns Command[] — it never mutates

@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/production.ts (Owner A)
+// FABLE WARS — sim/production.ts (Owner A)
 // Production queues (pay-as-you-build), placement validation, spiral placement
 // search for the AI, and the per-tick queue/construction advancement used by
 // game.ts. Selling/cancel refunds are handled in game.ts command application.

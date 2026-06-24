@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — complete building roster: 15 keys x 3 factions = 45 defs.
+// FABLE WARS — complete building roster: 15 keys x 3 factions = 45 defs.
 // Ids follow `<faction>_<key>` (e.g. 'tide_navalyard'). Stats are identical
 // across factions for a given key (faction quirks apply to units only);
 // names, blurbs and projectile flavor vary.
@@ -91,11 +91,11 @@ const SPECS: BuildingSpec[] = [
   },
   {
     key: 'refinery',
-    names: { scorch: 'Candy Smeltery', tide: 'Candy Distillery', verdant: 'Candy Arbor' },
+    names: { scorch: 'Rift Smeltery', tide: 'Crystal Distillery', verdant: 'Crystal Arbor' },
     blurbs: {
-      scorch: 'Melts rare candy into cold, hard credits. Smells like burnt sugar.',
-      tide: 'Triple-distilled crystal candy, aged into pure liquidity.',
-      verdant: 'Composts crystal candy into credits. Organic, free-range economics.',
+      scorch: 'Melts volatile rift crystals into cold, hard credits. Smells like burnt stone.',
+      tide: 'Triple-distilled crystal flow, refined into pure liquidity.',
+      verdant: 'Composts rift crystals into credits. Organic, free-range economics.',
     },
     tab: 'structure',
     cost: 2000,

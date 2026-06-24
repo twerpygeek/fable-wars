@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — visual effects system (renderer-owned).
+// FABLE WARS — visual effects system (renderer-owned).
 // Self-expiring effects spawned from GameEvents. Every particle's position is
 // a pure function of (effect seed, age), so the per-frame draw pass allocates
 // nothing; gradient sprites (fireballs, glows, smoke) are pre-rendered once.
@@ -384,7 +384,7 @@ export class EffectsSystem {
             pos: { x: ev.pos.x + 0.5, y: ev.pos.y + 0.5 },
             startedAt: now,
             duration: 900,
-            scale: 1.6, // >=1.5 + NEUTRAL = candy-pink sparkle (crystal)
+            scale: 1.6, // >=1.5 + NEUTRAL = rift-pink sparkle (crystal)
             element: Element.NEUTRAL,
           });
           break;

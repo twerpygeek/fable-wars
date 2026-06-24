@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/fog.ts (Owner B)
+// FABLE WARS — sim/fog.ts (Owner B)
 // Per-player fog of war. Each tick every player's `visible` bitmap is cleared
 // and re-stamped with filled circles of radius def.sight around each of their
 // entities; `explored` accumulates (explored |= visible).

@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — HUD overlays: top-left status bar (match clock, unit count,
+// FABLE WARS — HUD overlays: top-left status bar (match clock, unit count,
 // smoothed FPS), a toast stack top-center, and a subtle vignette for
 // atmosphere. DOM-only. Reads GameState, never mutates it.
 // =============================================================================

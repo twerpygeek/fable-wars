@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — minimap (radar). Top-down tile-grid view:
+// FABLE WARS — minimap (radar). Top-down tile-grid view:
 //   cached terrain downsample (1px per tile) → fog mask → entity dots
 //   (buildings 2x2, units 1x1, player colors) → white camera diamond.
 // No powered radar → animated static noise + "NO SIGNAL".

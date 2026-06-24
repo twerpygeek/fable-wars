@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/superweapons.ts (Owner B)
+// FABLE WARS — sim/superweapons.ts (Owner B)
 // Superweapon charging, ready events and launches.
 //
 // Delayed strike effects are encoded as special marker Projectiles with

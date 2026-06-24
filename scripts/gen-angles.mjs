@@ -26,10 +26,10 @@ const FACINGS = {
 };
 
 const STYLE =
-  '3/4 high-angle isometric real-time strategy game camera, chibi cartoon monster ' +
-  'sprite, crisp pixel-art, soft cel shading lit from the upper left, thin dark ' +
-  'outline, vibrant saturated colors, single creature centered, full body, no text, ' +
-  'no logo, no ground shadow, plain solid flat uniform light grey background';
+  '3/4 high-angle isometric real-time strategy game camera, dark fantasy pre-rendered ' +
+  '3D RTS unit sprite, crisp silhouette, realistic armor mass, upper-left key light, ' +
+  'single unit centered, full body, no text, no logo, no ground shadow, plain solid ' +
+  'flat uniform light grey background, not cute, not chibi, not mascot-like';
 
 const args = process.argv.slice(2);
 const skipExisting = args.includes('--skip-existing');

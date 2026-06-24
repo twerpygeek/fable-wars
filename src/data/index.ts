@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — game data assembly + validation.
+// FABLE WARS — game data assembly + validation.
 // Exports the fully populated, validated GameData. Validation runs at module
 // init and throws a descriptive Error on any contract violation so bad data
 // can never reach the sim.

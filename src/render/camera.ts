@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — isometric camera math.
+// FABLE WARS — isometric camera math.
 // Projection (see core/constants.ts):
 //   screenX = ((x - y) * TILE_HALF_W - cam.x) * cam.zoom
 //   screenY = ((x + y) * TILE_HALF_H - cam.y) * cam.zoom

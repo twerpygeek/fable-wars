@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — Sprite Lab (open the game with ?spritelab).
+// FABLE WARS — Sprite Lab (open the game with ?spritelab).
 // Browses every unit/building sprite (with any custom overrides applied) and
 // downloads correctly-named, correctly-sized PNG templates for repainting.
 // File names match exactly what loadSpriteOverrides() expects under

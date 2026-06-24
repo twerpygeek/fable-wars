@@ -1,13 +1,13 @@
-# Custom Sprite Guide — making the creatures & buildings nicer
+# Custom Sprite Guide — Fable Wars units and buildings
 
-Every sprite in Pocket Alert is procedurally drawn, and **every one of them can be replaced
+Every sprite in Fable Wars is procedurally drawn, and **every one of them can be replaced
 with your own PNG** without touching code. Anything you don't replace keeps the built-in art,
-so you can upgrade one creature at a time.
+so you can upgrade one unit at a time.
 
 ## TL;DR workflow
 
 1. Run the game and open **`/?spritelab`** (works locally at `http://localhost:5173/?spritelab`
-   and live at `https://fable-alert.vercel.app/?spritelab`). It shows every sprite and downloads
+   and live at `https://fablewars.vercel.app/?spritelab`). It shows every sprite and downloads
    **correctly-named, correctly-sized PNG templates with guide lines**.
 2. Paint over a template in any editor (Aseprite, Krita, Photoshop, Procreate) or generate art
    with an AI image tool and clean it up. Keep the canvas size and the transparent background.
@@ -21,7 +21,7 @@ so you can upgrade one creature at a time.
 - **Canvas: 64×64, transparent background.** Bigger is fine (e.g. 128×128) — it's auto-scaled down.
 - **Anchor: feet on the y=52 line, horizontally centered** (the template shows both guides).
 - **Facings: paint 5** — `s, sw, w, nw, n` (camera-facing → back). The engine mirrors them for
-  `se, e, ne` automatically. (You *may* additionally supply those 3 for asymmetric creatures.)
+  `se, e, ne` automatically. (You *may* additionally supply those 3 for asymmetric units.)
 - **Frames: `_0` (idle/stand) and `_1` (step — limbs swapped, 1–2px bob).** If walking animation is
   too much work, supply only `_0` and set `"frames": 1` in the manifest.
 - **Don't paint team colors** — the engine stamps the player-color band at the feet automatically.

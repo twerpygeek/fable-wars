@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — RA2-style build sidebar (Owner E).
+// FABLE WARS — RA2-style build sidebar (Owner E).
 // Right 200px column: minimap, credits ticker + power bar, six production tabs
 // (Q W E R T Y), icon grid with queue/lock/READY states, repair/sell toggles,
 // superweapon countdown. DOM built once; update() touches only changed nodes.

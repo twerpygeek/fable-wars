@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — terrain passability helpers.
+// FABLE WARS — terrain passability helpers.
 // Pure functions over GameMap; used by pathfinding, placement and mapgen.
 // =============================================================================
 

@@ -103,7 +103,7 @@ export function getGuidance(
     return {
       id: 'build-refinery',
       title: 'Start your economy',
-      body: `Queue ${data.buildings[`${faction}_refinery`].name} near Rare Candy crystals.`,
+      body: `Queue ${data.buildings[`${faction}_refinery`].name} near rift crystals.`,
       severity: 'info',
     };
   }

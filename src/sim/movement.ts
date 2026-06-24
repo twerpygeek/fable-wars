@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/movement.ts (Owner B)
+// FABLE WARS — sim/movement.ts (Owner B)
 // Waypoint-following unit movement with soft collision avoidance.
 //
 // Units follow `u.path` (integer tile waypoints from pathfinding; the physical

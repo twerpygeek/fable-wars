@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — battlefield hover tooltip (Owner E).
+// FABLE WARS — battlefield hover tooltip (Owner E).
 // Cursor-following nameplate for the unit/building under the mouse: name,
 // HP bar (rules.ini ConditionYellow/Red thresholds), gold veterancy chevrons,
 // one-line blurb, and the owner's name in their player color for enemies.

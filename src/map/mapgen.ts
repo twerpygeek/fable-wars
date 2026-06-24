@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — seeded procedural map generator.
+// FABLE WARS — seeded procedural map generator.
 // Deterministic: ALL randomness flows through one mulberry32(seed) stream.
 // Pipeline: start positions → water (value-noise blobs) → guaranteed start
 // lakes (medium/high) → dirt patches → start-zone clearing → sand shoreline →

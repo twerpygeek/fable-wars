@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/entity.ts (Owner A)
+// FABLE WARS — sim/entity.ts (Owner A)
 // Entity lifecycle: spawn, remove, per-player queries, occupancy maintenance.
 //
 // entitiesOf/buildingsOf are backed by a per-state cache invalidated on every

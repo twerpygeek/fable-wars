@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sound effects (Owner F).
+// FABLE WARS — sound effects (Owner F).
 // One lazy AudioContext shared by the whole audio stack. Three sources feed the
 // same positional voice chain, in priority order per sound:
 //   1. recorded samples (CC0 Kenney recordings via samples.ts) when decoded,

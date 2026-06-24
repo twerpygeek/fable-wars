@@ -1,4 +1,4 @@
-// Pocket Alert — application shell: menu → lobby → match loop → game over.
+// Fable Wars — application shell: menu → lobby → match loop → game over.
 import type {
   Camera,
   Command,

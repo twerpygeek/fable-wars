@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — procedural sprite atlas (Owner D, "the art department").
+// FABLE WARS — procedural sprite atlas (Owner D, "the art department").
 //
 // Every sprite is drawn once with Canvas 2D and cached. Deterministic: all
 // noise comes from mulberry32 seeded by the sprite key.
@@ -201,7 +201,7 @@ interface CreatureCfg {
   base: string; // main body color
   belly?: string;
   accent?: string; // markings / accessory color
-  size: number; // body height px (chibi total)
+  size: number; // body height px for the procedural fallback silhouette
   ears?: 'point' | 'round' | 'long' | 'leaf' | 'none';
   tail?: 'flame' | 'zap' | 'fin' | 'leaf' | 'plain' | 'none';
   horn?: boolean;
@@ -1392,7 +1392,7 @@ function drawBuilding(
     }
     case 'refinery': {
       isoBox(ctx, p, 26, theme, 3);
-      // candy silo
+      // crystal silo
       const sx = cx - 12;
       ctx.fillStyle = shade(theme.wallA, 0.06);
       ctx.beginPath();
@@ -1401,7 +1401,7 @@ function drawBuilding(
       ctx.strokeStyle = theme.trim;
       ctx.lineWidth = 1.2;
       ctx.stroke();
-      // candy pile
+      // crystal pile
       for (let i = 0; i < 7; i++) {
         const gx = cx + 8 + rnd() * 14 - 7;
         const gy = topY(26) + 6 + rnd() * 6;

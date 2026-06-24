@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — mouse/keyboard controller (Owner E).
+// FABLE WARS — mouse/keyboard controller (Owner E).
 // Translates raw input into UIState mutations + sim Commands. Never mutates
 // GameState. Active only between enable()/disable() (match lifetime).
 //

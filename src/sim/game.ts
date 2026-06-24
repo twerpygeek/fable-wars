@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/game.ts (Owner A)
+// FABLE WARS — sim/game.ts (Owner A)
 // createGame + tickGame: the ONLY mutators of GameState. Tick order per
 // ARCHITECTURE.md: commands → production → economy → unit brains (combat,
 // movement) → unit pushing → projectiles → superweapons → crates → fog →

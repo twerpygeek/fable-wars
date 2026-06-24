@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — local match history ("Service Record"). Finished matches are
+// FABLE WARS — local match history ("Service Record"). Finished matches are
 // stored in localStorage so the main menu can list past operations and replay
 // any setup (seed included — the exact same map regenerates). Storage is
 // best-effort: quota errors and corrupted payloads degrade to "no history",

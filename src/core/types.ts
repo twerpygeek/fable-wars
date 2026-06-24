@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — shared type contract.
+// FABLE WARS — shared type contract.
 // Every module imports from here. Sim state is plain data (JSON-serializable
 // except typed arrays) and is mutated only inside sim/game.ts tickGame().
 // UI and AI talk to the sim exclusively through Command[]; the sim talks back
@@ -92,8 +92,8 @@ export const enum MoveDomain {
 }
 
 export interface UnitDef {
-  id: string; // e.g. 'scorch_peekachoo'
-  name: string; // display, e.g. 'Peekachoo'
+  id: string; // stable internal key, e.g. 'scorch_peekachoo'
+  name: string; // display, e.g. 'Volt Cinder'
   blurb: string; // one-line flavor for tooltip
   faction: FactionId;
   tab: Extract<ProductionTab, 'infantry' | 'vehicle' | 'air' | 'naval'>;

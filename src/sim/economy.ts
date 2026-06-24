@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/economy.ts (Owner A)
+// FABLE WARS — sim/economy.ts (Owner A)
 // Per-tick economy pass:
 //   power recompute (edge-triggered lowPower/powerRestored events, radarActive),
 //   building repair drain (credits -> hp),

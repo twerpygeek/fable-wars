@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — EVA-style announcer (Owner F).
+// FABLE WARS — EVA-style announcer (Owner F).
 // speechSynthesis with a deep/slow delivery, priority queue (0 = critical,
 // 1 = combat, 2 = production), no overlap, per-line dedupe cooldowns, and a
 // radio-static SFX fallback for important lines when speech is unavailable.

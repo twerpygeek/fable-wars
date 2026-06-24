@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — procedural chiptune-military soundtrack (Owner F).
+// FABLE WARS — procedural chiptune-military soundtrack (Owner F).
 // ~115 BPM, A minor, 16-bar form, scheduled with the classic WebAudio
 // lookahead pattern (25 ms timer, 100 ms scheduling horizon) so the loop is
 // seamless. Intensity 0..1 layers in combat percussion and busier hats.

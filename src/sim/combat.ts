@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/combat.ts (Owner B)
+// FABLE WARS — sim/combat.ts (Owner B)
 // Targeting, firing, projectiles, damage/veterancy, engineer capture and
 // passive healing (elite self-heal, Verdant regen, repair-depot aura).
 //

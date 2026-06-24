@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — faction + superweapon definitions.
+// FABLE WARS — faction + superweapon definitions.
 // Three factions per DESIGN.md. Superweapon defs live here because each
 // faction is identified by exactly one superweapon.
 // =============================================================================

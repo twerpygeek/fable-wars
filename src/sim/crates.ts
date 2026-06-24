@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/crates.ts (Owner A)
+// FABLE WARS — sim/crates.ts (Owner A)
 // RA2 [CrateRules]-style map bonuses. Called once per tick from game.ts
 // (after updateSuperweapons). Spawns crates on a fixed schedule at random
 // passable ground tiles, detects pickup by any player's unit, and applies the

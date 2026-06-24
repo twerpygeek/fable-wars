@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — AudioSystem (Owner F).
+// FABLE WARS — AudioSystem (Owner F).
 // Routes GameEvents from the sim into the SFX synth, procedural music layer
 // and the EVA announcer. Positional audio: pan/volume by distance from the
 // camera center, culled beyond ~1.5 screens. Reads GameState strictly

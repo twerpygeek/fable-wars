@@ -46,7 +46,7 @@ export function saveB64(b64, outPath) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const env = loadEnv();
   const apiKey = env.BYTEPLUS_MODELARK_API_KEY;
-  const prompt = process.argv[2] || 'a cute cartoon flame salamander, transparent background';
+  const prompt = process.argv[2] || 'dark fantasy pre-rendered 3D Fable Wars ember infantry, transparent background';
   const out = process.argv[3] || 'tmp/probe.png';
   console.log('model:', MODEL, '\nprompt:', prompt);
   const json = await generate({ apiKey, prompt });

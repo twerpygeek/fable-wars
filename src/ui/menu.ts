@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — menus (Owner E): main menu, skirmish lobby, loading overlay,
+// FABLE WARS — menus (Owner E): main menu, skirmish lobby, loading overlay,
 // ESC menu, game-over screen, How-to-Play. Dark command-console aesthetic with
 // drifting elemental particles. Produces GameConfig (human is player 0).
 // =============================================================================
@@ -407,16 +407,16 @@ interface BattleCodePayload {
 }
 const TIPS = [
   'First minute: power, refinery, barracks. Then scout before the first raid.',
-  'Right-click crystals with harvesters to claim a Candy field deliberately.',
-  'Peekachoo hits air AND ground. The cheeks are not just for show.',
+  'Right-click crystals with harvesters to claim a crystal field deliberately.',
+  'Volt Cinders can punish aircraft early. Mix them in before enemy air arrives.',
   'Low power slows construction and shuts down radar and advanced defenses.',
-  'Harvesters auto-return to the nearest Candy Refinery. Protect them!',
-  'Engineers (the Professors) capture enemy buildings. Escort them well.',
-  'Fire beats Grass, Grass beats Water, Water beats Fire. +25% damage.',
-  'Veteran creatures deal +25% damage. Elites self-heal. Keep them alive.',
+  'Harvesters auto-return to the nearest Crystal Refinery. Protect them!',
+  'Savant units capture enemy buildings. Escort them well.',
+  'Fire beats Verdant, Verdant beats Tide, Tide beats Fire. +25% damage.',
+  'Veteran units deal +25% damage. Elites self-heal. Keep them alive.',
   'Sell unwanted structures for half their cost — fast cash in a pinch.',
   'Press H to jump to your Citadel. Space jumps to the last attack.',
-  'Hard AI snipes harvesters. Wall in your Candy fields or guard them.',
+  'Hard AI snipes harvesters. Wall in your crystal fields or guard them.',
 ];
 const ART_CODEX = [
   {
@@ -1024,8 +1024,8 @@ export class MenuManager {
     panel.style.maxWidth = '640px';
     panel.innerHTML = `<h1 class="pa-title" style="font-size:24px;letter-spacing:4px;">HOW TO PLAY</h1>
       <div class="pa-menu-h2">Objective</div>
-      <div style="font-size:11px;color:#9aa3cf;line-height:1.6">Destroy every enemy structure. Build Power, a Candy
-      Refinery, then war production. Harvesters mine <b style="color:#ff9af0">Rare Candy crystals</b> to fund your army.
+      <div style="font-size:11px;color:#9aa3cf;line-height:1.6">Destroy every enemy structure. Build Power, a Crystal
+      Refinery, then war production. Harvesters mine <b style="color:#ff9af0">rift crystals</b> to fund your army.
       Radar unlocks tier 2; the Master Lab unlocks tier 3 and your faction superweapon.</div>
       <div class="pa-menu-h2">Controls</div>
       <table>

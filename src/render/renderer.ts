@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — isometric renderer. The player's entire view of the game.
+// FABLE WARS — isometric renderer. The player's entire view of the game.
 //
 // Render pass order:
 //   1. terrain      — blitted from an offscreen full-map iso pre-render that is

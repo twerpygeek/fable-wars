@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — recorded SFX sample loader (Owner F).
+// FABLE WARS — recorded SFX sample loader (Owner F).
 // Small decoded-buffer cache over public/audio/sfx/ (cherry-picked CC0 Kenney
 // recordings, see CREDITS.md). Every manifest entry ships as <name>.ogg with a
 // <name>.m4a sibling because Safari's decodeAudioData rejects Ogg Vorbis.

@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — sim/pathfinding.ts
+// FABLE WARS — sim/pathfinding.ts
 // A* pathfinding on the tile grid. 8-directional with octile heuristic,
 // diagonal cost sqrt(2), no corner-cutting (a diagonal step requires both
 // orthogonal neighbors to be walkable). Binary min-heap + typed scratch

@@ -1,5 +1,5 @@
 // =============================================================================
-// POCKET ALERT — tuning constants. Balance lives here and in src/data/*.
+// FABLE WARS — tuning constants. Balance lives here and in src/data/*.
 // =============================================================================
 
 import { ArmorClass, Element, WeaponClass } from './types';
