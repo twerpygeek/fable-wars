@@ -8,6 +8,7 @@ import type {
 import { PLAYER_COLORS } from '../core/types';
 import {
   getCrystalRushDeployCost,
+  getCrystalRushManualWaveCount,
   getCrystalRushUpgradeCost,
 } from '../sim/modes/crystalRush';
 
@@ -147,7 +148,7 @@ export class CrystalRushPanel {
           <div class="pa-rush-meter-bar js-base-bar"></div>
         </div>
       </div>
-      <div class="pa-rush-label">Battle Plan</div>
+      <div class="pa-rush-label">War Surge</div>
       <div class="pa-rush-plans"></div>
       <div class="pa-rush-label">Upgrades</div>
       <div class="pa-rush-ups"></div>
@@ -188,6 +189,7 @@ export class CrystalRushPanel {
     const mins = Math.floor(state.tick / 15 / 60);
     const secs = Math.floor(state.tick / 15) % 60;
     const deployCost = getCrystalRushDeployCost(state, this.me);
+    const surgeCount = getCrystalRushManualWaveCount(state, this.me);
     const deployTicksLeft = Math.max(0, crp.nextDeployTick - state.tick);
     const deployCd = Math.ceil(deployTicksLeft / 15);
     const waveCd = Math.max(0, Math.ceil((crp.nextWaveTick - state.tick) / 15));
@@ -205,7 +207,7 @@ export class CrystalRushPanel {
     this.setText('.js-credits', String(p.credits));
     this.setText('.js-income', `+${crp.incomeRate}/s`);
     this.setText('.js-auto-wave', `${waveCd}s`);
-    this.setText('.js-intent', this.intentText(crp.stance, deployTicksLeft, p.credits, deployCost));
+    this.setText('.js-intent', this.intentText(crp.stance, deployTicksLeft, p.credits, deployCost, surgeCount));
     this.setText('.js-crystal-yours', `${crystalCounts[this.me] ?? 0} yours`);
     this.setText('.js-base-race', `You ${myBaseHp}% · Enemy ${enemyBaseHp}%`);
     const crystalBar = this.el.querySelector('.js-crystal-bar') as HTMLElement;
@@ -227,7 +229,7 @@ export class CrystalRushPanel {
       btn.className = 'pa-rush-btn pa-rush-plan' + (crp.stance === plan.id ? ' sel' : '');
       btn.disabled = deployTicksLeft > 0 || p.credits < deployCost;
       btn.innerHTML = `<b>${plan.label}</b><span>${plan.desc}</span><em>${
-        deployTicksLeft > 0 ? `${deployCd}s` : `${deployCost}c`
+        deployTicksLeft > 0 ? `${deployCd}s` : `${surgeCount} units · ${deployCost}c`
       }</em>`;
     }
 
@@ -260,12 +262,13 @@ export class CrystalRushPanel {
     deployTicksLeft: number,
     credits: number,
     deployCost: number,
+    surgeCount: number,
   ): string {
     if (deployTicksLeft > 0) return 'Orders committed. Your next manual wave is forming.';
     if (credits < deployCost) return `Earn ${deployCost - credits} more crystals, then choose a battle plan.`;
-    if (stance === 'greedy') return 'Ready: Claim Crystal sends your next wave to secure income.';
-    if (stance === 'aggressive') return 'Ready: Break Base sends your next wave to eliminate a rival.';
-    return 'Ready: Balanced Push splits your next wave between income and pressure.';
+    if (stance === 'greedy') return `Ready: spend crystals to surge ${surgeCount} units into the center fight.`;
+    if (stance === 'aggressive') return `Ready: spend crystals to surge ${surgeCount} units at an enemy base.`;
+    return `Ready: spend crystals to split ${surgeCount} units between income and pressure.`;
   }
 
   private crystalPresence(state: GameState): number[] {

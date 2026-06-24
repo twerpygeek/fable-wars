@@ -165,6 +165,12 @@ export function getCrystalRushDeployCost(state: GameState, player: PlayerId): nu
   return MANUAL_DEPLOY_COST_BASE + Math.max(0, crp.waveLevel - 1) * 70;
 }
 
+export function getCrystalRushManualWaveCount(state: GameState, player: PlayerId): number {
+  const crp = state.crystalRush?.player[player];
+  if (crp === undefined) return 0;
+  return Math.min(MAX_WAVE_UNITS, Math.ceil(baseWaveCount(state, crp.waveLevel) * 1.42) + 2);
+}
+
 function sculptCenterCrystal(state: GameState, center: Vec2): void {
   for (let y = center.y - 5; y <= center.y + 5; y++) {
     for (let x = center.x - 5; x <= center.x + 5; x++) {
@@ -329,8 +335,7 @@ function spawnWave(state: GameState, data: GameData, player: PlayerId, events: G
   const roster = waveRoster(data, p.faction, crp.waveLevel, state.tick);
   if (roster.length === 0) return;
   const bd = data.buildings[base.defId];
-  const baseCount = 3 + crp.waveLevel * 2 + Math.floor(state.tick / secondsToTicks(105));
-  const count = Math.min(MAX_WAVE_UNITS, manual ? Math.ceil(baseCount * 0.75) + 2 : baseCount);
+  const count = manual ? getCrystalRushManualWaveCount(state, player) : Math.min(MAX_WAVE_UNITS, baseWaveCount(state, crp.waveLevel));
   for (let i = 0; i < count; i++) {
     const def = roster[i % roster.length];
     const tile = findSpawnTileNear(state, base.pos.x | 0, base.pos.y | 0, bd.footprint.w, bd.footprint.h, def.domain);
@@ -341,6 +346,10 @@ function spawnWave(state: GameState, data: GameData, player: PlayerId, events: G
     p.stats.built++;
     events.push({ type: 'unitReady', player, defId: def.id, id: u.id });
   }
+}
+
+function baseWaveCount(state: GameState, level: number): number {
+  return 3 + level * 2 + Math.floor(state.tick / secondsToTicks(105));
 }
 
 function waveRoster(data: GameData, faction: FactionId, level: number, tick: number): UnitDef[] {

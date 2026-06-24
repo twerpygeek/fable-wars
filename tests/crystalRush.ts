@@ -54,3 +54,21 @@ assert.ok(
   afterUnits.some((e) => e.orders[0]?.kind === 'attack'),
   'aggressive deploy should send at least one unit toward an enemy base',
 );
+
+const surgeCfg: GameConfig = {
+  ...cfg,
+  seed: 777331,
+  players: cfg.players.map((p, i) => ({ ...p, isHuman: i === 0, name: i === 0 ? 'Surge Commander' : p.name })),
+};
+const surgeState = createGame(surgeCfg, DATA);
+const surgePlayer = surgeState.crystalRush?.player[0];
+assert.ok(surgePlayer, 'Crystal Rush player state should exist');
+surgePlayer.waveLevel = 4;
+surgePlayer.nextWaveTick = TICK_RATE * 60 * 30;
+surgeState.tick = TICK_RATE * 20;
+surgeState.players[0].credits = 2000;
+const surgeBefore = entitiesOf(surgeState, 0).filter((e) => e.kind === 'unit').length;
+tickGame(surgeState, DATA, [{ type: 'crystalRushDeployWave', player: 0, stance: 'split' }]);
+const surgeSpawned = entitiesOf(surgeState, 0).filter((e) => e.kind === 'unit').length - surgeBefore;
+
+assert.ok(surgeSpawned >= 15, `War Surge should feel stronger than an auto wave, spawned ${surgeSpawned}`);
