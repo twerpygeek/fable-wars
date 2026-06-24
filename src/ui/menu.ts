@@ -14,11 +14,11 @@ import {
 } from '../core/constants';
 import { DATA } from '../data/index';
 import {
+  battleInviteUrl,
   multiplayerEndpoint,
   normalizeRoomCode,
   randomRoomCode,
   roomSocketUrl,
-  roomUrl,
 } from '../net/multiplayer';
 import { clearHistory, getHistory } from './history';
 import type { MatchResult } from './history';
@@ -805,7 +805,10 @@ export class MenuManager {
   private showOnlineBattle(): void {
     const el = this.screen();
     const endpoint = multiplayerEndpoint();
-    const roomFromUrl = new URLSearchParams(location.search).get('room');
+    const params = new URLSearchParams(location.search);
+    const battleFromUrl = params.get('battle');
+    if (battleFromUrl) this.applyBattleCode(battleFromUrl);
+    const roomFromUrl = params.get('room');
     const room = normalizeRoomCode(roomFromUrl ?? randomRoomCode());
     const panel = document.createElement('div');
     panel.className = 'pa-panel';
@@ -844,10 +847,11 @@ export class MenuManager {
     const refreshNote = () => {
       const code = normalizeRoomCode(roomInput.value);
       const ws = roomSocketUrl(code, endpoint);
-      const invite = roomUrl(code);
+      const battle = this.currentBattleCode();
+      const invite = battleInviteUrl(code, battle);
       note.innerHTML = endpoint
-        ? `Room relay found at <code>${escapeHtml(endpoint)}</code>. Invite link: <code>${escapeHtml(invite)}</code>.`
-        : `Online Battle now starts Crystal Rush immediately. Invite links can still be copied, and live friend rooms will unlock when the realtime relay endpoint is connected.`;
+        ? `Room relay found at <code>${escapeHtml(endpoint)}</code>. Invite carries this room and battle setup: <code>${escapeHtml(invite)}</code>.`
+        : `Copy Invite shares this exact faction, map, seed, and Crystal Rush room code. Live friend rooms unlock when the realtime relay endpoint is connected.`;
       roomInput.value = code;
       return { code, ws, invite };
     };

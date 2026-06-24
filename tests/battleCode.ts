@@ -10,5 +10,8 @@ assert.match(source, /FW1-/);
 assert.match(source, /pa-battle-code/);
 assert.match(source, /Copy Code/);
 assert.match(source, /Share this setup with a friend/);
+assert.match(source, /battleInviteUrl/);
+assert.match(source, /params\.get\('battle'\)/);
+assert.match(source, /Copy Invite shares this exact faction, map, seed/);
 
 console.log('PASS battle code');

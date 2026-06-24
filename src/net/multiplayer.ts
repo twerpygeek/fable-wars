@@ -1,4 +1,5 @@
 export const MULTIPLAYER_ROOM_PARAM = 'room';
+export const MULTIPLAYER_BATTLE_PARAM = 'battle';
 
 type ImportMetaWithEnv = ImportMeta & {
   env?: Record<string, string | boolean | undefined>;
@@ -30,6 +31,12 @@ export function randomRoomCode(): string {
 export function roomUrl(roomCode: string, base = window.location.href): string {
   const url = new URL(base);
   url.searchParams.set(MULTIPLAYER_ROOM_PARAM, normalizeRoomCode(roomCode));
+  return url.toString();
+}
+
+export function battleInviteUrl(roomCode: string, battleCode: string, base = window.location.href): string {
+  const url = new URL(roomUrl(roomCode, base));
+  url.searchParams.set(MULTIPLAYER_BATTLE_PARAM, battleCode.trim());
   return url.toString();
 }
 
