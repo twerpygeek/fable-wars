@@ -261,53 +261,6 @@ interface CreatureCfg {
   big?: boolean; // tier-3 bulk
 }
 
-const CREATURES: Record<string, CreatureCfg> = {
-  // SCORCH
-  scorch_cinder_imp: { arch: 'biped', base: '#f08030', belly: '#ffd79b', size: 34, tail: 'flame', cheeks: '#ff9e54' },
-  scorch_volt_cinder: { arch: 'biped', base: '#ffd83c', belly: '#fff1b8', size: 32, ears: 'long', tail: 'zap', cheeks: '#ff4040' },
-  scorch_magma_brute: { arch: 'biped', base: '#e05038', belly: '#ffb04a', size: 38, flameHead: true, tail: 'flame' },
-  scorch_ash_savant: { arch: 'prof', base: '#c03028', accent: '#f8d030', size: 33 },
-  scorch_ember_hauler: { arch: 'turtle', base: '#5a4a42', belly: '#c8a888', accent: '#ff5a2a', size: 36 },
-  scorch_basalt_ram: { arch: 'quad', base: '#9aa0aa', belly: '#c9ced8', size: 38, horn: true },
-  scorch_ashrunner: { arch: 'quad', base: '#f08030', belly: '#f8e0a0', accent: '#2e2030', size: 36, tail: 'plain' },
-  scorch_storm_anvil: { arch: 'machine', base: '#b8c0d0', accent: '#3858f0', size: 34, magnets: true },
-  scorch_caldera_titan: { arch: 'biped', base: '#d03028', belly: '#8a1c14', accent: '#dcdcdc', size: 48, horn: true, big: true, tail: 'plain' },
-  scorch_cinderwing: { arch: 'bird', base: '#7038f8', belly: '#a890f0', size: 30, wings: true, ears: 'point' },
-  scorch_solar_wyrm: { arch: 'bird', base: '#ff7a2a', belly: '#ffd83c', size: 44, wings: true, flameHead: true, big: true },
-  scorch_slag_barge: { arch: 'blob', base: '#e0503a', belly: '#5a4a42', size: 34, boat: true, flameHead: true },
-  scorch_ember_nautilus: { arch: 'blob', base: '#8a8fa0', belly: '#b9bece', size: 32, sub: true },
-  // TIDE
-  tide_coral_initiate: { arch: 'biped', base: '#58a8e0', belly: '#f8e8b0', size: 33, tail: 'plain' },
-  tide_rill_lancer: { arch: 'serpent', base: '#68b8e8', belly: '#cfeaff', size: 34 },
-  tide_breaker_guard: { arch: 'biped', base: '#3868a8', belly: '#e8e8f0', size: 38, big: false },
-  tide_reef_savant: { arch: 'prof', base: '#2a6ab8', accent: '#ffd83c', size: 33 },
-  tide_claw_harvester: { arch: 'machine', base: '#e86a4a', accent: '#f8d8a8', size: 34 },
-  tide_glassfin_prowler: { arch: 'quad', base: '#58c8d8', belly: '#cfeaff', size: 34, ears: 'leaf', tail: 'fin' },
-  tide_coral_bulwark: { arch: 'turtle', base: '#3888c8', belly: '#e8d8a8', size: 40, shellCannons: true },
-  tide_prism_array: { arch: 'machine', base: '#8a5ad8', accent: '#ff4060', size: 34 },
-  tide_abyss_sovereign: { arch: 'serpent', base: '#2858c8', belly: '#e8eaf2', accent: '#ff3038', size: 48, big: true },
-  tide_reefwing: { arch: 'bird', base: '#e8ecf2', belly: '#ffffff', accent: '#58a8e0', size: 30, wings: true },
-  tide_storm_bomber: { arch: 'bird', base: '#e8ecf2', belly: '#ffd83c', accent: '#3868a8', size: 42, wings: true, big: true },
-  tide_kraken_skiff: { arch: 'blob', base: '#5a7ae0', accent: '#e03050', size: 36, boat: true },
-  tide_razortooth_sub: { arch: 'blob', base: '#4868b8', belly: '#e8eaf2', size: 34, sub: true },
-  tide_leviathan_ark: { arch: 'serpent', base: '#3878d8', belly: '#f0e8c8', accent: '#e03050', size: 50, big: true, boat: true },
-  // VERDANT
-  verdant_mossling: { arch: 'quad', base: '#58c8a8', belly: '#a8e8c8', size: 32, bulb: true },
-  verdant_thorn_wasp: { arch: 'bird', base: '#f8d030', accent: '#2e2030', size: 32, wings: true, scythes: true },
-  verdant_spore_pod: { arch: 'blob', base: '#4a68b8', accent: '#58c850', size: 28, ears: 'leaf' },
-  verdant_briar_reaper: { arch: 'biped', base: '#78c850', belly: '#d8e8b0', size: 38, scythes: true, wings: true },
-  verdant_root_savant: { arch: 'prof', base: '#48803a', accent: '#e8d8a8', size: 33 },
-  verdant_grove_hauler: { arch: 'turtle', base: '#5a8a4a', belly: '#c8b888', accent: '#4ade5a', size: 38 },
-  verdant_vine_stalker: { arch: 'biped', base: '#58c850', belly: '#c8e8a0', size: 34, tail: 'leaf' },
-  verdant_bloom_siege: { arch: 'quad', base: '#48a868', belly: '#a8d8b0', size: 42, flower: true, big: true },
-  verdant_tangle_mass: { arch: 'blob', base: '#3858c0', accent: '#58c850', size: 32 },
-  verdant_elder_husk: { arch: 'biped', base: '#386878', belly: '#f0e8d8', size: 50, ears: 'round', big: true },
-  verdant_canopy_raptor: { arch: 'bird', base: '#c8a060', belly: '#f0e0c0', accent: '#e05038', size: 32, wings: true },
-  verdant_spore_moth: { arch: 'bird', base: '#7a5ad8', belly: '#e8ecf2', size: 36, wings: true, ears: 'point', big: true },
-  verdant_bog_skiff: { arch: 'blob', base: '#4a98c8', accent: '#58c850', size: 32, boat: true },
-  verdant_mangrove_colossus: { arch: 'blob', base: '#58a858', belly: '#f8d030', size: 42, sombrero: true, boat: true, big: true },
-};
-
 const WORLD_CREATURES: Record<string, CreatureCfg> = {
   // SCORCH: obsidian bodies, molten cores, brutal silhouettes
   scorch_cinder_imp: { arch: 'biped', base: '#2a2024', belly: '#ff6a22', accent: '#ffb13c', size: 35, tail: 'flame', horn: true },
@@ -446,7 +399,7 @@ class Atlas implements SpriteAtlas {
       return mc;
     }
 
-    const cfg = WORLD_CREATURES[key] ?? CREATURES[key] ?? { arch: 'blob' as Archetype, base: '#c0c0c0', size: 32 };
+    const cfg = WORLD_CREATURES[key] ?? { arch: 'machine' as Archetype, base: '#2d3036', belly: '#6ee47a', accent: '#ffd36b', size: 34, magnets: true };
     const [cv, ctx] = canvas(64, 64);
     ctx.save();
     ctx.translate(32, 54);

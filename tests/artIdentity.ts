@@ -50,6 +50,8 @@ const bannedTerms = [
   'lotadder',
   'ludicolossus',
   'pokemon',
+  'rare candy',
+  'creature-parody',
 ];
 
 const scannedRoots = ['src', 'public/sprites/manifest.json', 'scripts', 'SPRITES.md', 'DESIGN.md', 'ARCHITECTURE.md'];
@@ -75,6 +77,13 @@ for (const scanRoot of scannedRoots) {
     for (const term of bannedTerms) {
       if (text.includes(term)) offenders.push(`${relative(root, file)} contains ${term}`);
     }
+  }
+}
+
+for (const file of readdirSync(join(root, 'public/art/generated'))) {
+  const lower = file.toLowerCase();
+  for (const term of bannedTerms) {
+    if (lower.includes(term.replaceAll(' ', '-'))) offenders.push(`public/art/generated/${file} contains legacy art root ${term}`);
   }
 }
 
@@ -163,6 +172,9 @@ if (!/function sanitizeBuildingOverride/.test(spritesSource)) {
 }
 if (!/sanitizeBuildingOverride\(ovImg\)/.test(spritesSource)) {
   throw new Error('constructed building overrides should use sanitizeBuildingOverride(ovImg) before scaling');
+}
+if (/const CREATURES: Record<string, CreatureCfg>/.test(spritesSource) || /WORLD_CREATURES\[key\] \?\? CREATURES/.test(spritesSource)) {
+  throw new Error('unit fallback must use the Fable Wars world creature set only, not the old cute prototype creature table');
 }
 
 {

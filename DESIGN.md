@@ -1,7 +1,8 @@
-# Pocket Alert — Game Design
+# Fable Wars — Game Design
 
-RA2-style RTS, creature-parody theme. Resource = **Rare Candy crystals**. Destroy every enemy
-structure to win. Classic pacing: 20–30 minute matches, 15 ticks/sec.
+RA2-style browser RTS with a dark fantasy, pre-rendered 3D war-beast identity. Resource =
+**rift crystals**. Destroy every enemy structure to win. Classic pacing: 20–30 minute matches,
+15 ticks/sec.
 
 ## Factions
 
@@ -80,7 +81,7 @@ combat.ts elite self-heal check by faction).
 |---|---|---|---|---|
 | conyard | Ember Citadel / Tide Citadel / Grove Citadel | 3×3 | +50 | isConYard; produces structure+defense tabs; hp 1500 |
 | power | Geothermal Den / Tidal Generator / Sunbloom Grove | 2×2 | +150 | cost 600 |
-| refinery | Candy Smeltery / Candy Distillery / Candy Arbor | 3×2 | −50 | isRefinery; cost 2000; free harvester |
+| refinery | Rift Smeltery / Rift Distillery / Rift Arbor | 3×2 | −50 | isRefinery; cost 2000; free harvester |
 | barracks | Ember Hatchery / Tide Hatchery / Grove Hatchery | 2×2 | −25 | produces infantry; cost 500 |
 | factory | Evolution Forge / Evolution Bay / Evolution Glade | 3×3 | −50 | produces vehicle; cost 2000; needs refinery |
 | radar | Scout Perch (all) | 2×2 | −50 | isRadar; needsPower; cost 1200; needs refinery; tier-2 gate |
