@@ -194,4 +194,29 @@ if (/const CREATURES: Record<string, CreatureCfg>/.test(spritesSource) || /WORLD
   }
 }
 
+{
+  const png = readPng(join(root, 'public/sprites/buildings/verdant_conyard.png'));
+  let hiddenWhiteFringePixels = 0;
+  let visibleWhiteCloudPixels = 0;
+  for (let i = 0; i < png.data.length; i += 4) {
+    const pixel = i / 4;
+    const x = pixel % png.width;
+    const y = Math.floor(pixel / png.width);
+    const r = png.data[i];
+    const g = png.data[i + 1];
+    const b = png.data[i + 2];
+    const a = png.data[i + 3];
+    const wasCloudZone = y >= 38 && y <= 136 && (x <= 101 || x >= 135);
+    const isPale = r > 170 && g > 170 && b > 170 && Math.max(r, g, b) - Math.min(r, g, b) < 90;
+    if (a <= 2 && isPale) hiddenWhiteFringePixels++;
+    if (wasCloudZone && a > 2 && isPale) visibleWhiteCloudPixels++;
+  }
+  if (hiddenWhiteFringePixels > 0) {
+    throw new Error(`verdant_conyard.png has ${hiddenWhiteFringePixels} transparent white RGB pixels that can fringe when scaled`);
+  }
+  if (visibleWhiteCloudPixels > 30) {
+    throw new Error(`verdant_conyard.png has ${visibleWhiteCloudPixels} visible pale matte cloud pixels`);
+  }
+}
+
 console.log('art identity checks passed');

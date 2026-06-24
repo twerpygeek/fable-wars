@@ -224,10 +224,21 @@ function sanitizeBuildingOverride(img: HTMLImageElement): HTMLCanvasElement {
     const g = data[i + 1];
     const b = data[i + 2];
     const a = data[i + 3];
+    if (a <= 2) {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+      continue;
+    }
     if (!isWhiteMatte(r, g, b, a)) continue;
     // Generated building cutouts sometimes carry white/milky matte clouds.
     // Remove the pale halo but keep hard metallic highlights readable.
     const alphaScale = a < 180 ? 0 : 0.22;
+    if (alphaScale === 0) {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+    }
     data[i + 3] = Math.round(a * alphaScale);
   }
   ctx.putImageData(pixels, 0, 0);
