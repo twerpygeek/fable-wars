@@ -9,6 +9,8 @@
  * presence and broadcasts JSON messages. The game client owns deterministic
  * simulation and sends explicit Crystal Rush commands through the room.
  */
+const PROTOCOL_VERSION = 1;
+
 export default class FableWarsRoom {
   constructor(room) {
     this.room = room;
@@ -24,7 +26,7 @@ export default class FableWarsRoom {
       ready: false,
     };
     this.players.set(conn.id, player);
-    conn.send(JSON.stringify({ type: 'welcome', clientId: conn.id, room: this.room.id }));
+    conn.send(JSON.stringify({ type: 'welcome', v: PROTOCOL_VERSION, clientId: conn.id, room: this.room.id }));
     this.broadcastRoom();
   }
 
@@ -33,7 +35,11 @@ export default class FableWarsRoom {
     try {
       msg = JSON.parse(String(message));
     } catch {
-      sender.send(JSON.stringify({ type: 'error', message: 'Invalid JSON message.' }));
+      sender.send(JSON.stringify({ type: 'error', v: PROTOCOL_VERSION, message: 'Invalid JSON message.' }));
+      return;
+    }
+    if (msg.v !== PROTOCOL_VERSION) {
+      sender.send(JSON.stringify({ type: 'error', v: PROTOCOL_VERSION, message: 'Unsupported room protocol version.' }));
       return;
     }
 
@@ -56,7 +62,7 @@ export default class FableWarsRoom {
     }
 
     if (msg.type === 'start' || msg.type === 'command' || msg.type === 'chat') {
-      this.room.broadcast(JSON.stringify({ ...msg, from: sender.id, at: Date.now() }));
+      this.room.broadcast(JSON.stringify({ ...msg, v: PROTOCOL_VERSION, from: sender.id, at: Date.now() }));
     }
   }
 
@@ -69,6 +75,7 @@ export default class FableWarsRoom {
     this.room.broadcast(
       JSON.stringify({
         type: 'room',
+        v: PROTOCOL_VERSION,
         room: this.room.id,
         players: [...this.players.values()],
       }),

@@ -29,7 +29,7 @@
     "test:headless": "tsx tests/headless.ts",
     "test:art": "tsx tests/artIdentity.ts",
     "test:crystal-rush": "tsx tests/crystalRush.ts",
-    "test:multiplayer": "tsx tests/multiplayer.ts",
+    "test:multiplayer": "tsx tests/multiplayer.ts && tsx tests/multiplayerProtocol.ts",
     "test:balance": "tsx tests/balance.ts --reps 2 --maxMin 35",
     "test:guidance": "tsx tests/guidance.ts"
   },

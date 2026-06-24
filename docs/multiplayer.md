@@ -31,18 +31,19 @@ The Online Battle menu will then show the room server as configured and generate
 Client to room:
 
 ```json
-{ "type": "hello", "name": "Commander", "faction": "scorch", "colorIdx": 0 }
-{ "type": "ready", "ready": true }
-{ "type": "start", "config": {}, "startTick": 120 }
-{ "type": "command", "tick": 135, "command": { "type": "crystalRushDeployWave" } }
+{ "v": 1, "type": "hello", "name": "Commander", "faction": "scorch", "colorIdx": 0 }
+{ "v": 1, "type": "ready", "ready": true }
+{ "v": 1, "type": "start", "battleCode": "FW1-..." }
+{ "v": 1, "type": "command", "tick": 135, "commands": [{ "type": "crystalRushDeployWave", "player": 0 }] }
+{ "v": 1, "type": "chat", "text": "rally at crystal" }
 ```
 
 Room to clients:
 
 ```json
-{ "type": "welcome", "clientId": "abc", "room": "FW-12345" }
-{ "type": "room", "room": "FW-12345", "players": [] }
-{ "type": "command", "from": "abc", "tick": 135, "command": {} }
+{ "v": 1, "type": "welcome", "clientId": "abc", "room": "FW-12345" }
+{ "v": 1, "type": "room", "room": "FW-12345", "players": [] }
+{ "v": 1, "type": "command", "from": "abc", "tick": 135, "commands": [] }
 ```
 
 ## Next Implementation Step
