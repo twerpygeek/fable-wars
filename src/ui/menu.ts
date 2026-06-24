@@ -21,6 +21,7 @@ import {
   roomSocketUrl,
 } from '../net/multiplayer';
 import { createRoomClient, type RoomClient } from '../net/client';
+import type { RoomPlayer } from '../net/protocol';
 import { clearHistory, getHistory } from './history';
 import type { MatchResult } from './history';
 
@@ -122,6 +123,20 @@ const CSS = `
 .pa-online-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .pa-online-note { color: #8790bf; font-size: 9px; line-height: 1.55; letter-spacing: 1px; }
 .pa-online-note code { color: #ffd777; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.pa-online-roster { display: grid; gap: 7px; margin-top: 10px; }
+.pa-online-player { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  padding: 8px; border: 1px solid rgba(255,220,150,0.16); border-radius: 3px;
+  background: linear-gradient(180deg, rgba(18,21,32,0.74), rgba(5,7,13,0.66));
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.06), inset 0 -2px 0 rgba(0,0,0,0.32); }
+.pa-online-player.empty { grid-template-columns: 1fr; color: #8790bf; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
+.pa-online-color { width: 10px; height: 10px; border-radius: 50%; background: var(--pc, #ffd777);
+  border: 1px solid rgba(255,255,255,0.32); box-shadow: 0 0 10px var(--pc, #ffd777); }
+.pa-online-player-name { min-width: 0; color: #fff4d6; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pa-online-player-meta { margin-top: 2px; color: #8f98c7; font-size: 7px; letter-spacing: 1px; text-transform: uppercase; }
+.pa-online-pill { padding: 4px 6px; border: 1px solid rgba(101,216,110,0.48); border-radius: 2px; color: #b9ffbe;
+  background: rgba(37,93,43,0.24); font-size: 7px; letter-spacing: 1px; text-transform: uppercase; }
+.pa-online-pill.waiting { border-color: rgba(255,215,119,0.38); color: #ffd777; background: rgba(110,76,25,0.24); }
 .pa-online-muted { opacity: 0.46; filter: grayscale(0.45); pointer-events: none; }
 .pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
   margin: 18px -10px -18px; padding: 12px 10px 10px;
@@ -840,11 +855,13 @@ export class MenuManager {
         <div class="pa-online-card">
           <h2>Alpha Status</h2>
           <p class="pa-online-note js-online-note"></p>
+          <div class="pa-online-roster js-online-roster"></div>
         </div>
       </div>`;
     const nameInput = panel.querySelector<HTMLInputElement>('.js-online-name')!;
     const roomInput = panel.querySelector<HTMLInputElement>('.js-online-room')!;
     const note = panel.querySelector<HTMLElement>('.js-online-note')!;
+    const roster = panel.querySelector<HTMLElement>('.js-online-roster')!;
     let roomClient: RoomClient | null = null;
     const refreshNote = () => {
       const code = normalizeRoomCode(roomInput.value);
@@ -858,6 +875,7 @@ export class MenuManager {
       return { code, ws, invite };
     };
     roomInput.addEventListener('change', refreshNote);
+    roster.innerHTML = renderOnlineRoster([]);
     const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
     host.addEventListener('click', () => {
       const { code, ws } = refreshNote();
@@ -876,8 +894,10 @@ export class MenuManager {
             roomClient?.ready(true);
           } else if (status === 'closed') {
             note.innerHTML = `Room connection closed. Copy the invite and reconnect when your friend is ready.`;
+            roster.innerHTML = renderOnlineRoster([]);
           } else if (status === 'error') {
             note.innerHTML = `Room connection failed. Check <code>VITE_MULTIPLAYER_WS</code> and the relay deployment.`;
+            roster.innerHTML = renderOnlineRoster([]);
           }
         },
         onMessage: (msg) => {
@@ -887,6 +907,7 @@ export class MenuManager {
               break;
             case 'room':
               note.innerHTML = `Room <code>${escapeHtml(msg.room)}</code> online. ${msg.players.length} commander${msg.players.length === 1 ? '' : 's'} present.`;
+              roster.innerHTML = renderOnlineRoster(msg.players);
               break;
             case 'error':
               note.innerHTML = `Room relay error: ${escapeHtml(msg.message)}`;
@@ -1587,6 +1608,27 @@ function formatDuration(sec: number): string {
 /** Player names come back out of localStorage — never trust them as HTML. */
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderOnlineRoster(players: RoomPlayer[]): string {
+  if (players.length === 0) {
+    return `<div class="pa-online-player empty">Waiting for commanders to join this room...</div>`;
+  }
+  return players
+    .map((player) => {
+      const faction = DATA.factions[player.faction]?.name ?? player.faction;
+      const color = PLAYER_COLORS[player.colorIdx]?.hex ?? '#ffd777';
+      const status = player.ready ? 'READY' : 'WAITING';
+      return `<div class="pa-online-player">
+        <span class="pa-online-color" style="--pc:${color}"></span>
+        <span>
+          <span class="pa-online-player-name">${escapeHtml(player.name || 'Commander')}</span>
+          <span class="pa-online-player-meta">${escapeHtml(faction)}</span>
+        </span>
+        <span class="pa-online-pill${player.ready ? '' : ' waiting'}">${status}</span>
+      </div>`;
+    })
+    .join('');
 }
 
 function btn(label: string, onClick: () => void, primary = false): HTMLElement {

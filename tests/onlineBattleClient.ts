@@ -14,5 +14,10 @@ assert.match(source, /case 'welcome'/);
 assert.match(source, /case 'room'/);
 assert.match(source, /Connected to room/);
 assert.match(source, /players\.length/);
+assert.match(source, /js-online-roster/);
+assert.match(source, /renderOnlineRoster/);
+assert.match(source, /pa-online-player/);
+assert.match(source, /READY/);
+assert.match(source, /WAITING/);
 
 console.log('PASS online battle client');
