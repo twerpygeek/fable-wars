@@ -192,6 +192,24 @@ function sanitizeTerrainPropOverride(img: HTMLImageElement): HTMLCanvasElement {
   return cv;
 }
 
+function drawTerrainPropContactShadow(ctx: Ctx, t: Terrain, propX: number, propY: number, propW: number, propH: number): void {
+  const shadowW = t === Terrain.CRYSTAL ? propW * 0.62 : t === Terrain.ROCK ? propW * 0.54 : propW * 0.48;
+  const shadowH = t === Terrain.TREE ? propH * 0.12 : propH * 0.16;
+  const cx = propX + propW * 0.52 + 3;
+  const cy = propY + propH * 0.82 + 2;
+  const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, Math.max(shadowW, shadowH));
+  g.addColorStop(0, 'rgba(2, 6, 10, 0.34)');
+  g.addColorStop(0.58, 'rgba(2, 6, 10, 0.18)');
+  g.addColorStop(1, 'rgba(2, 6, 10, 0)');
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, shadowW * 0.5, Math.max(3, shadowH), 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function isWhiteMatte(r: number, g: number, b: number, a: number): boolean {
   return a > 24 && r > 212 && g > 212 && b > 212 && Math.max(r, g, b) - Math.min(r, g, b) < 38;
 }
@@ -481,8 +499,11 @@ class Atlas implements SpriteAtlas {
         const prop = sanitizeTerrainPropOverride(img);
         const base = drawTerrain(t, variant % 3, false);
         const [cv, ctx] = canvas(Math.max(base.width, prop.width), Math.max(base.height, prop.height));
+        const propX = (cv.width - prop.width) / 2;
+        const propY = cv.height - prop.height;
         ctx.drawImage(base, (cv.width - base.width) / 2, cv.height - base.height);
-        ctx.drawImage(prop, (cv.width - prop.width) / 2, cv.height - prop.height);
+        drawTerrainPropContactShadow(ctx, t, propX, propY, prop.width, prop.height);
+        ctx.drawImage(prop, propX, propY);
         this.terrainCache.set(ck, cv);
         return cv;
       }
