@@ -192,6 +192,30 @@ function sanitizeTerrainPropOverride(img: HTMLImageElement): HTMLCanvasElement {
   return cv;
 }
 
+function isWhiteMatte(r: number, g: number, b: number, a: number): boolean {
+  return a > 24 && r > 212 && g > 212 && b > 212 && Math.max(r, g, b) - Math.min(r, g, b) < 38;
+}
+
+function sanitizeBuildingOverride(img: HTMLImageElement): HTMLCanvasElement {
+  const [cv, ctx] = canvas(img.width, img.height);
+  ctx.drawImage(img, 0, 0);
+  const pixels = ctx.getImageData(0, 0, cv.width, cv.height);
+  const data = pixels.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    if (!isWhiteMatte(r, g, b, a)) continue;
+    // Generated building cutouts sometimes carry white/milky matte clouds.
+    // Remove the pale halo but keep hard metallic highlights readable.
+    const alphaScale = a < 180 ? 0 : 0.22;
+    data[i + 3] = Math.round(a * alphaScale);
+  }
+  ctx.putImageData(pixels, 0, 0);
+  return cv;
+}
+
 function shade(hex: string, f: number): string {
   // f>0 lighten toward white, f<0 darken toward black
   const n = parseInt(hex.slice(1), 16);
@@ -468,10 +492,11 @@ class Atlas implements SpriteAtlas {
     // custom art override (constructed state only; the scaffold/egg stays procedural)
     const ovImg = constructed ? this.ov?.buildings.get(key) : undefined;
     if (ovImg) {
-      const scale = Math.min(W / ovImg.width, H / ovImg.height);
-      const dw = ovImg.width * scale;
-      const dh = ovImg.height * scale;
-      ctx.drawImage(ovImg, (W - dw) / 2, H - dh, dw, dh); // bottom-anchored
+      const cleanImg = sanitizeBuildingOverride(ovImg);
+      const scale = Math.min(W / cleanImg.width, H / cleanImg.height);
+      const dw = cleanImg.width * scale;
+      const dh = cleanImg.height * scale;
+      ctx.drawImage(cleanImg, (W - dw) / 2, H - dh, dw, dh); // bottom-anchored
       banner(ctx, bvx, bvy - 3, hex);
       this.buildingCache.set(ck, cv);
       return cv;

@@ -54,6 +54,7 @@ const bannedTerms = [
 
 const scannedRoots = ['src', 'public/sprites/manifest.json', 'scripts', 'SPRITES.md', 'DESIGN.md', 'ARCHITECTURE.md'];
 const textExtensions = new Set(['.ts', '.tsx', '.js', '.mjs', '.json', '.md']);
+const spritesSource = readFileSync(join(root, 'src/render/sprites.ts'), 'utf8');
 
 function listFiles(path: string, out: string[] = []): string[] {
   const absolute = join(root, path);
@@ -155,6 +156,13 @@ for (const file of readdirSync(join(root, 'public/sprites/buildings'))) {
   if (haloPixels > 40) {
     throw new Error(`${file} has ${haloPixels} semi-transparent white matte pixels`);
   }
+}
+
+if (!/function sanitizeBuildingOverride/.test(spritesSource)) {
+  throw new Error('building overrides must be sanitized before drawing so white cutout mattes do not render in game');
+}
+if (!/sanitizeBuildingOverride\(ovImg\)/.test(spritesSource)) {
+  throw new Error('constructed building overrides should use sanitizeBuildingOverride(ovImg) before scaling');
 }
 
 {
