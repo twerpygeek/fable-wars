@@ -46,12 +46,14 @@ function game() {
   const msg = getGuidance(state, DATA, 0, ui());
   assert.equal(msg?.id, 'select-start');
   assert.equal(msg?.severity, 'info');
+  assert.equal(msg?.action, 'Select your Citadel');
 }
 
 {
   const state = game();
   const msg = getGuidance(state, DATA, 0, ui({ selection: [1] }));
   assert.equal(msg?.id, 'build-power');
+  assert.equal(msg?.action, 'Queue power');
 }
 
 {

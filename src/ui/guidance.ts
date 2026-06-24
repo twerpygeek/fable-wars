@@ -5,6 +5,7 @@ export interface GuidanceMessage {
   id: string;
   title: string;
   body: string;
+  action: string;
   severity: 'info' | 'warn';
 }
 
@@ -65,6 +66,7 @@ export function getGuidance(
       id: 'low-power',
       title: 'Power shortage',
       body: 'Build another power plant. Low power slows production and shuts down advanced systems.',
+      action: 'Restore power',
       severity: 'warn',
     };
   }
@@ -75,6 +77,7 @@ export function getGuidance(
       id: 'rebuild-harvester',
       title: 'No harvesters',
       body: 'Queue a harvester from the vehicle tab or protect your economy before attacking.',
+      action: 'Queue harvester',
       severity: 'warn',
     };
   }
@@ -86,6 +89,7 @@ export function getGuidance(
       id: 'select-start',
       title: 'Start by selecting',
       body: 'Drag-select your creatures or click the Citadel, then right-click to move or set rally points.',
+      action: 'Select your Citadel',
       severity: 'info',
     };
   }
@@ -95,6 +99,7 @@ export function getGuidance(
       id: 'build-power',
       title: 'Build power',
       body: `Open BLD and queue ${data.buildings[`${faction}_power`].name} so your base can expand.`,
+      action: 'Queue power',
       severity: 'info',
     };
   }
@@ -104,6 +109,7 @@ export function getGuidance(
       id: 'build-refinery',
       title: 'Start your economy',
       body: `Queue ${data.buildings[`${faction}_refinery`].name} near rift crystals.`,
+      action: 'Build refinery',
       severity: 'info',
     };
   }
@@ -113,6 +119,7 @@ export function getGuidance(
       id: 'build-barracks',
       title: 'Train defenders',
       body: `Queue ${data.buildings[`${faction}_barracks`].name}, then make a few infantry before the first raid.`,
+      action: 'Train defenders',
       severity: 'info',
     };
   }
@@ -126,6 +133,7 @@ export function getGuidance(
       id: 'spend-bank',
       title: 'Spend your bank',
       body: 'You have enough credits to expand production, defenses, or tech. Idle credits do not win battles.',
+      action: 'Spend credits',
       severity: 'info',
     };
   }

@@ -48,6 +48,13 @@ const CSS = `
 .pa-guide-title { font-size: 11px; font-weight: bold; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; }
 .pa-guide-body { margin-top: 4px; font-size: 10px; line-height: 1.45; color: #b9c5f5; }
 .pa-guide.warn .pa-guide-body { color: #ffd9c4; }
+.pa-guide-action {
+  display: inline-block; margin-top: 7px; padding: 4px 8px;
+  border: 1px solid rgba(255, 217, 94, 0.65); border-radius: 3px;
+  background: linear-gradient(180deg, rgba(107, 78, 32, 0.82), rgba(36, 24, 12, 0.9));
+  color: #fff3bf; font-size: 9px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,237,190,0.2), 0 2px 0 rgba(0,0,0,0.45);
+}
 @media (max-width: 980px) { .pa-guide { max-width: calc(100vw - 232px); } }
 .pa-toast {
   font-family: Verdana, Geneva, sans-serif; font-size: 12px; letter-spacing: 1.5px;
@@ -87,6 +94,7 @@ export class HUD {
   private guideEl: HTMLDivElement;
   private guideTitleEl: HTMLDivElement;
   private guideBodyEl: HTMLDivElement;
+  private guideActionEl: HTMLDivElement;
 
   // cached text so we only touch the DOM on change
   private shownClock = '';
@@ -134,7 +142,9 @@ export class HUD {
     this.guideTitleEl.className = 'pa-guide-title';
     this.guideBodyEl = document.createElement('div');
     this.guideBodyEl.className = 'pa-guide-body';
-    this.guideEl.append(this.guideTitleEl, this.guideBodyEl);
+    this.guideActionEl = document.createElement('div');
+    this.guideActionEl.className = 'pa-guide-action';
+    this.guideEl.append(this.guideTitleEl, this.guideBodyEl, this.guideActionEl);
     root.appendChild(this.guideEl);
 
     this.toastWrap = document.createElement('div');
@@ -184,12 +194,13 @@ export class HUD {
         this.guideEl.className = 'pa-guide hidden';
       }
     } else {
-      const key = `${guide.id}|${guide.severity}|${guide.title}|${guide.body}`;
+      const key = `${guide.id}|${guide.severity}|${guide.title}|${guide.body}|${guide.action}`;
       if (key !== this.shownGuideKey) {
         this.shownGuideKey = key;
         this.guideEl.className = guide.severity === 'warn' ? 'pa-guide warn' : 'pa-guide';
         this.guideTitleEl.textContent = guide.title;
         this.guideBodyEl.textContent = guide.body;
+        this.guideActionEl.textContent = guide.action;
       }
     }
   }
