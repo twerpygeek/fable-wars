@@ -149,6 +149,7 @@ const CSS = `
   border: 2px solid #2a231d; border-radius: 3px; padding: 7px 8px; font-size: 10px; letter-spacing: 1px;
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,237,190,0.08); }
 .pa-online-chat-form .pa-small-btn { min-width: 78px; }
+.pa-online-start { width: 100%; margin-top: 10px; min-height: 46px; font-size: 10px; letter-spacing: 2px; }
 .pa-online-muted { opacity: 0.46; filter: grayscale(0.45); pointer-events: none; }
 .pa-lobby-actions { position: sticky; bottom: -28px; z-index: 3; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;
   margin: 18px -10px -18px; padding: 12px 10px 10px;
@@ -877,6 +878,7 @@ export class MenuManager {
               <button class="pa-small-btn js-online-chat-send" type="button">Send</button>
             </div>
           </div>
+          <button class="pa-btn primary pa-online-start js-online-start" type="button">Start Room Match</button>
         </div>
       </div>`;
     const nameInput = panel.querySelector<HTMLInputElement>('.js-online-name')!;
@@ -886,6 +888,7 @@ export class MenuManager {
     const chatLog = panel.querySelector<HTMLElement>('.js-online-chat-log')!;
     const chatInput = panel.querySelector<HTMLInputElement>('.js-online-chat')!;
     const chatSend = panel.querySelector<HTMLButtonElement>('.js-online-chat-send')!;
+    const roomStart = panel.querySelector<HTMLButtonElement>('.js-online-start')!;
     let roomClient: RoomClient | null = null;
     let roomOpen = false;
     let roomPlayers: RoomPlayer[] = [];
@@ -921,6 +924,16 @@ export class MenuManager {
     chatSend.addEventListener('click', sendChat);
     chatInput.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') sendChat();
+    });
+    roomStart.addEventListener('click', () => {
+      if (!roomClient || !roomOpen) {
+        appendChat(`<div class="pa-online-chat-line system">Host a room before starting a shared match.</div>`);
+        return;
+      }
+      this.mode = 'crystalRush';
+      const code = this.currentBattleCode();
+      roomClient.start(code);
+      appendChat(`<div class="pa-online-chat-line system">Launching shared Crystal Rush match...</div>`);
     });
     const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
     host.addEventListener('click', () => {
@@ -967,6 +980,15 @@ export class MenuManager {
               break;
             case 'chat':
               appendChat(renderOnlineChatLine(playerName(msg.from), msg.text));
+              break;
+            case 'start':
+              if (this.applyBattleCode(msg.battleCode)) {
+                this.mode = 'crystalRush';
+                appendChat(`<div class="pa-online-chat-line system">${escapeHtml(playerName(msg.from))} started the room match.</div>`);
+                this.launch();
+              } else {
+                note.innerHTML = `Room start failed: invalid battle setup from <code>${escapeHtml(playerName(msg.from))}</code>.`;
+              }
               break;
             case 'error':
               note.innerHTML = `Room relay error: ${escapeHtml(msg.message)}`;

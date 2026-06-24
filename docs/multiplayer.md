@@ -26,6 +26,13 @@ VITE_MULTIPLAYER_WS=wss://fable-wars.<your-account>.partykit.dev
 
 The Online Battle menu will then show the room server as configured and generate room invite links.
 
+## Implemented Lobby Flow
+
+- Players can host or join a shared room code.
+- The room roster shows commander name, faction, color, and ready state.
+- Commander chat is relayed through the room server.
+- Start Room Match broadcasts the host's current battle code; clients apply that setup and launch Crystal Rush.
+
 ## Protocol
 
 Client to room:
@@ -48,9 +55,8 @@ Room to clients:
 
 ## Next Implementation Step
 
-Wire `src/net/multiplayer.ts` into the match loop:
+Wire deterministic command scheduling into the live match loop:
 
-- Host builds a Crystal Rush `GameConfig`.
 - Every client starts from that same config and seed.
 - Local UI commands are sent to the room with an execution tick.
 - Each client applies commands only when the sim reaches that tick.

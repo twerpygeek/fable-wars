@@ -25,5 +25,11 @@ assert.match(source, /roomClient\.chat\(text\)/);
 assert.match(source, /case 'chat'/);
 assert.match(source, /renderOnlineChatLine/);
 assert.match(source, /Commander chat online/);
+assert.match(source, /js-online-start/);
+assert.match(source, /Start Room Match/);
+assert.match(source, /roomClient\.start\(code\)/);
+assert.match(source, /case 'start'/);
+assert.match(source, /this\.applyBattleCode\(msg\.battleCode\)/);
+assert.match(source, /this\.launch\(\)/);
 
 console.log('PASS online battle client');
