@@ -20,6 +20,7 @@ import {
   randomRoomCode,
   roomSocketUrl,
 } from '../net/multiplayer';
+import { createRoomClient, type RoomClient } from '../net/client';
 import { clearHistory, getHistory } from './history';
 import type { MatchResult } from './history';
 
@@ -844,6 +845,7 @@ export class MenuManager {
     const nameInput = panel.querySelector<HTMLInputElement>('.js-online-name')!;
     const roomInput = panel.querySelector<HTMLInputElement>('.js-online-room')!;
     const note = panel.querySelector<HTMLElement>('.js-online-note')!;
+    let roomClient: RoomClient | null = null;
     const refreshNote = () => {
       const code = normalizeRoomCode(roomInput.value);
       const ws = roomSocketUrl(code, endpoint);
@@ -858,13 +860,44 @@ export class MenuManager {
     roomInput.addEventListener('change', refreshNote);
     const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
     host.addEventListener('click', () => {
-      const { ws } = refreshNote();
+      const { code, ws } = refreshNote();
       if (!ws) {
         this.mode = 'crystalRush';
         this.launch();
         return;
       }
-      note.innerHTML = `Room reserved for ${escapeHtml(nameInput.value || 'Commander')}. Connection target: <code>${escapeHtml(ws)}</code>.`;
+      roomClient?.close();
+      roomClient = createRoomClient(ws, {
+        onStatus: (status) => {
+          if (status === 'connecting') note.innerHTML = `Opening room <code>${escapeHtml(code)}</code>...`;
+          else if (status === 'open') {
+            note.innerHTML = `Connected to room <code>${escapeHtml(code)}</code>. Waiting for the room roster...`;
+            roomClient?.hello({ name: nameInput.value || 'Commander', faction: this.faction, colorIdx: this.colorIdx });
+            roomClient?.ready(true);
+          } else if (status === 'closed') {
+            note.innerHTML = `Room connection closed. Copy the invite and reconnect when your friend is ready.`;
+          } else if (status === 'error') {
+            note.innerHTML = `Room connection failed. Check <code>VITE_MULTIPLAYER_WS</code> and the relay deployment.`;
+          }
+        },
+        onMessage: (msg) => {
+          switch (msg.type) {
+            case 'welcome':
+              note.innerHTML = `Connected to room <code>${escapeHtml(msg.room)}</code> as commander <code>${escapeHtml(msg.clientId)}</code>.`;
+              break;
+            case 'room':
+              note.innerHTML = `Room <code>${escapeHtml(msg.room)}</code> online. ${msg.players.length} commander${msg.players.length === 1 ? '' : 's'} present.`;
+              break;
+            case 'error':
+              note.innerHTML = `Room relay error: ${escapeHtml(msg.message)}`;
+              break;
+          }
+        },
+        onError: (message) => {
+          note.innerHTML = `${escapeHtml(message)} Try copying the invite instead.`;
+        },
+      });
+      roomClient.connect();
     });
     panel.querySelector<HTMLButtonElement>('.js-online-copy')!.addEventListener('click', () => {
       const { invite } = refreshNote();
@@ -880,7 +913,12 @@ export class MenuManager {
     panel.querySelector<HTMLButtonElement>('.js-online-docs')!.addEventListener('click', () => {
       note.innerHTML = `Deploy <code>realtime/partykit</code>, then set <code>VITE_MULTIPLAYER_WS</code> in Vercel. The repo includes the room relay and protocol notes.`;
     });
-    panel.appendChild(btn('Back', () => this.showMainMenu()));
+    panel.appendChild(
+      btn('Back', () => {
+        roomClient?.close();
+        this.showMainMenu();
+      }),
+    );
     refreshNote();
     el.appendChild(panel);
   }
