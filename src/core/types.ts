@@ -396,6 +396,7 @@ export type GameEvent =
   | { type: 'crystalDepleted'; pos: Vec2 }
   | { type: 'promotion'; id: EntityId; rank: VetRank }
   | { type: 'cratePickup'; player: PlayerId; kind: CrateKind; pos: Vec2; amount?: number }
+  | { type: 'crystalRushSurge'; player: PlayerId; pos: Vec2; count: number; stance: CrystalRushStance }
   | { type: 'aiTaunt'; player: PlayerId; text: string };
 
 // --- Rendering / UI shared types ----------------------------------------------

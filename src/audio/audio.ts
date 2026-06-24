@@ -187,6 +187,13 @@ export class AudioSystem {
           break;
         }
 
+        case 'crystalRushSurge': {
+          if (ev.player !== humanPlayer) break;
+          const s = this.spatial(ev.pos, cam, viewW, viewH);
+          playSfx('promote', s ? { pan: s.pan, gain: Math.max(0.72, s.gain), pitch: 0.88 } : { gain: 0.76, pitch: 0.88 });
+          break;
+        }
+
         case 'buildingReady': {
           if (ev.player === humanPlayer) announce('constructionComplete');
           break;

@@ -54,6 +54,10 @@ assert.ok(
   afterUnits.some((e) => e.orders[0]?.kind === 'attack'),
   'aggressive deploy should send at least one unit toward an enemy base',
 );
+const surgeEvents = tickGame(humanState, DATA, [{ type: 'crystalRushDeployWave', player: 0, stance: 'split' }]).filter(
+  (ev) => ev.type === 'crystalRushSurge',
+);
+assert.equal(surgeEvents.length, 0, 'surge on cooldown should not emit a feedback event');
 
 const surgeCfg: GameConfig = {
   ...cfg,
@@ -68,7 +72,17 @@ surgePlayer.nextWaveTick = TICK_RATE * 60 * 30;
 surgeState.tick = TICK_RATE * 20;
 surgeState.players[0].credits = 2000;
 const surgeBefore = entitiesOf(surgeState, 0).filter((e) => e.kind === 'unit').length;
-tickGame(surgeState, DATA, [{ type: 'crystalRushDeployWave', player: 0, stance: 'split' }]);
+const surgeTickEvents = tickGame(surgeState, DATA, [{ type: 'crystalRushDeployWave', player: 0, stance: 'split' }]);
 const surgeSpawned = entitiesOf(surgeState, 0).filter((e) => e.kind === 'unit').length - surgeBefore;
+const surgeFeedback = surgeTickEvents.find((ev) => ev.type === 'crystalRushSurge');
 
 assert.ok(surgeSpawned >= 15, `War Surge should feel stronger than an auto wave, spawned ${surgeSpawned}`);
+assert.deepEqual(
+  surgeFeedback && {
+    player: surgeFeedback.player,
+    count: surgeFeedback.count,
+    stance: surgeFeedback.stance,
+  },
+  { player: 0, count: surgeSpawned, stance: 'split' },
+  'successful War Surge should emit a feedback event with the spawned unit count',
+);

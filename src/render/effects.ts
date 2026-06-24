@@ -362,6 +362,33 @@ export class EffectsSystem {
           });
           break;
         }
+        case 'crystalRushSurge': {
+          // War Surge command feedback: brief command flash, shake, and rally sparks at the player's Citadel.
+          if (ev.player === humanPlayer) {
+            this.flash('#ffe8a6', 0.14, 280, now);
+            this.shake(Math.min(7, 3 + ev.count * 0.12), 360, now);
+          }
+          this.add({
+            kind: 'place',
+            pos: ev.pos,
+            startedAt: now,
+            duration: 720,
+            scale: 2.1,
+            element: Element.NEUTRAL,
+          });
+          for (let i = 0; i < 4; i++) {
+            const a = (i / 4) * Math.PI * 2;
+            this.add({
+              kind: 'spark',
+              pos: { x: ev.pos.x + Math.cos(a) * 0.7, y: ev.pos.y + Math.sin(a) * 0.7 },
+              startedAt: now + i * 45,
+              duration: 520,
+              scale: 0.8,
+              element: Element.ELECTRIC,
+            });
+          }
+          break;
+        }
         case 'buildingCaptured': {
           const e = state.entities.get(ev.id);
           if (!e) break;

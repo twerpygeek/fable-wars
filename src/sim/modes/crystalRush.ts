@@ -336,6 +336,7 @@ function spawnWave(state: GameState, data: GameData, player: PlayerId, events: G
   if (roster.length === 0) return;
   const bd = data.buildings[base.defId];
   const count = manual ? getCrystalRushManualWaveCount(state, player) : Math.min(MAX_WAVE_UNITS, baseWaveCount(state, crp.waveLevel));
+  let spawned = 0;
   for (let i = 0; i < count; i++) {
     const def = roster[i % roster.length];
     const tile = findSpawnTileNear(state, base.pos.x | 0, base.pos.y | 0, bd.footprint.w, bd.footprint.h, def.domain);
@@ -344,7 +345,17 @@ function spawnWave(state: GameState, data: GameData, player: PlayerId, events: G
     occupyEntity(state, data, u);
     assignWaveOrder(state, data, u, i);
     p.stats.built++;
+    spawned++;
     events.push({ type: 'unitReady', player, defId: def.id, id: u.id });
+  }
+  if (manual && spawned > 0) {
+    events.push({
+      type: 'crystalRushSurge',
+      player,
+      pos: entityCenter(base, data),
+      count: spawned,
+      stance: crp.stance,
+    });
   }
 }
 
