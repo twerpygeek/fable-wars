@@ -3,7 +3,7 @@
 // The engine mirrors w/sw/nw -> e/se/ne automatically, so we only make the left set.
 //
 // Usage:
-//   node scripts/gen-angles.mjs scorch_charmandar tide_squirtul ...
+//   node scripts/gen-angles.mjs scorch_cinder_imp tide_coral_initiate ...
 //   node scripts/gen-angles.mjs --test     # the 6 test creatures
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -13,8 +13,8 @@ import { buildUnitPrompts } from './sprites.config.mjs';
 const UNIT_PROMPTS = buildUnitPrompts();
 
 const TEST_CREATURES = [
-  'scorch_charmandar', 'scorch_peekachoo', 'tide_squirtul',
-  'verdant_bulbasore', 'tide_krabber', 'scorch_ryhorrn',
+  'scorch_cinder_imp', 'scorch_volt_cinder', 'tide_coral_initiate',
+  'verdant_mossling', 'tide_claw_harvester', 'scorch_basalt_ram',
 ];
 
 // Facing -> how to describe the rotation of the SAME character.

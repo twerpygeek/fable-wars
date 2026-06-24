@@ -5,7 +5,7 @@
 //   node scripts/gen.mjs --test                 # small diverse batch
 //   node scripts/gen.mjs --units                # all 41 creatures
 //   node scripts/gen.mjs --buildings            # all 45 structures
-//   node scripts/gen.mjs scorch_ryhorrn tide_krabber   # specific ids
+//   node scripts/gen.mjs scorch_basalt_ram tide_claw_harvester   # specific ids
 //   node scripts/gen.mjs --units --concurrency 4
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -16,12 +16,12 @@ const UNIT_PROMPTS = buildUnitPrompts();
 const BUILDING_PROMPTS = buildBuildingPrompts();
 
 const TEST_IDS = [
-  'scorch_charmandar', // basic infantry / flame glow
-  'scorch_peekachoo', // electric sparks, yellow
-  'tide_squirtul', // water faction
-  'verdant_bulbasore', // grass faction
-  'tide_krabber', // harvester + pink/cyan crystals
-  'scorch_ryhorrn', // GREY creature on grey bg — keying stress test
+  'scorch_cinder_imp', // basic infantry / flame glow
+  'scorch_volt_cinder', // electric sparks, yellow
+  'tide_coral_initiate', // water faction
+  'verdant_mossling', // grass faction
+  'tide_claw_harvester', // harvester + pink/cyan crystals
+  'scorch_basalt_ram', // GREY creature on grey bg — keying stress test
   'scorch_conyard', // building style check
 ];
 

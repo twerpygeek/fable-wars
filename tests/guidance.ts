@@ -71,7 +71,7 @@ function game() {
     }
   }
   const p = state.players[0];
-  p.queues.vehicle.items.push('scorch_ryhorrn');
+  p.queues.vehicle.items.push('scorch_basalt_ram');
   const msg = getGuidance(state, DATA, 0, ui({ selection: [1] }));
   assert.equal(msg?.id, 'rebuild-harvester');
 }

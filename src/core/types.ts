@@ -92,7 +92,7 @@ export const enum MoveDomain {
 }
 
 export interface UnitDef {
-  id: string; // stable internal key, e.g. 'scorch_peekachoo'
+  id: string; // stable internal key, e.g. 'scorch_volt_cinder'
   name: string; // display, e.g. 'Volt Cinder'
   blurb: string; // one-line flavor for tooltip
   faction: FactionId;

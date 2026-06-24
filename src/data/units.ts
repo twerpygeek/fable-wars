@@ -73,7 +73,7 @@ const ALL: UnitDef[] = [
   // SCORCH LEGION — brute force, heavy armor, raw damage
   // ===========================================================================
   mk({
-    id: 'scorch_charmandar',
+    id: 'scorch_cinder_imp',
     name: 'Cinder Imp',
     blurb: 'Frontline ember infantry with a molten bite and no sense of self-preservation.',
     faction: 'scorch',
@@ -90,7 +90,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_barracks'],
   }),
   mk({
-    id: 'scorch_peekachoo',
+    id: 'scorch_volt_cinder',
     name: 'Volt Cinder',
     blurb: 'A crackling obsidian skirmisher that grounds aircraft with snap-burst lightning.',
     faction: 'scorch',
@@ -107,7 +107,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_barracks'],
   }),
   mk({
-    id: 'scorch_prof_cinder',
+    id: 'scorch_ash_savant',
     name: 'Ash Savant',
     blurb: 'A heat-masked infiltrator trained to seize enemy structures under fire.',
     faction: 'scorch',
@@ -124,7 +124,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_barracks'],
   }),
   mk({
-    id: 'scorch_magmarr',
+    id: 'scorch_magma_brute',
     name: 'Magma Brute',
     blurb: 'Heavy infantry with a furnace chest and a habit of turning cover into slag.',
     faction: 'scorch',
@@ -141,7 +141,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_barracks'],
   }),
   mk({
-    id: 'scorch_ryhorrn',
+    id: 'scorch_basalt_ram',
     name: 'Basalt Ram',
     blurb: 'Armored shock beast that cracks armor plates with a lava-lit horn.',
     faction: 'scorch',
@@ -158,7 +158,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_factory'],
   }),
   mk({
-    id: 'scorch_torkoala',
+    id: 'scorch_ember_hauler',
     name: 'Ember Hauler',
     blurb: 'Slow, stubborn harvester plated in heat-blackened shell and crystal dust.',
     faction: 'scorch',
@@ -175,7 +175,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_factory'],
   }),
   mk({
-    id: 'scorch_arcanyne',
+    id: 'scorch_ashrunner',
     name: 'Ashrunner',
     blurb: 'Fast raider beast bred for harvester hunts and sudden flank collapses.',
     faction: 'scorch',
@@ -192,7 +192,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_factory'],
   }),
   mk({
-    id: 'scorch_magnetonn',
+    id: 'scorch_storm_anvil',
     name: 'Storm Anvil',
     blurb: 'Magnetized anti-air construct that drags flyers into a killing arc.',
     faction: 'scorch',
@@ -209,7 +209,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_factory'],
   }),
   mk({
-    id: 'scorch_groudonn',
+    id: 'scorch_caldera_titan',
     name: 'Caldera Titan',
     blurb: 'A walking volcanic siege engine. Where it stops, the map changes.',
     faction: 'scorch',
@@ -226,7 +226,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_factory'],
   }),
   mk({
-    id: 'scorch_zubattler',
+    id: 'scorch_cinderwing',
     name: 'Cinderwing',
     blurb: 'Scout flyer with charred wings and a talent for finding weak patrol lines.',
     faction: 'scorch',
@@ -243,7 +243,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_airpad'],
   }),
   mk({
-    id: 'scorch_moltrez',
+    id: 'scorch_solar_wyrm',
     name: 'Solar Wyrm',
     blurb: 'Tier-three firebird that paints attack runs in molten gold.',
     faction: 'scorch',
@@ -260,7 +260,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_airpad'],
   }),
   mk({
-    id: 'scorch_magcarggo',
+    id: 'scorch_slag_barge',
     name: 'Slag Barge',
     blurb: 'Naval fire platform that floats because the ocean is too afraid to argue.',
     faction: 'scorch',
@@ -277,7 +277,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['scorch_navalyard'],
   }),
   mk({
-    id: 'scorch_slugmariner',
+    id: 'scorch_ember_nautilus',
     name: 'Ember Nautilus',
     blurb: 'Submerged raider with a hot core and a cold ambush pattern.',
     faction: 'scorch',
@@ -300,7 +300,7 @@ const ALL: UnitDef[] = [
   // TIDE DOMINION — tech, mobility, naval supremacy
   // ===========================================================================
   mk({
-    id: 'tide_squirtul',
+    id: 'tide_coral_initiate',
     name: 'Coral Initiate',
     blurb: 'Disciplined Tide infantry wrapped in pale coral and aqua glass.',
     faction: 'tide',
@@ -317,7 +317,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_barracks'],
   }),
   mk({
-    id: 'tide_horsean',
+    id: 'tide_rill_lancer',
     name: 'Rill Lancer',
     blurb: 'A quick aquatic lancer that punches above its size from the surf line.',
     faction: 'tide',
@@ -334,7 +334,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_barracks'],
   }),
   mk({
-    id: 'tide_prof_brine',
+    id: 'tide_reef_savant',
     name: 'Reef Savant',
     blurb: 'A salt-robed infiltrator who captures structures with surgical calm.',
     faction: 'tide',
@@ -351,7 +351,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_barracks'],
   }),
   mk({
-    id: 'tide_polywrath',
+    id: 'tide_breaker_guard',
     name: 'Breaker Guard',
     blurb: 'Close-order infantry that hits like a wave folding over stone.',
     faction: 'tide',
@@ -368,7 +368,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_barracks'],
   }),
   mk({
-    id: 'tide_vaporeonix',
+    id: 'tide_glassfin_prowler',
     name: 'Glassfin Prowler',
     blurb: 'Fast amphibious hunter with bright fins and a nastier temper.',
     faction: 'tide',
@@ -385,7 +385,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_factory'],
   }),
   mk({
-    id: 'tide_krabber',
+    id: 'tide_claw_harvester',
     name: 'Claw Harvester',
     blurb: 'Resource crawler that shears rift crystals loose with coral pincers.',
     faction: 'tide',
@@ -402,7 +402,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_factory'],
   }),
   mk({
-    id: 'tide_starmiez',
+    id: 'tide_prism_array',
     name: 'Prism Array',
     blurb: 'Hovering anti-air focus that refracts shots through a blue core.',
     faction: 'tide',
@@ -419,7 +419,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_factory'],
   }),
   mk({
-    id: 'tide_blastoyse',
+    id: 'tide_coral_bulwark',
     name: 'Coral Bulwark',
     blurb: 'Main battle shellback carrying pressure cannons over its shoulders.',
     faction: 'tide',
@@ -436,7 +436,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_factory'],
   }),
   mk({
-    id: 'tide_kyogrre',
+    id: 'tide_abyss_sovereign',
     name: 'Abyss Sovereign',
     blurb: 'Huge Tide siege creature whose wake becomes a front line.',
     faction: 'tide',
@@ -453,7 +453,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_factory'],
   }),
   mk({
-    id: 'tide_wingullet',
+    id: 'tide_reefwing',
     name: 'Reefwing',
     blurb: 'Light interceptor that patrols the sky like a blade over water.',
     faction: 'tide',
@@ -470,7 +470,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_airpad'],
   }),
   mk({
-    id: 'tide_pelipperator',
+    id: 'tide_storm_bomber',
     name: 'Tide Bomber',
     blurb: 'Heavy flyer that drops pressurized storms on clustered armor.',
     faction: 'tide',
@@ -487,7 +487,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_airpad'],
   }),
   mk({
-    id: 'tide_tentacrush',
+    id: 'tide_kraken_skiff',
     name: 'Kraken Skiff',
     blurb: 'Surface raider with grasping coral limbs and close-range fury.',
     faction: 'tide',
@@ -504,7 +504,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_navalyard'],
   }),
   mk({
-    id: 'tide_sharpeedo',
+    id: 'tide_razortooth_sub',
     name: 'Razortooth Sub',
     blurb: 'Fast submerged predator built for convoy harassment.',
     faction: 'tide',
@@ -522,7 +522,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['tide_navalyard'],
   }),
   mk({
-    id: 'tide_gyarrados',
+    id: 'tide_leviathan_ark',
     name: 'Leviathan Ark',
     blurb: 'Capital sea serpent carrying enough guns to rename a coastline.',
     faction: 'tide',
@@ -543,7 +543,7 @@ const ALL: UnitDef[] = [
   // VERDANT SWARM — cheap swarms, speed, regeneration
   // ===========================================================================
   mk({
-    id: 'verdant_bulbasore',
+    id: 'verdant_mossling',
     name: 'Mossling',
     blurb: 'Cheap living-wood infantry grown around a toxic green heart.',
     faction: 'verdant',
@@ -560,7 +560,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_barracks'],
   }),
   mk({
-    id: 'verdant_beedrillz',
+    id: 'verdant_thorn_wasp',
     name: 'Thorn Wasp',
     blurb: 'Needle-winged interceptor with a bad attitude toward armor seams.',
     faction: 'verdant',
@@ -577,7 +577,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_barracks'],
   }),
   mk({
-    id: 'verdant_oddishooter',
+    id: 'verdant_spore_pod',
     name: 'Spore Pod',
     blurb: 'Small ranged organism that lobs irritants from under a leaf crown.',
     faction: 'verdant',
@@ -594,7 +594,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_barracks'],
   }),
   mk({
-    id: 'verdant_prof_oakley',
+    id: 'verdant_root_savant',
     name: 'Root Savant',
     blurb: 'A quiet infiltrator who convinces enemy buildings to change allegiance.',
     faction: 'verdant',
@@ -611,7 +611,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_barracks'],
   }),
   mk({
-    id: 'verdant_scytherr',
+    id: 'verdant_briar_reaper',
     name: 'Briar Reaper',
     blurb: 'Blade-limbed assault creature for cutting through light defenses.',
     faction: 'verdant',
@@ -628,7 +628,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_barracks'],
   }),
   mk({
-    id: 'verdant_sceptilash',
+    id: 'verdant_vine_stalker',
     name: 'Vine Stalker',
     blurb: 'Fast Verdant striker that lashes from the tree line.',
     faction: 'verdant',
@@ -645,7 +645,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_factory'],
   }),
   mk({
-    id: 'verdant_torterrar',
+    id: 'verdant_grove_hauler',
     name: 'Grove Hauler',
     blurb: 'Harvesting beast with roots for armor and a crystal-fed engine heart.',
     faction: 'verdant',
@@ -662,7 +662,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_factory'],
   }),
   mk({
-    id: 'verdant_tanglevine',
+    id: 'verdant_tangle_mass',
     name: 'Tangle Mass',
     blurb: 'Creeping ambush unit that turns open ground into a problem.',
     faction: 'verdant',
@@ -679,7 +679,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_factory'],
   }),
   mk({
-    id: 'verdant_venosore',
+    id: 'verdant_bloom_siege',
     name: 'Bloom Siege',
     blurb: 'Heavy artillery beast crowned with a war-flower cannon.',
     faction: 'verdant',
@@ -696,7 +696,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_factory'],
   }),
   mk({
-    id: 'verdant_snorlux',
+    id: 'verdant_elder_husk',
     name: 'Elder Husk',
     blurb: 'Towering living-wood bruiser with enough mass to stop a column.',
     faction: 'verdant',
@@ -713,7 +713,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_factory'],
   }),
   mk({
-    id: 'verdant_pidgeottoh',
+    id: 'verdant_canopy_raptor',
     name: 'Canopy Raptor',
     blurb: 'Air-superiority hunter with branch-bone wings and green-lit eyes.',
     faction: 'verdant',
@@ -730,7 +730,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_airpad'],
   }),
   mk({
-    id: 'verdant_butterfrei',
+    id: 'verdant_spore_moth',
     name: 'Spore Moth',
     blurb: 'Tier-three bomber that leaves glowing pollen and regret behind.',
     faction: 'verdant',
@@ -747,7 +747,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_airpad'],
   }),
   mk({
-    id: 'verdant_lotadder',
+    id: 'verdant_bog_skiff',
     name: 'Bog Skiff',
     blurb: 'Small naval gunbeast grown around a floating root raft.',
     faction: 'verdant',
@@ -764,7 +764,7 @@ const ALL: UnitDef[] = [
     prerequisites: ['verdant_navalyard'],
   }),
   mk({
-    id: 'verdant_ludicolossus',
+    id: 'verdant_mangrove_colossus',
     name: 'Mangrove Colossus',
     blurb: 'Verdant capital ship, half fortress and half overgrown nightmare.',
     faction: 'verdant',
@@ -783,47 +783,47 @@ const ALL: UnitDef[] = [
 ];
 
 const WORLD_ROSTER: Record<string, { name: string; blurb: string }> = {
-  scorch_charmandar: { name: 'Cinder Imp', blurb: 'Frontline ember infantry with a molten bite and no sense of self-preservation.' },
-  scorch_peekachoo: { name: 'Volt Cinder', blurb: 'A crackling obsidian skirmisher that grounds aircraft with snap-burst lightning.' },
-  scorch_prof_cinder: { name: 'Ash Savant', blurb: 'A heat-masked infiltrator trained to seize enemy structures under fire.' },
-  scorch_magmarr: { name: 'Magma Brute', blurb: 'Heavy infantry with a furnace chest and a habit of turning cover into slag.' },
-  scorch_ryhorrn: { name: 'Basalt Ram', blurb: 'Armored shock beast that cracks armor plates with a lava-lit horn.' },
-  scorch_torkoala: { name: 'Ember Hauler', blurb: 'Slow, stubborn harvester plated in heat-blackened shell and crystal dust.' },
-  scorch_arcanyne: { name: 'Ashrunner', blurb: 'Fast raider beast bred for harvester hunts and sudden flank collapses.' },
-  scorch_magnetonn: { name: 'Storm Anvil', blurb: 'Magnetized anti-air construct that drags flyers into a killing arc.' },
-  scorch_groudonn: { name: 'Caldera Titan', blurb: 'A walking volcanic siege engine. Where it stops, the map changes.' },
-  scorch_zubattler: { name: 'Cinderwing', blurb: 'Scout flyer with charred wings and a talent for finding weak patrol lines.' },
-  scorch_moltrez: { name: 'Solar Wyrm', blurb: 'Tier-three firebird that paints attack runs in molten gold.' },
-  scorch_magcarggo: { name: 'Slag Barge', blurb: 'Naval fire platform that floats because the ocean is too afraid to argue.' },
-  scorch_slugmariner: { name: 'Ember Nautilus', blurb: 'Submerged raider with a hot core and a cold ambush pattern.' },
-  tide_squirtul: { name: 'Coral Initiate', blurb: 'Disciplined Tide infantry wrapped in pale coral and aqua glass.' },
-  tide_horsean: { name: 'Rill Lancer', blurb: 'A quick aquatic lancer that punches above its size from the surf line.' },
-  tide_prof_brine: { name: 'Reef Savant', blurb: 'A salt-robed infiltrator who captures structures with surgical calm.' },
-  tide_polywrath: { name: 'Breaker Guard', blurb: 'Close-order infantry that hits like a wave folding over stone.' },
-  tide_vaporeonix: { name: 'Glassfin Prowler', blurb: 'Fast amphibious hunter with bright fins and a nastier temper.' },
-  tide_krabber: { name: 'Claw Harvester', blurb: 'Resource crawler that shears rift crystals loose with coral pincers.' },
-  tide_starmiez: { name: 'Prism Array', blurb: 'Hovering anti-air focus that refracts shots through a blue core.' },
-  tide_blastoyse: { name: 'Coral Bulwark', blurb: 'Main battle shellback carrying pressure cannons over its shoulders.' },
-  tide_kyogrre: { name: 'Abyss Sovereign', blurb: 'Huge Tide siege creature whose wake becomes a front line.' },
-  tide_wingullet: { name: 'Reefwing', blurb: 'Light interceptor that patrols the sky like a blade over water.' },
-  tide_pelipperator: { name: 'Tide Bomber', blurb: 'Heavy flyer that drops pressurized storms on clustered armor.' },
-  tide_tentacrush: { name: 'Kraken Skiff', blurb: 'Surface raider with grasping coral limbs and close-range fury.' },
-  tide_sharpeedo: { name: 'Razortooth Sub', blurb: 'Fast submerged predator built for convoy harassment.' },
-  tide_gyarrados: { name: 'Leviathan Ark', blurb: 'Capital sea serpent carrying enough guns to rename a coastline.' },
-  verdant_bulbasore: { name: 'Mossling', blurb: 'Cheap living-wood infantry grown around a toxic green heart.' },
-  verdant_beedrillz: { name: 'Thorn Wasp', blurb: 'Needle-winged interceptor with a bad attitude toward armor seams.' },
-  verdant_oddishooter: { name: 'Spore Pod', blurb: 'Small ranged organism that lobs irritants from under a leaf crown.' },
-  verdant_prof_oakley: { name: 'Root Savant', blurb: 'A quiet infiltrator who convinces enemy buildings to change allegiance.' },
-  verdant_scytherr: { name: 'Briar Reaper', blurb: 'Blade-limbed assault creature for cutting through light defenses.' },
-  verdant_sceptilash: { name: 'Vine Stalker', blurb: 'Fast Verdant striker that lashes from the tree line.' },
-  verdant_torterrar: { name: 'Grove Hauler', blurb: 'Harvesting beast with roots for armor and a crystal-fed engine heart.' },
-  verdant_tanglevine: { name: 'Tangle Mass', blurb: 'Creeping ambush unit that turns open ground into a problem.' },
-  verdant_venosore: { name: 'Bloom Siege', blurb: 'Heavy artillery beast crowned with a war-flower cannon.' },
-  verdant_snorlux: { name: 'Elder Husk', blurb: 'Towering living-wood bruiser with enough mass to stop a column.' },
-  verdant_pidgeottoh: { name: 'Canopy Raptor', blurb: 'Air-superiority hunter with branch-bone wings and green-lit eyes.' },
-  verdant_butterfrei: { name: 'Spore Moth', blurb: 'Tier-three bomber that leaves glowing pollen and regret behind.' },
-  verdant_lotadder: { name: 'Bog Skiff', blurb: 'Small naval gunbeast grown around a floating root raft.' },
-  verdant_ludicolossus: { name: 'Mangrove Colossus', blurb: 'Verdant capital ship, half fortress and half overgrown nightmare.' },
+  scorch_cinder_imp: { name: 'Cinder Imp', blurb: 'Frontline ember infantry with a molten bite and no sense of self-preservation.' },
+  scorch_volt_cinder: { name: 'Volt Cinder', blurb: 'A crackling obsidian skirmisher that grounds aircraft with snap-burst lightning.' },
+  scorch_ash_savant: { name: 'Ash Savant', blurb: 'A heat-masked infiltrator trained to seize enemy structures under fire.' },
+  scorch_magma_brute: { name: 'Magma Brute', blurb: 'Heavy infantry with a furnace chest and a habit of turning cover into slag.' },
+  scorch_basalt_ram: { name: 'Basalt Ram', blurb: 'Armored shock beast that cracks armor plates with a lava-lit horn.' },
+  scorch_ember_hauler: { name: 'Ember Hauler', blurb: 'Slow, stubborn harvester plated in heat-blackened shell and crystal dust.' },
+  scorch_ashrunner: { name: 'Ashrunner', blurb: 'Fast raider beast bred for harvester hunts and sudden flank collapses.' },
+  scorch_storm_anvil: { name: 'Storm Anvil', blurb: 'Magnetized anti-air construct that drags flyers into a killing arc.' },
+  scorch_caldera_titan: { name: 'Caldera Titan', blurb: 'A walking volcanic siege engine. Where it stops, the map changes.' },
+  scorch_cinderwing: { name: 'Cinderwing', blurb: 'Scout flyer with charred wings and a talent for finding weak patrol lines.' },
+  scorch_solar_wyrm: { name: 'Solar Wyrm', blurb: 'Tier-three firebird that paints attack runs in molten gold.' },
+  scorch_slag_barge: { name: 'Slag Barge', blurb: 'Naval fire platform that floats because the ocean is too afraid to argue.' },
+  scorch_ember_nautilus: { name: 'Ember Nautilus', blurb: 'Submerged raider with a hot core and a cold ambush pattern.' },
+  tide_coral_initiate: { name: 'Coral Initiate', blurb: 'Disciplined Tide infantry wrapped in pale coral and aqua glass.' },
+  tide_rill_lancer: { name: 'Rill Lancer', blurb: 'A quick aquatic lancer that punches above its size from the surf line.' },
+  tide_reef_savant: { name: 'Reef Savant', blurb: 'A salt-robed infiltrator who captures structures with surgical calm.' },
+  tide_breaker_guard: { name: 'Breaker Guard', blurb: 'Close-order infantry that hits like a wave folding over stone.' },
+  tide_glassfin_prowler: { name: 'Glassfin Prowler', blurb: 'Fast amphibious hunter with bright fins and a nastier temper.' },
+  tide_claw_harvester: { name: 'Claw Harvester', blurb: 'Resource crawler that shears rift crystals loose with coral pincers.' },
+  tide_prism_array: { name: 'Prism Array', blurb: 'Hovering anti-air focus that refracts shots through a blue core.' },
+  tide_coral_bulwark: { name: 'Coral Bulwark', blurb: 'Main battle shellback carrying pressure cannons over its shoulders.' },
+  tide_abyss_sovereign: { name: 'Abyss Sovereign', blurb: 'Huge Tide siege creature whose wake becomes a front line.' },
+  tide_reefwing: { name: 'Reefwing', blurb: 'Light interceptor that patrols the sky like a blade over water.' },
+  tide_storm_bomber: { name: 'Tide Bomber', blurb: 'Heavy flyer that drops pressurized storms on clustered armor.' },
+  tide_kraken_skiff: { name: 'Kraken Skiff', blurb: 'Surface raider with grasping coral limbs and close-range fury.' },
+  tide_razortooth_sub: { name: 'Razortooth Sub', blurb: 'Fast submerged predator built for convoy harassment.' },
+  tide_leviathan_ark: { name: 'Leviathan Ark', blurb: 'Capital sea serpent carrying enough guns to rename a coastline.' },
+  verdant_mossling: { name: 'Mossling', blurb: 'Cheap living-wood infantry grown around a toxic green heart.' },
+  verdant_thorn_wasp: { name: 'Thorn Wasp', blurb: 'Needle-winged interceptor with a bad attitude toward armor seams.' },
+  verdant_spore_pod: { name: 'Spore Pod', blurb: 'Small ranged organism that lobs irritants from under a leaf crown.' },
+  verdant_root_savant: { name: 'Root Savant', blurb: 'A quiet infiltrator who convinces enemy buildings to change allegiance.' },
+  verdant_briar_reaper: { name: 'Briar Reaper', blurb: 'Blade-limbed assault creature for cutting through light defenses.' },
+  verdant_vine_stalker: { name: 'Vine Stalker', blurb: 'Fast Verdant striker that lashes from the tree line.' },
+  verdant_grove_hauler: { name: 'Grove Hauler', blurb: 'Harvesting beast with roots for armor and a crystal-fed engine heart.' },
+  verdant_tangle_mass: { name: 'Tangle Mass', blurb: 'Creeping ambush unit that turns open ground into a problem.' },
+  verdant_bloom_siege: { name: 'Bloom Siege', blurb: 'Heavy artillery beast crowned with a war-flower cannon.' },
+  verdant_elder_husk: { name: 'Elder Husk', blurb: 'Towering living-wood bruiser with enough mass to stop a column.' },
+  verdant_canopy_raptor: { name: 'Canopy Raptor', blurb: 'Air-superiority hunter with branch-bone wings and green-lit eyes.' },
+  verdant_spore_moth: { name: 'Spore Moth', blurb: 'Tier-three bomber that leaves glowing pollen and regret behind.' },
+  verdant_bog_skiff: { name: 'Bog Skiff', blurb: 'Small naval gunbeast grown around a floating root raft.' },
+  verdant_mangrove_colossus: { name: 'Mangrove Colossus', blurb: 'Verdant capital ship, half fortress and half overgrown nightmare.' },
 };
 
 export const UNITS: Record<string, UnitDef> = {};

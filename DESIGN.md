@@ -24,55 +24,55 @@ combat.ts elite self-heal check by faction).
 ### Scorch Legion
 | id | name | tab/tier | role | archetype (for sprites) |
 |---|---|---|---|---|
-| scorch_charmandar | Charmandar | inf t1 | basic flame-spit trooper, FIRE CLAW | orange biped lizard, flame tail |
-| scorch_peekachoo | Peekachoo | inf t1 | shock trooper, ELECTRIC PIERCE, hits air | yellow rodent, jagged tail, red cheeks |
-| scorch_magmarr | Magmarr | inf t2 | flamer, BLAST, melts buildings/infantry | bulky red biped, flame-plume head |
-| scorch_prof_cinder | Prof. Cinder | inf t1 | engineer — captures buildings | tiny human, red lab coat, goggles |
-| scorch_torkoala | Torkoala | veh t1 | HARVESTER (cap 700) | smoking coal tortoise w/ hopper |
-| scorch_ryhorrn | Ryhorrn | veh t1 | main battle creature, CANNON MEDIUM | grey rock rhino, horn cannon |
-| scorch_arcanyne | Arcanyne | veh t2 | fast raider, CLAW, harasses | orange striped dog, mane |
-| scorch_magnetonn | Magnetonn | veh t2 | anti-air, PIERCE | three floating magnet-orbs |
-| scorch_groudonn | Groudonn | veh t3 | super-heavy, dual CANNON, HEAVY | huge red spiked behemoth |
-| scorch_zubattler | Zubattler | air t2 | interceptor, PIERCE, AA+ground | blue bat, big ears |
-| scorch_moltrez | Moltrez | air t3 | heavy bomber, BLAST splash (Kirov-ish, slow) | flaming phoenix |
-| scorch_magcarggo | Magcarggo | naval t2 | gunboat, CANNON | lava slug on a raft hull |
-| scorch_slugmariner | Slugmariner | naval t2 | submarine, PIERCE, naval-only targets | grey slug sub, periscope |
+| scorch_cinder_imp | Cinder Imp | inf t1 | basic ember trooper, FIRE CLAW | small obsidian imp, molten cracks, clawed stance |
+| scorch_volt_cinder | Volt Cinder | inf t1 | shock trooper, ELECTRIC PIERCE, hits air | obsidian skirmisher, lava plates, lightning arcs |
+| scorch_magma_brute | Magma Brute | inf t2 | flamer, BLAST, melts buildings/infantry | furnace-chested brute, black armor, orange core glow |
+| scorch_ash_savant | Ash Savant | inf t1 | engineer — captures buildings | heat-masked infiltrator, dark robes, brass war tools |
+| scorch_ember_hauler | Ember Hauler | veh t1 | HARVESTER (cap 700) | smoking coal tortoise w/ hopper |
+| scorch_basalt_ram | Basalt Ram | veh t1 | main battle creature, CANNON MEDIUM | grey rock rhino, horn cannon |
+| scorch_ashrunner | Ashrunner | veh t2 | fast raider, CLAW, harasses | black stone raider beast, ember mane, armored paws |
+| scorch_storm_anvil | Storm Anvil | veh t2 | anti-air, PIERCE | magnetized anti-air construct, orange energy coils |
+| scorch_caldera_titan | Caldera Titan | veh t3 | super-heavy, dual CANNON, HEAVY | huge red spiked behemoth |
+| scorch_cinderwing | Cinderwing | air t2 | interceptor, PIERCE, AA+ground | charred scout flyer, ember-veined wings |
+| scorch_solar_wyrm | Solar Wyrm | air t3 | heavy bomber, BLAST splash (Kirov-ish, slow) | molten firebird, broad burning wings, black armor bones |
+| scorch_slag_barge | Slag Barge | naval t2 | gunboat, CANNON | volcanic crystal mortar mounted on a dark fire barge |
+| scorch_ember_nautilus | Ember Nautilus | naval t2 | submarine, PIERCE, naval-only targets | dark shell raider, glowing hot core, submerged ambush profile |
 
 ### Tide Dominion
 | id | name | tab/tier | role | archetype |
 |---|---|---|---|---|
-| tide_squirtul | Squirtul | inf t1 | basic water-gun trooper, WATER PIERCE | small blue turtle biped |
-| tide_horsean | Horsean | inf t1 | anti-armor/AA bubble lance, PIERCE | blue seahorse |
-| tide_polywrath | Polywrath | inf t2 | bruiser, CLAW, high hp | burly blue frog, swirl belly |
-| tide_prof_brine | Prof. Brine | inf t1 | engineer | tiny human, blue slicker, sou'wester hat |
-| tide_krabber | Krabber | veh t1 | HARVESTER (cap 700) | red crab w/ cargo basket |
-| tide_vaporeonix | Vaporeonix | veh t1 | fast scout/raider, CLAW | sleek finned aqua quadruped |
-| tide_blastoyse | Blastoyse | veh t2 | main battle creature, hydro CANNON | big turtle, twin shell cannons |
-| tide_starmiez | Starmiez | veh t2 | anti-air, PIERCE | purple star w/ gem core |
-| tide_kyogrre | Kyogrre | veh t3 | heavy hover, CANNON+splash, HEAVY | blue whale w/ red runes, hovers |
-| tide_wingullet | Wingullet | air t2 | interceptor | white gull |
-| tide_pelipperator | Pelipperator | air t3 | bomber, BLAST | big-billed pelican |
-| tide_tentacrush | Tentacrush | naval t2 | mid gunship, PIERCE | red-orb jellyfish |
-| tide_sharpeedo | Sharpeedo | naval t2 | fast sub, naval-only | torpedo shark |
-| tide_gyarrados | Gyarrados | naval t3 | capital ship, long-range BLAST bombardment | rearing blue sea serpent |
+| tide_coral_initiate | Coral Initiate | inf t1 | basic water-gun trooper, WATER PIERCE | disciplined infantry in pale coral armor and aqua glass |
+| tide_rill_lancer | Rill Lancer | inf t1 | anti-armor/AA bubble lance, PIERCE | quick aquatic lancer, spear profile, blue crystal fins |
+| tide_breaker_guard | Breaker Guard | inf t2 | bruiser, CLAW, high hp | close-order guard, heavy coral gauntlets, wave armor |
+| tide_reef_savant | Reef Savant | inf t1 | engineer | salt-robed infiltrator with surgical tools and blue crystal focus |
+| tide_claw_harvester | Claw Harvester | veh t1 | HARVESTER (cap 700) | coral pincer crawler with crystal cargo frame |
+| tide_glassfin_prowler | Glassfin Prowler | veh t1 | fast scout/raider, CLAW | sleek amphibious hunter, bright fins, aquatic armor |
+| tide_coral_bulwark | Coral Bulwark | veh t2 | main battle creature, hydro CANNON | big turtle, twin shell cannons |
+| tide_prism_array | Prism Array | veh t2 | anti-air, PIERCE | hovering anti-air focus with a blue refracting crystal core |
+| tide_abyss_sovereign | Abyss Sovereign | veh t3 | heavy hover, CANNON+splash, HEAVY | blue whale w/ red runes, hovers |
+| tide_reefwing | Reefwing | air t2 | interceptor | light interceptor with blade wings and water-glass feathers |
+| tide_storm_bomber | Tide Bomber | air t3 | bomber, BLAST | heavy flyer with storm cargo belly and coral armor plates |
+| tide_kraken_skiff | Kraken Skiff | naval t2 | mid gunship, PIERCE | surface raider with grasping coral limbs |
+| tide_razortooth_sub | Razortooth Sub | naval t2 | fast sub, naval-only | armored prow predator with blue wake lines |
+| tide_leviathan_ark | Leviathan Ark | naval t3 | capital ship, long-range BLAST bombardment | rearing blue sea serpent |
 
 ### Verdant Swarm
 | id | name | tab/tier | role | archetype |
 |---|---|---|---|---|
-| verdant_bulbasore | Bulbasore | inf t1 | basic seed-spit, GRASS, extra cheap | teal quadruped w/ bulb |
-| verdant_beedrillz | Beedrillz | inf t1 | fast melee stinger, CLAW | wasp w/ drill arms (low hover, ground) |
-| verdant_oddishooter | Oddishooter | inf t1 | anti-air spore flinger, PIERCE | blue radish w/ leaf sprout |
-| verdant_scytherr | Scytherr | inf t2 | elite melee shredder, CLAW | green mantis, scythe arms |
-| verdant_prof_oakley | Prof. Oakley | inf t1 | engineer | tiny human, green vest, straw hat |
-| verdant_torterrar | Torterrar | veh t1 | HARVESTER (cap 700) | tortoise w/ tree+bins on back |
-| verdant_sceptilash | Sceptilash | veh t1 | fast raider, CLAW | green gecko runner |
-| verdant_venosore | Venosore | veh t2 | main battle creature, solar CANNON | big quad w/ pink flower cannon |
-| verdant_tanglevine | Tanglevine | veh t2 | anti-air vine flak, PIERCE | blue vine ball, two feet |
-| verdant_snorlux | Snorlux | veh t3 | colossal HP wall, CLAW, NEUTRAL elem, slow | giant sleepy teal bear |
-| verdant_pidgeottoh | Pidgeottoh | air t2 | interceptor | brown/cream raptor bird |
-| verdant_butterfrei | Butterfrei | air t3 | spore bomber, BLAST+lingering splash | purple butterfly |
-| verdant_lotadder | Lotadder | naval t2 | gunboat | lilypad duck skiff |
-| verdant_ludicolossus | Ludicolossus | naval t3 | capital, dance-beam BLAST | pineapple duck w/ sombrero |
+| verdant_mossling | Mossling | inf t1 | basic seed-spit, GRASS, extra cheap | living-wood infantry around a toxic green heart |
+| verdant_thorn_wasp | Thorn Wasp | inf t1 | fast melee stinger, CLAW | needle-winged interceptor, branch armor, stinger lances |
+| verdant_spore_pod | Spore Pod | inf t1 | anti-air spore flinger, PIERCE | small ranged organism with leaf crown and glowing spore sacs |
+| verdant_briar_reaper | Briar Reaper | inf t2 | elite melee shredder, CLAW | bark-and-thorn assault unit with blade limbs |
+| verdant_root_savant | Root Savant | inf t1 | engineer | quiet infiltrator with ritual tools and living-wood armor |
+| verdant_grove_hauler | Grove Hauler | veh t1 | HARVESTER (cap 700) | harvesting beast with root armor and a crystal-fed engine heart |
+| verdant_vine_stalker | Vine Stalker | veh t1 | fast raider, CLAW | fast Verdant striker with leaf blades and predatory crouch |
+| verdant_bloom_siege | Bloom Siege | veh t2 | main battle creature, solar CANNON | big quad w/ pink flower cannon |
+| verdant_tangle_mass | Tangle Mass | veh t2 | anti-air vine flak, PIERCE | creeping ambush mass of vines, roots, and glowing eyes |
+| verdant_elder_husk | Elder Husk | veh t3 | colossal HP wall, CLAW, NEUTRAL elem, slow | giant sleepy teal bear |
+| verdant_canopy_raptor | Canopy Raptor | air t2 | interceptor | brown/cream raptor bird |
+| verdant_spore_moth | Spore Moth | air t3 | spore bomber, BLAST+lingering splash | dark-winged bomber with glowing pollen trails |
+| verdant_bog_skiff | Bog Skiff | naval t2 | gunboat | small naval gunbeast grown around a floating root raft |
+| verdant_mangrove_colossus | Mangrove Colossus | naval t3 | capital, dance-beam BLAST | half fortress, half overgrown nightmare |
 
 ## Buildings (ids: `<faction>_<key>`, all three factions have all 15)
 
@@ -104,7 +104,7 @@ combat.ts elite self-heal check by faction).
 ## Balance guidance (data module defaults; exact numbers tunable)
 - buildTicks default: `secondsToTicks(cost / 30)`.
 - Infantry: cost 150–400 (engineer 500), hp 80–220, speed 1.6–2.4 t/s, sight 6.
-- Vehicles: cost 700–1000 (t1/t2), harvester 1000 (hp 600, unarmed), t3 1700–1900, hp 300–900 (Snorlux 1600), speed 1.2–2.8.
+- Vehicles: cost 700–1000 (t1/t2), harvester 1000 (hp 600, unarmed), t3 1700–1900, hp 300–900 (Elder Husk 1600), speed 1.2–2.8.
 - Air: cost 1000–1600, hp 200–360, speed 3.0–3.6, ignore terrain.
 - Naval: cost 800–1100, capital 1800–2000, hp 400–1000; capitals range 9–10 (outrange defenses).
 - Weapons: DPS ≈ cost/100 per second for combat units (tune by role: anti-X bonus comes from WEAPON_VS_ARMOR).

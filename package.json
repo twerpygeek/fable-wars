@@ -27,6 +27,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:headless": "tsx tests/headless.ts",
+    "test:art": "tsx tests/artIdentity.ts",
     "test:crystal-rush": "tsx tests/crystalRush.ts",
     "test:multiplayer": "tsx tests/multiplayer.ts",
     "test:balance": "tsx tests/balance.ts --reps 2 --maxMin 35",

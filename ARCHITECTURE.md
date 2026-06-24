@@ -31,7 +31,7 @@ export const DATA: GameData; // fully populated, validated (prerequisites exist,
 export function defOf(defId: string): UnitDef | BuildingDef; // throws on unknown
 ```
 Three factions (see DESIGN.md for rosters/identity). Def id convention: `<faction>_<name>` e.g.
-`scorch_peekachoo`, `tide_navalyard`. Every def's `spriteKey` equals its `id`.
+`scorch_volt_cinder`, `tide_navalyard`. Every def's `spriteKey` equals its `id`.
 
 ### src/map/ — terrain + procedural generation
 Files: `map/mapgen.ts`, `map/terrain.ts`

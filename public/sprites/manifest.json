@@ -1,7 +1,7 @@
 {
   "_readme": "Fable Wars concept-sheet sprite pack. Units are extracted from public/art/source/fable-wars-unit-concept-sheet.png with 5 required facings and 1 frame; terrain/objectives/buildings keep their existing override packs with procedural fallback.",
   "units": {
-    "scorch_charmandar": {
+    "scorch_cinder_imp": {
       "facings": [
         "s",
         "sw",
@@ -11,7 +11,7 @@
       ],
       "frames": 1
     },
-    "scorch_peekachoo": {
+    "scorch_volt_cinder": {
       "facings": [
         "s",
         "sw",
@@ -21,7 +21,7 @@
       ],
       "frames": 1
     },
-    "scorch_prof_cinder": {
+    "scorch_ash_savant": {
       "facings": [
         "s",
         "sw",
@@ -31,7 +31,7 @@
       ],
       "frames": 1
     },
-    "scorch_magmarr": {
+    "scorch_magma_brute": {
       "facings": [
         "s",
         "sw",
@@ -41,7 +41,7 @@
       ],
       "frames": 1
     },
-    "scorch_ryhorrn": {
+    "scorch_basalt_ram": {
       "facings": [
         "s",
         "sw",
@@ -51,7 +51,7 @@
       ],
       "frames": 1
     },
-    "scorch_torkoala": {
+    "scorch_ember_hauler": {
       "facings": [
         "s",
         "sw",
@@ -61,7 +61,7 @@
       ],
       "frames": 1
     },
-    "scorch_arcanyne": {
+    "scorch_ashrunner": {
       "facings": [
         "s",
         "sw",
@@ -71,7 +71,7 @@
       ],
       "frames": 1
     },
-    "scorch_magnetonn": {
+    "scorch_storm_anvil": {
       "facings": [
         "s",
         "sw",
@@ -81,7 +81,7 @@
       ],
       "frames": 1
     },
-    "scorch_groudonn": {
+    "scorch_caldera_titan": {
       "facings": [
         "s",
         "sw",
@@ -91,7 +91,7 @@
       ],
       "frames": 1
     },
-    "scorch_zubattler": {
+    "scorch_cinderwing": {
       "facings": [
         "s",
         "sw",
@@ -101,7 +101,7 @@
       ],
       "frames": 1
     },
-    "scorch_moltrez": {
+    "scorch_solar_wyrm": {
       "facings": [
         "s",
         "sw",
@@ -111,7 +111,7 @@
       ],
       "frames": 1
     },
-    "scorch_magcarggo": {
+    "scorch_slag_barge": {
       "facings": [
         "s",
         "sw",
@@ -121,7 +121,7 @@
       ],
       "frames": 1
     },
-    "scorch_slugmariner": {
+    "scorch_ember_nautilus": {
       "facings": [
         "s",
         "sw",
@@ -131,7 +131,7 @@
       ],
       "frames": 1
     },
-    "tide_squirtul": {
+    "tide_coral_initiate": {
       "facings": [
         "s",
         "sw",
@@ -141,7 +141,7 @@
       ],
       "frames": 1
     },
-    "tide_horsean": {
+    "tide_rill_lancer": {
       "facings": [
         "s",
         "sw",
@@ -151,7 +151,7 @@
       ],
       "frames": 1
     },
-    "tide_prof_brine": {
+    "tide_reef_savant": {
       "facings": [
         "s",
         "sw",
@@ -161,7 +161,7 @@
       ],
       "frames": 1
     },
-    "tide_polywrath": {
+    "tide_breaker_guard": {
       "facings": [
         "s",
         "sw",
@@ -171,7 +171,7 @@
       ],
       "frames": 1
     },
-    "tide_vaporeonix": {
+    "tide_glassfin_prowler": {
       "facings": [
         "s",
         "sw",
@@ -181,7 +181,7 @@
       ],
       "frames": 1
     },
-    "tide_krabber": {
+    "tide_claw_harvester": {
       "facings": [
         "s",
         "sw",
@@ -191,7 +191,7 @@
       ],
       "frames": 1
     },
-    "tide_starmiez": {
+    "tide_prism_array": {
       "facings": [
         "s",
         "sw",
@@ -201,7 +201,7 @@
       ],
       "frames": 1
     },
-    "tide_blastoyse": {
+    "tide_coral_bulwark": {
       "facings": [
         "s",
         "sw",
@@ -211,7 +211,7 @@
       ],
       "frames": 1
     },
-    "tide_kyogrre": {
+    "tide_abyss_sovereign": {
       "facings": [
         "s",
         "sw",
@@ -221,7 +221,7 @@
       ],
       "frames": 1
     },
-    "tide_wingullet": {
+    "tide_reefwing": {
       "facings": [
         "s",
         "sw",
@@ -231,7 +231,7 @@
       ],
       "frames": 1
     },
-    "tide_pelipperator": {
+    "tide_storm_bomber": {
       "facings": [
         "s",
         "sw",
@@ -241,7 +241,7 @@
       ],
       "frames": 1
     },
-    "tide_tentacrush": {
+    "tide_kraken_skiff": {
       "facings": [
         "s",
         "sw",
@@ -251,7 +251,7 @@
       ],
       "frames": 1
     },
-    "tide_sharpeedo": {
+    "tide_razortooth_sub": {
       "facings": [
         "s",
         "sw",
@@ -261,7 +261,7 @@
       ],
       "frames": 1
     },
-    "tide_gyarrados": {
+    "tide_leviathan_ark": {
       "facings": [
         "s",
         "sw",
@@ -271,7 +271,7 @@
       ],
       "frames": 1
     },
-    "verdant_bulbasore": {
+    "verdant_mossling": {
       "facings": [
         "s",
         "sw",
@@ -281,7 +281,7 @@
       ],
       "frames": 1
     },
-    "verdant_beedrillz": {
+    "verdant_thorn_wasp": {
       "facings": [
         "s",
         "sw",
@@ -291,7 +291,7 @@
       ],
       "frames": 1
     },
-    "verdant_oddishooter": {
+    "verdant_spore_pod": {
       "facings": [
         "s",
         "sw",
@@ -301,7 +301,7 @@
       ],
       "frames": 1
     },
-    "verdant_prof_oakley": {
+    "verdant_root_savant": {
       "facings": [
         "s",
         "sw",
@@ -311,7 +311,7 @@
       ],
       "frames": 1
     },
-    "verdant_scytherr": {
+    "verdant_briar_reaper": {
       "facings": [
         "s",
         "sw",
@@ -321,7 +321,7 @@
       ],
       "frames": 1
     },
-    "verdant_sceptilash": {
+    "verdant_vine_stalker": {
       "facings": [
         "s",
         "sw",
@@ -331,7 +331,7 @@
       ],
       "frames": 1
     },
-    "verdant_torterrar": {
+    "verdant_grove_hauler": {
       "facings": [
         "s",
         "sw",
@@ -341,7 +341,7 @@
       ],
       "frames": 1
     },
-    "verdant_tanglevine": {
+    "verdant_tangle_mass": {
       "facings": [
         "s",
         "sw",
@@ -351,7 +351,7 @@
       ],
       "frames": 1
     },
-    "verdant_venosore": {
+    "verdant_bloom_siege": {
       "facings": [
         "s",
         "sw",
@@ -361,7 +361,7 @@
       ],
       "frames": 1
     },
-    "verdant_snorlux": {
+    "verdant_elder_husk": {
       "facings": [
         "s",
         "sw",
@@ -371,7 +371,7 @@
       ],
       "frames": 1
     },
-    "verdant_pidgeottoh": {
+    "verdant_canopy_raptor": {
       "facings": [
         "s",
         "sw",
@@ -381,7 +381,7 @@
       ],
       "frames": 1
     },
-    "verdant_butterfrei": {
+    "verdant_spore_moth": {
       "facings": [
         "s",
         "sw",
@@ -391,7 +391,7 @@
       ],
       "frames": 1
     },
-    "verdant_lotadder": {
+    "verdant_bog_skiff": {
       "facings": [
         "s",
         "sw",
@@ -401,7 +401,7 @@
       ],
       "frames": 1
     },
-    "verdant_ludicolossus": {
+    "verdant_mangrove_colossus": {
       "facings": [
         "s",
         "sw",

@@ -611,7 +611,7 @@ Change the loading tip text selection to include a first-action tip:
 const TIPS = [
   'First minute: power, refinery, barracks. Then scout before the first raid.',
   'Right-click crystals with harvesters to claim a Candy field deliberately.',
-  'Peekachoo hits air AND ground. The cheeks are not just for show.',
+  'Volt Cinder hits air AND ground. The cheeks are not just for show.',
   'Low power slows construction and shuts down radar and advanced defenses.',
   'Harvesters auto-return to the nearest Candy Refinery. Protect them!',
   'Engineers (the Professors) capture enemy buildings. Escort them well.',

@@ -26,29 +26,29 @@ so you can upgrade one unit at a time.
   too much work, supply only `_0` and set `"frames": 1` in the manifest.
 - **Don't paint team colors** — the engine stamps the player-color band at the feet automatically.
 - Full set for one unit = 10 files (5 facings × 2 frames), e.g.
-  `scorch_peekachoo_s_0.png`, `scorch_peekachoo_s_1.png`, `scorch_peekachoo_sw_0.png`, …
+  `scorch_volt_cinder_s_0.png`, `scorch_volt_cinder_s_1.png`, `scorch_volt_cinder_sw_0.png`, …
 
 ### All 41 unit ids
 | 🔥 Scorch Legion | 🌊 Tide Dominion | 🌿 Verdant Swarm |
 |---|---|---|
-| scorch_charmandar | tide_squirtul | verdant_bulbasore |
-| scorch_peekachoo | tide_horsean | verdant_beedrillz |
-| scorch_magmarr | tide_polywrath | verdant_oddishooter |
-| scorch_prof_cinder | tide_prof_brine | verdant_scytherr |
-| scorch_torkoala (harvester) | tide_krabber (harvester) | verdant_prof_oakley |
-| scorch_ryhorrn | tide_vaporeonix | verdant_torterrar (harvester) |
-| scorch_arcanyne | tide_blastoyse | verdant_sceptilash |
-| scorch_magnetonn | tide_starmiez | verdant_venosore |
-| scorch_groudonn | tide_kyogrre | verdant_tanglevine |
-| scorch_zubattler | tide_wingullet | verdant_snorlux |
-| scorch_moltrez | tide_pelipperator | verdant_pidgeottoh |
-| scorch_magcarggo | tide_tentacrush | verdant_butterfrei |
-| scorch_slugmariner | tide_sharpeedo | verdant_lotadder |
-| | tide_gyarrados | verdant_ludicolossus |
+| scorch_cinder_imp | tide_coral_initiate | verdant_mossling |
+| scorch_volt_cinder | tide_rill_lancer | verdant_thorn_wasp |
+| scorch_magma_brute | tide_breaker_guard | verdant_spore_pod |
+| scorch_ash_savant | tide_reef_savant | verdant_briar_reaper |
+| scorch_ember_hauler (harvester) | tide_claw_harvester (harvester) | verdant_root_savant |
+| scorch_basalt_ram | tide_glassfin_prowler | verdant_grove_hauler (harvester) |
+| scorch_ashrunner | tide_coral_bulwark | verdant_vine_stalker |
+| scorch_storm_anvil | tide_prism_array | verdant_bloom_siege |
+| scorch_caldera_titan | tide_abyss_sovereign | verdant_tangle_mass |
+| scorch_cinderwing | tide_reefwing | verdant_elder_husk |
+| scorch_solar_wyrm | tide_storm_bomber | verdant_canopy_raptor |
+| scorch_slag_barge | tide_kraken_skiff | verdant_spore_moth |
+| scorch_ember_nautilus | tide_razortooth_sub | verdant_bog_skiff |
+| | tide_leviathan_ark | verdant_mangrove_colossus |
 
 **Suggested priority** (most-seen on screen): the 3 harvesters, then each faction's basic infantry
-(charmandar / squirtul / bulbasore), main battle creatures (ryhorrn / blastoyse / venosore),
-then tier-3 showpieces (groudonn / kyogrre / snorlux).
+(cinder imp / coral initiate / mossling), main battle creatures (basalt ram / coral bulwark / bloom siege),
+then tier-3 showpieces (caldera titan / abyss sovereign / elder husk).
 
 ## Buildings — `public/sprites/buildings/<id>.png`
 
@@ -87,8 +87,8 @@ node scripts/import-objective-asset.mjs central_crystal /path/to/generated-cryst
 {
   "objectives": ["central_crystal"],
   "units": {
-    "scorch_peekachoo": { "facings": ["s", "sw", "w", "nw", "n"], "frames": 2 },
-    "verdant_snorlux":  { "facings": ["s"], "frames": 1 }
+    "scorch_volt_cinder": { "facings": ["s", "sw", "w", "nw", "n"], "frames": 2 },
+    "verdant_elder_husk":  { "facings": ["s"], "frames": 1 }
   },
   "buildings": ["scorch_conyard", "scorch_refinery"]
 }
