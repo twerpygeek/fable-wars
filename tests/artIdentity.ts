@@ -157,4 +157,21 @@ for (const file of readdirSync(join(root, 'public/sprites/buildings'))) {
   }
 }
 
+{
+  const png = readPng(join(root, 'public/sprites/buildings/verdant_power.png'));
+  let nearWhiteBlobPixels = 0;
+  for (let i = 0; i < png.data.length; i += 4) {
+    const r = png.data[i];
+    const g = png.data[i + 1];
+    const b = png.data[i + 2];
+    const a = png.data[i + 3];
+    if (a > 70 && r > 212 && g > 212 && b > 212 && Math.max(r, g, b) - Math.min(r, g, b) < 34) {
+      nearWhiteBlobPixels++;
+    }
+  }
+  if (nearWhiteBlobPixels > 20) {
+    throw new Error(`verdant_power.png has ${nearWhiteBlobPixels} near-white matte pixels`);
+  }
+}
+
 console.log('art identity checks passed');
