@@ -42,6 +42,15 @@ const humanCfg: GameConfig = {
   players: cfg.players.map((p, i) => ({ ...p, isHuman: i === 0, name: i === 0 ? 'Human Commander' : p.name })),
 };
 const humanState = createGame(humanCfg, DATA);
+assert.equal(
+  humanState.players[0].visible.reduce((sum, v) => sum + v, 0),
+  humanState.map.w * humanState.map.h,
+  'human Crystal Rush commanders should see the whole battlefield for macro readability',
+);
+assert.ok(
+  humanState.players[1].visible.reduce((sum, v) => sum + v, 0) < humanState.map.w * humanState.map.h,
+  'AI visibility should not become fully omniscient just to improve the human presentation',
+);
 humanState.tick = TICK_RATE * 12;
 humanState.players[0].credits = 1000;
 const beforeUnits = entitiesOf(humanState, 0).filter((e) => e.kind === 'unit').length;

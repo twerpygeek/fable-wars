@@ -187,6 +187,11 @@ export function revealCrystalRushMap(state: GameState): void {
   const mode = state.crystalRush;
   if (mode === undefined) return;
   for (const p of state.players) {
+    if (p.isHuman) {
+      p.explored.fill(1);
+      p.visible.fill(1);
+      continue;
+    }
     for (let y = mode.objective.y - 8; y <= mode.objective.y + 8; y++) {
       for (let x = mode.objective.x - 8; x <= mode.objective.x + 8; x++) {
         if (!inBounds(state.map, x, y)) continue;
