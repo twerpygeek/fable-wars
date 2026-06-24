@@ -174,6 +174,24 @@ function solidifyUnitOverride(ctx: Ctx, w: number, h: number): void {
   ctx.putImageData(img, 0, 0);
 }
 
+function isMagentaChroma(r: number, g: number, b: number): boolean {
+  return r > 205 && b > 205 && g < 95 && Math.abs(r - b) < 72;
+}
+
+function sanitizeTerrainPropOverride(img: HTMLImageElement): HTMLCanvasElement {
+  const [cv, ctx] = canvas(img.width, img.height);
+  ctx.drawImage(img, 0, 0);
+  const pixels = ctx.getImageData(0, 0, cv.width, cv.height);
+  const data = pixels.data;
+  for (let i = 0; i < data.length; i += 4) {
+    if (isMagentaChroma(data[i], data[i + 1], data[i + 2])) {
+      data[i + 3] = 0;
+    }
+  }
+  ctx.putImageData(pixels, 0, 0);
+  return cv;
+}
+
 function shade(hex: string, f: number): string {
   // f>0 lighten toward white, f<0 darken toward black
   const n = parseInt(hex.slice(1), 16);
@@ -482,10 +500,11 @@ class Atlas implements SpriteAtlas {
     const img = key ? this.ov?.terrain.get(`${key}_${variant % 3}`) : undefined;
     if (img) {
       if (isPropCutout) {
+        const prop = sanitizeTerrainPropOverride(img);
         const base = drawTerrain(t, variant % 3, false);
-        const [cv, ctx] = canvas(Math.max(base.width, img.width), Math.max(base.height, img.height));
+        const [cv, ctx] = canvas(Math.max(base.width, prop.width), Math.max(base.height, prop.height));
         ctx.drawImage(base, (cv.width - base.width) / 2, cv.height - base.height);
-        ctx.drawImage(img, (cv.width - img.width) / 2, cv.height - img.height);
+        ctx.drawImage(prop, (cv.width - prop.width) / 2, cv.height - prop.height);
         this.terrainCache.set(ck, cv);
         return cv;
       }
