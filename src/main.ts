@@ -32,6 +32,7 @@ import { recordMatch, type MatchResult } from './ui/history';
 import { AudioSystem } from './audio/audio';
 import { Element } from './core/types';
 import { TICK_RATE } from './core/constants';
+import { createOnlineCommandQueue, type OnlineMatchConnection } from './net/onlineCommands';
 
 const app = document.getElementById('app')!;
 
@@ -54,7 +55,7 @@ let current: Match | null = null;
 let overrides: SpriteOverrides | null = null;
 const audioState = { sfx: true, music: true, voice: true };
 
-const menus = new MenuManager(app, (cfg) => startMatch(cfg));
+const menus = new MenuManager(app, (cfg, online) => startMatch(cfg, online));
 if (new URLSearchParams(location.search).has('spritelab')) {
   void loadSpriteOverrides().then((ov) => showSpriteLab(app, DATA, ov));
 } else {
@@ -79,7 +80,7 @@ function freshUIState(): UIState {
   };
 }
 
-function startMatch(cfg: GameConfig): void {
+function startMatch(cfg: GameConfig, online?: OnlineMatchConnection): void {
   menus.showLoading('Generating battlefield…');
   // Yield to let the loading screen paint before heavy work.
   setTimeout(async () => {
@@ -90,7 +91,7 @@ function startMatch(cfg: GameConfig): void {
         sprites = buildSpriteAtlas(DATA, overrides);
       }
       const state = createGame(cfg, DATA);
-      runMatch(state);
+      runMatch(state, online);
     } catch (err) {
       console.error('Failed to start match', err);
       menus.showMainMenu();
@@ -99,7 +100,7 @@ function startMatch(cfg: GameConfig): void {
   }, 50);
 }
 
-function runMatch(state: GameState): void {
+function runMatch(state: GameState, online?: OnlineMatchConnection): void {
   menus.hideMenus();
   const atlas = sprites!;
   const humanPlayer = Math.max(0, state.config.players.findIndex((p) => p.isHuman));
@@ -129,7 +130,22 @@ function runMatch(state: GameState): void {
   if (crystalRush) window.addEventListener('keydown', onCrystalRushKey);
 
   const pending: Command[] = [];
+  const onlineQueue =
+    online && crystalRush
+      ? createOnlineCommandQueue({
+          inputDelayTicks: 6,
+          sendFrame: (tick, commands) => online.sendCommandFrame(tick, commands),
+        })
+      : null;
+  online?.onCommandFrame((frame) => {
+    if (!onlineQueue) return;
+    onlineQueue.receiveFrame(frame);
+  });
   const dispatch = (c: Command) => {
+    if (onlineQueue && c.player === humanPlayer && c.type.startsWith('crystalRush')) {
+      pending.push(...onlineQueue.dispatchLocal(state.tick, c));
+      return;
+    }
     pending.push(c);
     // Legacy acknowledgements for non-context paths that do not emit through
     // InputController.onCommandFeedback.
@@ -415,6 +431,7 @@ function runMatch(state: GameState): void {
             }
           }
         }
+        if (onlineQueue) pending.push(...onlineQueue.drain(state.tick));
         const commands = pending.splice(0, pending.length);
         const events = tickGame(state, DATA, commands);
         routeEvents(events);

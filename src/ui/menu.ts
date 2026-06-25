@@ -21,6 +21,7 @@ import {
   roomSocketUrl,
 } from '../net/multiplayer';
 import { createRoomClient, type RoomClient } from '../net/client';
+import type { OnlineCommandFrame, OnlineMatchConnection } from '../net/onlineCommands';
 import type { RoomPlayer } from '../net/protocol';
 import { clearHistory, getHistory } from './history';
 import type { MatchResult } from './history';
@@ -542,7 +543,7 @@ function decodeBattleCode(code: string): BattleCodePayload | null {
 
 export class MenuManager {
   private root: HTMLElement;
-  private onStart: (cfg: GameConfig) => void;
+  private onStart: (cfg: GameConfig, online?: OnlineMatchConnection) => void;
   private menuEl: HTMLElement | null = null;
   private overlayEl: HTMLElement | null = null;
   private escEl: HTMLElement | null = null;
@@ -563,7 +564,7 @@ export class MenuManager {
   /** Config of the last launched match — main.ts reads this for "Play Again". */
   lastConfig: GameConfig | null = null;
 
-  constructor(root: HTMLElement, onStartGame: (cfg: GameConfig) => void) {
+  constructor(root: HTMLElement, onStartGame: (cfg: GameConfig, online?: OnlineMatchConnection) => void) {
     this.root = root;
     this.onStart = onStartGame;
     if (!document.getElementById(STYLE_ID)) {
@@ -891,7 +892,17 @@ export class MenuManager {
     const roomStart = panel.querySelector<HTMLButtonElement>('.js-online-start')!;
     let roomClient: RoomClient | null = null;
     let roomOpen = false;
+    let roomClientId: string | null = null;
     let roomPlayers: RoomPlayer[] = [];
+    const commandHandlers: ((frame: OnlineCommandFrame) => void)[] = [];
+    const onlineConnection: OnlineMatchConnection = {
+      sendCommandFrame(tick, commands) {
+        roomClient?.commandFrame(tick, commands);
+      },
+      onCommandFrame(handler) {
+        commandHandlers.push(handler);
+      },
+    };
     const appendChat = (html: string) => {
       chatLog.insertAdjacentHTML('beforeend', html);
       while (chatLog.children.length > 18) chatLog.firstElementChild?.remove();
@@ -971,6 +982,7 @@ export class MenuManager {
         onMessage: (msg) => {
           switch (msg.type) {
             case 'welcome':
+              roomClientId = msg.clientId;
               note.innerHTML = `Connected to room <code>${escapeHtml(msg.room)}</code> as commander <code>${escapeHtml(msg.clientId)}</code>.`;
               break;
             case 'room':
@@ -981,11 +993,16 @@ export class MenuManager {
             case 'chat':
               appendChat(renderOnlineChatLine(playerName(msg.from), msg.text));
               break;
+            case 'command':
+              if (msg.from !== roomClientId) {
+                commandHandlers.forEach((handler) => handler({ tick: msg.tick, commands: msg.commands }));
+              }
+              break;
             case 'start':
               if (this.applyBattleCode(msg.battleCode)) {
                 this.mode = 'crystalRush';
                 appendChat(`<div class="pa-online-chat-line system">${escapeHtml(playerName(msg.from))} started the room match.</div>`);
-                this.launch();
+                this.launch(onlineConnection);
               } else {
                 note.innerHTML = `Room start failed: invalid battle setup from <code>${escapeHtml(playerName(msg.from))}</code>.`;
               }
@@ -1415,7 +1432,7 @@ export class MenuManager {
     el.appendChild(panel);
   }
 
-  private launch(): void {
+  private launch(online?: OnlineMatchConnection): void {
     const factions: FactionId[] = ['scorch', 'tide', 'verdant'];
     const usedColors = new Set<number>([this.colorIdx]);
     const nextColor = () => {
@@ -1466,7 +1483,7 @@ export class MenuManager {
           };
     this.persistLobby();
     this.lastConfig = cfg;
-    this.onStart(cfg);
+    this.onStart(cfg, online);
   }
 
   // --- loading / game over / esc -----------------------------------------------------

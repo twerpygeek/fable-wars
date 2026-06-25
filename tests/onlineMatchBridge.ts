@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const mainSource = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+const menuSource = readFileSync(new URL('../src/ui/menu.ts', import.meta.url), 'utf8');
+const queueSource = readFileSync(new URL('../src/net/onlineCommands.ts', import.meta.url), 'utf8');
+
+assert.match(queueSource, /export interface OnlineMatchConnection/);
+assert.match(queueSource, /onCommandFrame\(handler/);
+assert.match(menuSource, /OnlineMatchConnection/);
+assert.match(menuSource, /commandHandlers/);
+assert.match(menuSource, /onCommandFrame\(handler\)/);
+assert.match(menuSource, /this\.launch\(onlineConnection\)/);
+assert.match(menuSource, /case 'command'/);
+assert.match(menuSource, /let roomClientId: string \| null = null/);
+assert.match(menuSource, /roomClientId = msg\.clientId/);
+assert.match(menuSource, /msg\.from !== roomClientId/);
+assert.match(mainSource, /createOnlineCommandQueue/);
+assert.match(mainSource, /online\?: OnlineMatchConnection/);
+assert.match(mainSource, /onlineQueue\.dispatchLocal\(state\.tick, c\)/);
+assert.match(mainSource, /onlineQueue\.receiveFrame\(frame\)/);
+assert.match(mainSource, /pending\.push\(\.\.\.onlineQueue\.drain\(state\.tick\)\)/);
+
+console.log('PASS online match bridge');

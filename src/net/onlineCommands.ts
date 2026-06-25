@@ -16,6 +16,11 @@ export interface OnlineCommandQueue {
   drain(currentTick: number): Command[];
 }
 
+export interface OnlineMatchConnection {
+  sendCommandFrame(tick: number, commands: Command[]): void;
+  onCommandFrame(handler: (frame: OnlineCommandFrame) => void): void;
+}
+
 export function createOnlineCommandQueue(options: OnlineCommandQueueOptions): OnlineCommandQueue {
   const frames = new Map<number, Command[]>();
   const inputDelayTicks = Math.max(0, Math.floor(options.inputDelayTicks));
