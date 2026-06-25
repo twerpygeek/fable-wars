@@ -1002,7 +1002,7 @@ export class MenuManager {
               if (this.applyBattleCode(msg.battleCode)) {
                 this.mode = 'crystalRush';
                 appendChat(`<div class="pa-online-chat-line system">${escapeHtml(playerName(msg.from))} started the room match.</div>`);
-                this.launch(onlineConnection);
+                this.launch(onlineConnection, roomPlayers, roomClientId);
               } else {
                 note.innerHTML = `Room start failed: invalid battle setup from <code>${escapeHtml(playerName(msg.from))}</code>.`;
               }
@@ -1432,7 +1432,65 @@ export class MenuManager {
     el.appendChild(panel);
   }
 
-  private launch(online?: OnlineMatchConnection): void {
+  private buildCrystalRushPlayers(onlinePlayers?: RoomPlayer[], localClientId?: string | null): GameConfig['players'] {
+    const factions: FactionId[] = ['scorch', 'tide', 'verdant'];
+    const onlineRoster = (onlinePlayers ?? []).slice(0, 4);
+    if (onlineRoster.length > 0 && localClientId) {
+      const usedColors = new Set<number>();
+      const uniqueColor = (preferred: number) => {
+        if (Number.isInteger(preferred) && preferred >= 0 && preferred < PLAYER_COLORS.length && !usedColors.has(preferred)) {
+          usedColors.add(preferred);
+          return preferred;
+        }
+        for (let i = 0; i < PLAYER_COLORS.length; i++) {
+          if (!usedColors.has(i)) {
+            usedColors.add(i);
+            return i;
+          }
+        }
+        return 0;
+      };
+      const players: GameConfig['players'] = onlineRoster.map((player) => ({
+        faction: player.faction,
+        isHuman: player.id === localClientId,
+        difficulty: null,
+        colorIdx: uniqueColor(player.colorIdx),
+        name: player.name || 'Commander',
+      }));
+      for (let i = players.length; i < 4; i++) {
+        const f = factions[(factions.indexOf(this.faction) + i) % factions.length];
+        players.push({
+          faction: f,
+          isHuman: false,
+          difficulty: 'medium',
+          colorIdx: uniqueColor(i),
+          name: `${DATA.factions[f].name.split(' ')[0]} Online AI ${i - onlineRoster.length + 1}`,
+        });
+      }
+      return players;
+    }
+
+    const usedColors = new Set<number>([this.colorIdx]);
+    const nextColor = () => {
+      for (let i = 0; i < PLAYER_COLORS.length; i++) if (!usedColors.has(i)) return (usedColors.add(i), i);
+      return 0;
+    };
+    return [
+      { faction: this.faction, isHuman: true, difficulty: null, colorIdx: this.colorIdx, name: 'Commander' },
+      ...[0, 1, 2].map((_, i) => {
+        const f = factions[(factions.indexOf(this.faction) + i + 1) % factions.length];
+        return {
+          faction: f,
+          isHuman: false,
+          difficulty: 'medium' as AIDifficulty,
+          colorIdx: nextColor(),
+          name: `${DATA.factions[f].name.split(' ')[0]} Rush AI ${i + 1}`,
+        };
+      }),
+    ];
+  }
+
+  private launch(online?: OnlineMatchConnection, onlinePlayers?: RoomPlayer[], localClientId?: string | null): void {
     const factions: FactionId[] = ['scorch', 'tide', 'verdant'];
     const usedColors = new Set<number>([this.colorIdx]);
     const nextColor = () => {
@@ -1447,19 +1505,7 @@ export class MenuManager {
             mapSize: this.mapSize === 'S' ? 'M' : this.mapSize,
             waterAmount: 'low',
             crates: false,
-            players: [
-              { faction: this.faction, isHuman: true, difficulty: null, colorIdx: this.colorIdx, name: 'Commander' },
-              ...[0, 1, 2].map((_, i) => {
-                const f = factions[(factions.indexOf(this.faction) + i + 1) % factions.length];
-                return {
-                  faction: f,
-                  isHuman: false,
-                  difficulty: 'medium' as AIDifficulty,
-                  colorIdx: nextColor(),
-                  name: `${DATA.factions[f].name.split(' ')[0]} Rush AI ${i + 1}`,
-                };
-              }),
-            ],
+            players: this.buildCrystalRushPlayers(onlinePlayers, localClientId),
           }
         : {
             mode: 'classic',

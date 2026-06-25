@@ -30,6 +30,10 @@ assert.match(source, /Start Room Match/);
 assert.match(source, /roomClient\.start\(code\)/);
 assert.match(source, /case 'start'/);
 assert.match(source, /this\.applyBattleCode\(msg\.battleCode\)/);
-assert.match(source, /this\.launch\(\)/);
+assert.match(source, /this\.launch\(onlineConnection, roomPlayers, roomClientId\)/);
+assert.match(source, /buildCrystalRushPlayers\(onlinePlayers\?: RoomPlayer\[], localClientId\?: string \| null\)/);
+assert.match(source, /isHuman: player\.id === localClientId/);
+assert.match(source, /difficulty: null/);
+assert.match(source, /Online AI/);
 
 console.log('PASS online battle client');

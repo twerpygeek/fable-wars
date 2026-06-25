@@ -133,7 +133,7 @@ export function updateCrystalRush(state: GameState, data: GameData, events: Game
   for (const p of state.players) {
     if (p.eliminated) continue;
     const crp = mode.player[p.id];
-    if (!p.isHuman && state.tick % secondsToTicks(4) === (p.id * 7) % secondsToTicks(4)) {
+    if (!p.isHuman && p.difficulty && state.tick % secondsToTicks(4) === (p.id * 7) % secondsToTicks(4)) {
       runCrystalRushAI(state, data, p.id, events);
     }
     if (state.tick >= crp.nextWaveTick) {
