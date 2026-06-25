@@ -795,7 +795,7 @@ export class MenuManager {
     );
     rush.innerHTML = modePreview(
       '/art/crystal-rush-gameplay-preview.png',
-      'Crystal Rush Beta',
+      'Crystal Rush',
       'Command wave pushes, hold the crystal, break enemy bases.'
     );
     classic.addEventListener('click', () => {
@@ -844,12 +844,12 @@ export class MenuManager {
     panel.className = 'pa-panel';
     panel.style.width = 'min(720px, calc(100vw - 24px))';
     panel.innerHTML = `<h1 class="pa-title" style="font-size:24px;letter-spacing:4px;">ONLINE BATTLE</h1>
-      <div class="pa-subtitle" style="margin-bottom:16px">Crystal Rush Multiplayer Alpha</div>
+      <div class="pa-subtitle" style="margin-bottom:16px">Commanders War Room</div>
       <div class="pa-online-grid">
         <div class="pa-online-card">
-          <div class="pa-online-status${endpoint ? ' ready' : ''}">${endpoint ? 'Online rooms ready' : 'Play now · friend rooms next'}</div>
+          <div class="pa-online-status${endpoint ? ' ready' : ''}">${endpoint ? 'Online rooms ready' : 'Crystal Rush skirmish ready'}</div>
           <h2>Play With Friends</h2>
-          <p>Crystal Rush launches immediately as a playable commander-vs-AI match. Friend rooms are the next online step: share a room code, ready up, then command waves together.</p>
+          <p>Share a room code, ready up, and lead Crystal Rush waves together. If the live room relay is offline, launch a polished commander-vs-AI skirmish from this war room.</p>
           <div class="pa-online-roadmap">
             <div class="pa-online-step"><b>1</b>Create room</div>
             <div class="pa-online-step"><b>2</b>Friend joins</div>
@@ -867,7 +867,7 @@ export class MenuManager {
           </div>
         </div>
         <div class="pa-online-card">
-          <h2>Alpha Status</h2>
+          <h2>Room Status</h2>
           <p class="pa-online-note js-online-note"></p>
           <div class="pa-online-roster js-online-roster"></div>
           <div class="pa-online-chat">
