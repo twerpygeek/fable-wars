@@ -265,7 +265,7 @@ function shade(hex: string, f: number): string {
 
 // --- creature visual configs -----------------------------------------------------
 
-type Archetype = 'biped' | 'quad' | 'bird' | 'serpent' | 'blob' | 'turtle' | 'prof' | 'machine';
+type Archetype = 'biped' | 'quad' | 'bird' | 'serpent' | 'turtle' | 'machine';
 
 interface CreatureCfg {
   arch: Archetype;
@@ -295,7 +295,7 @@ const WORLD_CREATURES: Record<string, CreatureCfg> = {
   scorch_cinder_imp: { arch: 'biped', base: '#2a2024', belly: '#ff6a22', accent: '#ffb13c', size: 35, tail: 'flame', horn: true },
   scorch_volt_cinder: { arch: 'machine', base: '#241f25', accent: '#ffcf3c', size: 34, magnets: true },
   scorch_magma_brute: { arch: 'biped', base: '#33242a', belly: '#ff7a28', accent: '#ffcf5a', size: 39, flameHead: true, horn: true },
-  scorch_ash_savant: { arch: 'prof', base: '#3a2528', accent: '#ff8c32', size: 34, flameHead: true },
+  scorch_ash_savant: { arch: 'biped', base: '#3a2528', accent: '#ff8c32', size: 34, flameHead: true, horn: true },
   scorch_ember_hauler: { arch: 'machine', base: '#30282a', belly: '#ff6a22', accent: '#ffb13c', size: 40, magnets: true },
   scorch_basalt_ram: { arch: 'quad', base: '#312a2e', belly: '#5a4246', accent: '#ff6a22', size: 40, horn: true },
   scorch_ashrunner: { arch: 'quad', base: '#35262a', belly: '#ff8c32', accent: '#141015', size: 37, tail: 'flame', horn: true },
@@ -303,13 +303,13 @@ const WORLD_CREATURES: Record<string, CreatureCfg> = {
   scorch_caldera_titan: { arch: 'biped', base: '#211a1d', belly: '#ff5a1f', accent: '#f5c46b', size: 50, horn: true, big: true, tail: 'plain', flameHead: true },
   scorch_cinderwing: { arch: 'bird', base: '#302432', belly: '#ff6a22', accent: '#f5c46b', size: 32, wings: true, horn: true },
   scorch_solar_wyrm: { arch: 'bird', base: '#2b2024', belly: '#ff8c32', accent: '#ffd36b', size: 46, wings: true, flameHead: true, big: true },
-  scorch_slag_barge: { arch: 'blob', base: '#2a2024', belly: '#ff5a1f', accent: '#ffb13c', size: 36, boat: true, flameHead: true },
-  scorch_ember_nautilus: { arch: 'blob', base: '#343039', belly: '#ff6a22', accent: '#ffb13c', size: 34, sub: true },
+  scorch_slag_barge: { arch: 'machine', base: '#2a2024', belly: '#ff5a1f', accent: '#ffb13c', size: 36, boat: true, flameHead: true, magnets: true },
+  scorch_ember_nautilus: { arch: 'serpent', base: '#343039', belly: '#ff6a22', accent: '#ffb13c', size: 34, sub: true },
   // TIDE: pale coral armor, aqua cores, predatory sea shapes
   tide_coral_initiate: { arch: 'machine', base: '#d9e7e9', belly: '#3fd3e7', accent: '#0b5f72', size: 34, magnets: true },
   tide_rill_lancer: { arch: 'serpent', base: '#2c7184', belly: '#eafcff', accent: '#23a8c5', size: 38, horn: true },
   tide_breaker_guard: { arch: 'machine', base: '#2a6475', belly: '#8ff0f5', accent: '#eafcff', size: 39, magnets: true },
-  tide_reef_savant: { arch: 'prof', base: '#2a6475', accent: '#8ff0f5', size: 34 },
+  tide_reef_savant: { arch: 'biped', base: '#2a6475', belly: '#8ff0f5', accent: '#eafcff', size: 34, horn: true },
   tide_claw_harvester: { arch: 'machine', base: '#cfe7e8', belly: '#7fe6ef', accent: '#1d7c91', size: 35, scythes: true },
   tide_glassfin_prowler: { arch: 'quad', base: '#5dc7d8', belly: '#eafcff', accent: '#1d7c91', size: 36, tail: 'fin', horn: true },
   tide_coral_bulwark: { arch: 'machine', base: '#e7edf0', belly: '#59d8e8', accent: '#23849a', size: 42, magnets: true },
@@ -317,19 +317,19 @@ const WORLD_CREATURES: Record<string, CreatureCfg> = {
   tide_abyss_sovereign: { arch: 'serpent', base: '#265f75', belly: '#eafcff', accent: '#39d8ef', size: 50, big: true, horn: true },
   tide_reefwing: { arch: 'machine', base: '#e7edf0', belly: '#92f0f5', accent: '#26788d', size: 32, magnets: true },
   tide_storm_bomber: { arch: 'machine', base: '#d9e7e9', belly: '#7fe6ef', accent: '#1d7c91', size: 44, magnets: true, big: true },
-  tide_kraken_skiff: { arch: 'blob', base: '#34788b', belly: '#8ff0f5', accent: '#eafcff', size: 37, boat: true, scythes: true },
-  tide_razortooth_sub: { arch: 'blob', base: '#214d64', belly: '#eafcff', accent: '#39d8ef', size: 35, sub: true },
+  tide_kraken_skiff: { arch: 'serpent', base: '#34788b', belly: '#8ff0f5', accent: '#eafcff', size: 37, boat: true, scythes: true },
+  tide_razortooth_sub: { arch: 'serpent', base: '#214d64', belly: '#eafcff', accent: '#39d8ef', size: 35, sub: true },
   tide_leviathan_ark: { arch: 'serpent', base: '#276f89', belly: '#d9fbff', accent: '#39d8ef', size: 52, big: true, boat: true, horn: true },
   // VERDANT: living wood, moss plates, toxic green cores
   verdant_mossling: { arch: 'biped', base: '#3a3325', belly: '#4ed66a', accent: '#b8df78', size: 35, horn: true, tail: 'leaf' },
   verdant_thorn_wasp: { arch: 'bird', base: '#5f6f33', belly: '#b8df78', accent: '#d8f277', size: 34, wings: true, scythes: true },
   verdant_spore_pod: { arch: 'machine', base: '#344a30', belly: '#4ed66a', accent: '#b8df78', size: 32, magnets: true },
   verdant_briar_reaper: { arch: 'biped', base: '#40522f', belly: '#6ee47a', accent: '#d8f277', size: 40, scythes: true, wings: true, horn: true },
-  verdant_root_savant: { arch: 'prof', base: '#4b3a2a', accent: '#66df70', size: 34 },
+  verdant_root_savant: { arch: 'biped', base: '#4b3a2a', belly: '#66df70', accent: '#b8df78', size: 34, horn: true, tail: 'leaf' },
   verdant_grove_hauler: { arch: 'turtle', base: '#4b3a2a', belly: '#66df70', accent: '#a7d96a', size: 40, bulb: true, shellCannons: true },
   verdant_vine_stalker: { arch: 'biped', base: '#42532f', belly: '#6ee47a', accent: '#d8f277', size: 36, tail: 'leaf', horn: true },
   verdant_bloom_siege: { arch: 'quad', base: '#4b3a2a', belly: '#66df70', accent: '#d8f277', size: 44, flower: true, big: true, horn: true },
-  verdant_tangle_mass: { arch: 'blob', base: '#2d3f2b', belly: '#4ed66a', accent: '#b8df78', size: 34, scythes: true },
+  verdant_tangle_mass: { arch: 'quad', base: '#2d3f2b', belly: '#4ed66a', accent: '#b8df78', size: 34, scythes: true },
   verdant_elder_husk: { arch: 'biped', base: '#3f4a32', belly: '#8adf74', accent: '#d8f277', size: 52, big: true, horn: true },
   verdant_canopy_raptor: { arch: 'bird', base: '#55452d', belly: '#84dd72', accent: '#d8f277', size: 34, wings: true, horn: true },
   verdant_spore_moth: { arch: 'machine', base: '#385232', belly: '#7ee176', accent: '#d8f277', size: 38, magnets: true, big: true },
@@ -620,8 +620,6 @@ function drawCreature(ctx: Ctx, cfg: CreatureCfg, dir: number, frame: number, pl
   const baseY = cfg.boat ? feetY - 10 : feetY;
 
   switch (cfg.arch) {
-    case 'prof':
-      return drawProf(ctx, cfg, dir, frame, playerHex);
     case 'machine':
       return drawMachine(ctx, cfg, frame, playerHex, key);
     case 'quad':
@@ -633,19 +631,15 @@ function drawCreature(ctx: Ctx, cfg: CreatureCfg, dir: number, frame: number, pl
     case 'turtle':
       return drawTurtle(ctx, cfg, dir, frame, playerHex, baseY);
     default: {
-      // biped / blob share a body-plan: round body + big head
-      const bodyH = size * (cfg.arch === 'blob' ? 0.9 : 0.55);
+      const bodyH = size * 0.55;
       const bodyW = size * (cfg.big ? 0.62 : 0.5);
-      const headR = size * (cfg.arch === 'blob' ? 0 : 0.30);
+      const headR = size * 0.30;
       const bodyCy = baseY - bodyH / 2 - bob;
 
-      // legs (biped, hidden for blob)
-      if (cfg.arch === 'biped') {
-        ctx.fillStyle = shade(cfg.base, -0.25);
-        const lo = frame === 1 ? 2.5 : 0;
-        ellipse(ctx, cx - bodyW * 0.32 + lean, baseY - 2 + (frame === 1 ? -1 : 0), 4.6, 5.5);
-        ellipse(ctx, cx + bodyW * 0.32 + lean + lo * 0.3, baseY - 2 + (frame === 1 ? 1 : 0), 4.6, 5.5);
-      }
+      ctx.fillStyle = shade(cfg.base, -0.25);
+      const lo = frame === 1 ? 2.5 : 0;
+      ellipse(ctx, cx - bodyW * 0.32 + lean, baseY - 2 + (frame === 1 ? -1 : 0), 4.6, 5.5);
+      ellipse(ctx, cx + bodyW * 0.32 + lean + lo * 0.3, baseY - 2 + (frame === 1 ? 1 : 0), 4.6, 5.5);
 
       // tail behind body
       drawTail(ctx, cfg, cx + (back ? 6 : -bodyW * 0.7) + lean, bodyCy + bodyH * 0.2, frame, back);
@@ -682,19 +676,6 @@ function drawCreature(ctx: Ctx, cfg: CreatureCfg, dir: number, frame: number, pl
           tri(ctx, cx + lean, headCy - headR - 6, 4.5, 9);
         }
         if (!back) drawFace(ctx, cfg, cx + lean, headCy, headR, profile);
-      } else if (cfg.ears === 'leaf') {
-        // oddish-style leaf sprouts on a blob
-        ctx.strokeStyle = '#58c850';
-        ctx.lineWidth = 2.6;
-        for (let i = -2; i <= 2; i++) {
-          ctx.beginPath();
-          ctx.moveTo(cx + lean + i * 3, bodyCy - bodyH * 0.5);
-          ctx.quadraticCurveTo(cx + lean + i * 6, bodyCy - bodyH * 0.5 - 9 - (frame === 1 ? 1 : 0), cx + lean + i * 7, bodyCy - bodyH * 0.5 - 12);
-          ctx.stroke();
-        }
-        if (!back) drawFace(ctx, cfg, cx + lean, bodyCy - 2, bodyW * 0.5, profile);
-      } else if (cfg.arch === 'blob' && !back) {
-        drawFace(ctx, cfg, cx + lean, bodyCy - 2, bodyW * 0.55, profile);
       }
 
       if (cfg.bulb) {
@@ -1065,62 +1046,6 @@ function drawTurtle(ctx: Ctx, cfg: CreatureCfg, dir: number, frame: number, play
   paintBall(ctx, hx, hy, hr * 1.05, hr, cfg.base);
   if (!back) drawFace(ctx, cfg, hx, hy, hr, profile);
   drawPlayerBand(ctx, cx, feetY - 3, size * 0.32, playerHex);
-}
-
-function drawProf(ctx: Ctx, cfg: CreatureCfg, dir: number, frame: number, playerHex: string): void {
-  const cx = 32;
-  const feetY = 52;
-  const back = dir === 5 || dir === 6;
-  const profile = dir === 4;
-  const bob = frame === 1 ? 1.2 : 0;
-  // legs
-  ctx.fillStyle = '#2a2438';
-  const lo = frame === 1 ? 2.4 : 0;
-  ctx.fillRect(cx - 4.6, feetY - 9 + (frame === 1 ? -1 : 0), 3.4, 8);
-  ctx.fillRect(cx + 1.2 + lo * 0.3, feetY - 9 + (frame === 1 ? 1 : 0), 3.4, 8);
-  // lab coat body
-  const g = ctx.createLinearGradient(cx, feetY - 26, cx, feetY - 6);
-  g.addColorStop(0, '#f2f3f7');
-  g.addColorStop(1, '#c9ccd8');
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.moveTo(cx - 7, feetY - 24 - bob);
-  ctx.lineTo(cx + 7, feetY - 24 - bob);
-  ctx.lineTo(cx + 9, feetY - 7);
-  ctx.lineTo(cx - 9, feetY - 7);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = '#8a8da0';
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-  // colored shirt stripe
-  if (!back) {
-    ctx.fillStyle = cfg.base;
-    ctx.fillRect(cx - 2, feetY - 23 - bob, 4, 14);
-  }
-  // head + hat
-  const hy = feetY - 30 - bob;
-  paintBall(ctx, cx, hy, 7.2, 6.6, '#f0c8a0');
-  if (!back) drawFace(ctx, { ...cfg, cheeks: undefined }, cx, hy, 6, profile);
-  ctx.fillStyle = cfg.base;
-  ellipse(ctx, cx, hy - 5.4, 8.4, 2.6); // brim
-  ctx.fillStyle = shade(cfg.base, -0.15);
-  ellipse(ctx, cx, hy - 7.4, 5, 3.4); // crown
-  // goggles accent
-  if (cfg.accent && !back) {
-    ctx.strokeStyle = cfg.accent;
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(cx - 2.6, hy - 3.2, 2, 0, Math.PI * 2);
-    ctx.arc(cx + 2.6, hy - 3.2, 2, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  // toolbox
-  ctx.fillStyle = playerHex;
-  ctx.fillRect(cx + 8, feetY - 12, 6.5, 5);
-  ctx.strokeStyle = '#1a1626';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(cx + 8, feetY - 12, 6.5, 5);
 }
 
 function drawMachine(ctx: Ctx, cfg: CreatureCfg, frame: number, playerHex: string, key: string): void {

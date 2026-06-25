@@ -176,6 +176,9 @@ if (!/sanitizeBuildingOverride\(ovImg\)/.test(spritesSource)) {
 if (/const CREATURES: Record<string, CreatureCfg>/.test(spritesSource) || /WORLD_CREATURES\[key\] \?\? CREATURES/.test(spritesSource)) {
   throw new Error('unit fallback must use the Fable Wars world creature set only, not the old cute prototype creature table');
 }
+if (/'blob'|'prof'|drawProf|oddish-style/.test(spritesSource)) {
+  throw new Error('unit fallback must not include mascot/blob/professor archetypes; missing sprites should stay dark fantasy RTS');
+}
 
 {
   const png = readPng(join(root, 'public/sprites/buildings/verdant_power.png'));
