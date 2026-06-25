@@ -890,6 +890,7 @@ export class MenuManager {
     const chatInput = panel.querySelector<HTMLInputElement>('.js-online-chat')!;
     const chatSend = panel.querySelector<HTMLButtonElement>('.js-online-chat-send')!;
     const roomStart = panel.querySelector<HTMLButtonElement>('.js-online-start')!;
+    const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
     let roomClient: RoomClient | null = null;
     let roomOpen = false;
     let roomClientId: string | null = null;
@@ -927,8 +928,18 @@ export class MenuManager {
       roomInput.value = code;
       return { code, ws, invite };
     };
+    const setRoomDisconnected = (html: string) => {
+      roomOpen = false;
+      roomClientId = null;
+      roomPlayers = [];
+      roster.innerHTML = renderOnlineRoster([]);
+      note.innerHTML = html;
+      roomStart.disabled = true;
+      host.textContent = 'Reconnect Room';
+    };
     roomInput.addEventListener('change', refreshNote);
     roster.innerHTML = renderOnlineRoster([]);
+    roomStart.disabled = true;
     const sendChat = () => {
       const text = chatInput.value.trim();
       if (!text) return;
@@ -953,7 +964,6 @@ export class MenuManager {
       roomClient.start(code);
       appendChat(`<div class="pa-online-chat-line system">Launching shared Crystal Rush match...</div>`);
     });
-    const host = panel.querySelector<HTMLButtonElement>('.js-online-host')!;
     host.addEventListener('click', () => {
       const { code, ws } = refreshNote();
       if (!ws) {
@@ -965,24 +975,23 @@ export class MenuManager {
       roomOpen = false;
       roomClient = createRoomClient(ws, {
         onStatus: (status) => {
-          if (status === 'connecting') note.innerHTML = `Opening room <code>${escapeHtml(code)}</code>...`;
-          else if (status === 'open') {
+          if (status === 'connecting') {
+            host.textContent = 'Opening Room...';
+            roomStart.disabled = true;
+            note.innerHTML = `Opening room <code>${escapeHtml(code)}</code>...`;
+          } else if (status === 'open') {
             roomOpen = true;
+            host.textContent = 'Room Connected';
+            roomStart.disabled = false;
             note.innerHTML = `Connected to room <code>${escapeHtml(code)}</code>. Waiting for the room roster...`;
             appendChat(`<div class="pa-online-chat-line system">Room connected. Commander chat online.</div>`);
             roomClient?.hello({ name: nameInput.value || 'Commander', faction: this.faction, colorIdx: this.colorIdx });
             roomClient?.ready(true);
           } else if (status === 'closed') {
-            roomOpen = false;
-            note.innerHTML = `Room connection closed. Copy the invite and reconnect when your friend is ready.`;
-            roomPlayers = [];
-            roster.innerHTML = renderOnlineRoster([]);
+            setRoomDisconnected(`Room connection closed. Copy the invite and reconnect when your friend is ready.`);
             appendChat(`<div class="pa-online-chat-line system">Room connection closed.</div>`);
           } else if (status === 'error') {
-            roomOpen = false;
-            note.innerHTML = `Room connection failed. Check <code>VITE_MULTIPLAYER_WS</code> and the relay deployment.`;
-            roomPlayers = [];
-            roster.innerHTML = renderOnlineRoster([]);
+            setRoomDisconnected(`Room connection failed. Check <code>VITE_MULTIPLAYER_WS</code> and the relay deployment.`);
             appendChat(`<div class="pa-online-chat-line system">Room connection failed.</div>`);
           }
         },

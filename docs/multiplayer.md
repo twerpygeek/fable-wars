@@ -33,6 +33,7 @@ The Online Battle menu will then show the room server as configured and generate
 - Commander chat is relayed through the room server.
 - Start Room Match broadcasts the host's current battle code; clients apply that setup and launch Crystal Rush.
 - Crystal Rush clients send periodic state checksums so the room can surface desync warnings.
+- If the room closes or errors, the Online Battle screen clears stale roster data and turns the main action into a reconnect button.
 
 ## Protocol
 
@@ -60,6 +61,5 @@ Room to clients:
 
 Harden the online match session:
 
-- Add visible reconnect handling.
 - Add room ownership / host transfer.
 - Add a post-match room summary so friends can rematch.

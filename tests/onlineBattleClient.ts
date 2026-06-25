@@ -35,5 +35,8 @@ assert.match(source, /buildCrystalRushPlayers\(onlinePlayers\?: RoomPlayer\[], l
 assert.match(source, /isHuman: player\.id === localClientId/);
 assert.match(source, /difficulty: null/);
 assert.match(source, /Online AI/);
+assert.match(source, /setRoomDisconnected/);
+assert.match(source, /Reconnect Room/);
+assert.match(source, /host\.textContent = 'Reconnect Room'/);
 
 console.log('PASS online battle client');
