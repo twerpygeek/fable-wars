@@ -1280,6 +1280,7 @@ export class Renderer {
   // --- fog of war -------------------------------------------------------------------
 
   private drawFog(state: GameState, humanPlayer: PlayerId): void {
+    if (state.config.mode === 'crystalRush') return;
     const m = state.map;
     const fog32 = this.fog32;
     const fogData = this.fogData;

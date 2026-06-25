@@ -20,7 +20,7 @@ import {
 import { showSpriteLab } from './render/spritelab';
 import { Renderer } from './render/renderer';
 import { Minimap } from './render/minimap';
-import { clampCamera, tileToScreen } from './render/camera';
+import { CRYSTAL_RUSH_MIN_ZOOM, clampCamera, fitCameraToTiles, tileToScreen } from './render/camera';
 import { Sidebar } from './ui/sidebar';
 import { HUD } from './ui/hud';
 import { InputController } from './ui/input';
@@ -179,7 +179,7 @@ function runMatch(state: GameState, online?: OnlineMatchConnection): void {
     }
   });
   const input = crystalRush ? null : new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
-  const cameraControls = crystalRush ? new CameraControls(canvas, cam, () => state.map) : null;
+  const cameraControls = crystalRush ? new CameraControls(canvas, cam, () => state.map, CRYSTAL_RUSH_MIN_ZOOM) : null;
   cameraControls?.enable();
   if (input !== null && sidebar !== null && minimap !== null) {
     input.bindMinimap(sidebar.minimapCanvas, minimap);
@@ -233,14 +233,24 @@ function runMatch(state: GameState, online?: OnlineMatchConnection): void {
     };
   }
 
-  // Start on the human base. Crystal Rush labels and command cards point the
-  // player toward the center objective, but first contact should answer
-  // "which side is mine?"
+  // Classic starts on the human base. Crystal Rush starts in tactical overview
+  // because its decisions are about lanes, the center crystal, and base races.
   const ownConYard = [...state.entities.values()].find(
     (e) => e.owner === humanPlayer && e.kind === 'building' && DATA.buildings[e.defId]?.isConYard
   );
-  const cameraTarget = ownConYard ? { x: ownConYard.pos.x + 1.5, y: ownConYard.pos.y + 1.5 } : null;
-  if (cameraTarget !== null) {
+  if (crystalRush && state.crystalRush !== undefined) {
+    const overviewPoints = [
+      state.crystalRush.objective,
+      ...state.map.startPositions,
+      ...(ownConYard ? [{ x: ownConYard.pos.x + 1.5, y: ownConYard.pos.y + 1.5 }] : []),
+    ];
+    fitCameraToTiles(cam, state.map, overviewPoints, canvas.width, canvas.height, {
+      minZoom: CRYSTAL_RUSH_MIN_ZOOM,
+      maxZoom: 0.82,
+      paddingPx: 260,
+    });
+  } else if (ownConYard) {
+    const cameraTarget = { x: ownConYard.pos.x + 1.5, y: ownConYard.pos.y + 1.5 };
     const { sx, sy } = tileToScreen({ x: 0, y: 0, zoom: cam.zoom }, cameraTarget.x, cameraTarget.y);
     cam.x = sx - canvas.width / 2;
     cam.y = sy - canvas.height / 2;

@@ -25,6 +25,7 @@ export class CameraControls {
   private edgeDwellMs = 0;
   private scrollRate = SCROLL_RATE_DEFAULT;
   private scrollRateReadAt = -Infinity;
+  private minZoom = MIN_ZOOM;
 
   private onMouseMove = (e: MouseEvent) => this.handleMouseMove(e);
   private onMouseDown = (e: MouseEvent) => this.handleMouseDown(e);
@@ -48,10 +49,11 @@ export class CameraControls {
     this.edgeDwellMs = 0;
   };
 
-  constructor(canvas: HTMLCanvasElement, cam: Camera, getMap: () => GameMap) {
+  constructor(canvas: HTMLCanvasElement, cam: Camera, getMap: () => GameMap, minZoom = MIN_ZOOM) {
     this.canvas = canvas;
     this.cam = cam;
     this.getMap = getMap;
+    this.minZoom = minZoom;
   }
 
   enable(): void {
@@ -119,7 +121,7 @@ export class CameraControls {
       const step = (speed * dt) / this.cam.zoom;
       this.cam.x += (dirX / len) * step;
       this.cam.y += (dirY / len) * step;
-      clampCamera(this.cam, this.getMap(), viewW, viewH);
+      clampCamera(this.cam, this.getMap(), viewW, viewH, { minZoom: this.minZoom });
     }
   }
 
@@ -154,14 +156,14 @@ export class CameraControls {
     e.preventDefault();
     const before = this.cam.zoom;
     const factor = Math.exp(-e.deltaY * 0.0015);
-    const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, before * factor));
+    const next = Math.max(this.minZoom, Math.min(MAX_ZOOM, before * factor));
     if (Math.abs(next - before) < 0.0001) return;
     const wx = e.offsetX / before + this.cam.x;
     const wy = e.offsetY / before + this.cam.y;
     this.cam.zoom = next;
     this.cam.x = wx - e.offsetX / next;
     this.cam.y = wy - e.offsetY / next;
-    clampCamera(this.cam, this.getMap(), this.canvas.width, this.canvas.height);
+    clampCamera(this.cam, this.getMap(), this.canvas.width, this.canvas.height, { minZoom: this.minZoom });
   }
 
   private edgeScrollDir(viewW: number, viewH: number): { dx: number; dy: number } | null {
