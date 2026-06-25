@@ -8,6 +8,8 @@ const crystalRushSource = readFileSync(new URL('../src/sim/modes/crystalRush.ts'
 
 assert.match(queueSource, /export interface OnlineMatchConnection/);
 assert.match(queueSource, /onCommandFrame\(handler/);
+assert.match(queueSource, /sendStateCheck\(tick: number, hash: string\)/);
+assert.match(queueSource, /onStateCheck\(handler: \(check: OnlineStateCheck\) => void\)/);
 assert.match(menuSource, /OnlineMatchConnection/);
 assert.match(menuSource, /commandHandlers/);
 assert.match(menuSource, /onCommandFrame\(handler\)/);
@@ -21,6 +23,9 @@ assert.match(mainSource, /online\?: OnlineMatchConnection/);
 assert.match(mainSource, /onlineQueue\.dispatchLocal\(state\.tick, c\)/);
 assert.match(mainSource, /onlineQueue\.receiveFrame\(frame\)/);
 assert.match(mainSource, /pending\.push\(\.\.\.onlineQueue\.drain\(state\.tick\)\)/);
+assert.match(mainSource, /hashGameState\(state\)/);
+assert.match(mainSource, /online\.sendStateCheck\(state\.tick, hashGameState\(state\)\)/);
+assert.match(mainSource, /Online desync warning/);
 assert.match(crystalRushSource, /!p\.isHuman && p\.difficulty/);
 
 console.log('PASS online match bridge');

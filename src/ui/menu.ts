@@ -21,7 +21,7 @@ import {
   roomSocketUrl,
 } from '../net/multiplayer';
 import { createRoomClient, type RoomClient } from '../net/client';
-import type { OnlineCommandFrame, OnlineMatchConnection } from '../net/onlineCommands';
+import type { OnlineCommandFrame, OnlineMatchConnection, OnlineStateCheck } from '../net/onlineCommands';
 import type { RoomPlayer } from '../net/protocol';
 import { clearHistory, getHistory } from './history';
 import type { MatchResult } from './history';
@@ -895,12 +895,19 @@ export class MenuManager {
     let roomClientId: string | null = null;
     let roomPlayers: RoomPlayer[] = [];
     const commandHandlers: ((frame: OnlineCommandFrame) => void)[] = [];
+    const stateCheckHandlers: ((check: OnlineStateCheck) => void)[] = [];
     const onlineConnection: OnlineMatchConnection = {
       sendCommandFrame(tick, commands) {
         roomClient?.commandFrame(tick, commands);
       },
       onCommandFrame(handler) {
         commandHandlers.push(handler);
+      },
+      sendStateCheck(tick, hash) {
+        roomClient?.stateCheck(tick, hash);
+      },
+      onStateCheck(handler) {
+        stateCheckHandlers.push(handler);
       },
     };
     const appendChat = (html: string) => {
@@ -996,6 +1003,11 @@ export class MenuManager {
             case 'command':
               if (msg.from !== roomClientId) {
                 commandHandlers.forEach((handler) => handler({ tick: msg.tick, commands: msg.commands }));
+              }
+              break;
+            case 'stateCheck':
+              if (msg.from !== roomClientId) {
+                stateCheckHandlers.forEach((handler) => handler({ tick: msg.tick, hash: msg.hash }));
               }
               break;
             case 'start':

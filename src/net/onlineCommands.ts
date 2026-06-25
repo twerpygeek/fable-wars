@@ -5,6 +5,11 @@ export interface OnlineCommandFrame {
   commands: Command[];
 }
 
+export interface OnlineStateCheck {
+  tick: number;
+  hash: string;
+}
+
 export interface OnlineCommandQueueOptions {
   inputDelayTicks: number;
   sendFrame: (tick: number, commands: Command[]) => void;
@@ -19,6 +24,8 @@ export interface OnlineCommandQueue {
 export interface OnlineMatchConnection {
   sendCommandFrame(tick: number, commands: Command[]): void;
   onCommandFrame(handler: (frame: OnlineCommandFrame) => void): void;
+  sendStateCheck(tick: number, hash: string): void;
+  onStateCheck(handler: (check: OnlineStateCheck) => void): void;
 }
 
 export function createOnlineCommandQueue(options: OnlineCommandQueueOptions): OnlineCommandQueue {

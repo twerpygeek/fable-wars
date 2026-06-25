@@ -32,6 +32,7 @@ The Online Battle menu will then show the room server as configured and generate
 - The room roster shows commander name, faction, color, and ready state.
 - Commander chat is relayed through the room server.
 - Start Room Match broadcasts the host's current battle code; clients apply that setup and launch Crystal Rush.
+- Crystal Rush clients send periodic state checksums so the room can surface desync warnings.
 
 ## Protocol
 
@@ -42,6 +43,7 @@ Client to room:
 { "v": 1, "type": "ready", "ready": true }
 { "v": 1, "type": "start", "battleCode": "FW1-..." }
 { "v": 1, "type": "command", "tick": 135, "commands": [{ "type": "crystalRushDeployWave", "player": 0 }] }
+{ "v": 1, "type": "stateCheck", "tick": 240, "hash": "a1b2c3d4" }
 { "v": 1, "type": "chat", "text": "rally at crystal" }
 ```
 
@@ -51,13 +53,13 @@ Room to clients:
 { "v": 1, "type": "welcome", "clientId": "abc", "room": "FW-12345" }
 { "v": 1, "type": "room", "room": "FW-12345", "players": [] }
 { "v": 1, "type": "command", "from": "abc", "tick": 135, "commands": [] }
+{ "v": 1, "type": "stateCheck", "from": "abc", "tick": 240, "hash": "a1b2c3d4" }
 ```
 
 ## Next Implementation Step
 
-Wire deterministic command scheduling into the live match loop:
+Harden the online match session:
 
-- Every client starts from that same config and seed.
-- Local UI commands are sent to the room with an execution tick.
-- Each client applies commands only when the sim reaches that tick.
-- Add periodic state checksums to detect desync.
+- Add visible reconnect handling.
+- Add room ownership / host transfer.
+- Add a post-match room summary so friends can rematch.

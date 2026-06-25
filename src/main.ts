@@ -33,11 +33,13 @@ import { AudioSystem } from './audio/audio';
 import { Element } from './core/types';
 import { TICK_RATE } from './core/constants';
 import { createOnlineCommandQueue, type OnlineMatchConnection } from './net/onlineCommands';
+import { hashGameState } from './net/stateHash';
 
 const app = document.getElementById('app')!;
 
 let sprites: SpriteAtlas | null = null;
 const audio = new AudioSystem();
+const ONLINE_STATE_CHECK_INTERVAL = TICK_RATE * 4;
 
 // Unlock WebAudio on first gesture.
 const unlock = () => {
@@ -130,6 +132,7 @@ function runMatch(state: GameState, online?: OnlineMatchConnection): void {
   if (crystalRush) window.addEventListener('keydown', onCrystalRushKey);
 
   const pending: Command[] = [];
+  const stateChecks = new Map<number, string>();
   const onlineQueue =
     online && crystalRush
       ? createOnlineCommandQueue({
@@ -168,6 +171,13 @@ function runMatch(state: GameState, online?: OnlineMatchConnection): void {
   const sidebar = crystalRush ? null : new Sidebar(matchRoot, DATA, atlas, dispatch, () => state, humanPlayer, ui);
   const minimap = sidebar === null ? null : new Minimap(sidebar.minimapCanvas);
   const hud = new HUD(matchRoot, DATA, ui);
+  online?.onStateCheck((check) => {
+    const localHash = stateChecks.get(check.tick);
+    if (localHash !== undefined && localHash !== check.hash) {
+      hud.toast('Online desync warning: this match no longer matches a peer.', 'warn');
+      console.warn('Online desync warning', { tick: check.tick, localHash, remoteHash: check.hash });
+    }
+  });
   const input = crystalRush ? null : new InputController(canvas, cam, ui, () => state, DATA, dispatch, humanPlayer, atlas);
   const cameraControls = crystalRush ? new CameraControls(canvas, cam, () => state.map) : null;
   cameraControls?.enable();
@@ -435,6 +445,11 @@ function runMatch(state: GameState, online?: OnlineMatchConnection): void {
         const commands = pending.splice(0, pending.length);
         const events = tickGame(state, DATA, commands);
         routeEvents(events);
+        if (online && onlineQueue && state.tick % ONLINE_STATE_CHECK_INTERVAL === 0) {
+          online.sendStateCheck(state.tick, hashGameState(state));
+          stateChecks.set(state.tick, hashGameState(state));
+          while (stateChecks.size > 8) stateChecks.delete(Math.min(...stateChecks.keys()));
+        }
         acc -= TICK_MS;
         safety++;
       }

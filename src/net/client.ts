@@ -5,6 +5,7 @@ import {
   createCommandFrame,
   createReadyMessage,
   createStartMessage,
+  createStateCheckMessage,
   PROTOCOL_VERSION,
   type ClientRoomMessage,
   type ServerRoomMessageEnvelope,
@@ -35,6 +36,7 @@ export interface RoomClient {
   ready(ready: boolean): void;
   start(battleCode: string): void;
   commandFrame(tick: number, commands: Command[]): void;
+  stateCheck(tick: number, hash: string): void;
   chat(text: string): void;
 }
 
@@ -102,6 +104,10 @@ export function createRoomClient(url: string, options: RoomClientOptions = {}): 
       send(createCommandFrame(tick, commands));
     },
 
+    stateCheck(tick, hash): void {
+      send(createStateCheckMessage(tick, hash));
+    },
+
     chat(text): void {
       send(createChatMessage(text));
     },
@@ -129,7 +135,11 @@ function parseServerMessage(data: unknown): ServerRoomMessageEnvelope | null {
   if (value.type === 'error') {
     return typeof value.message === 'string' ? { v: PROTOCOL_VERSION, type: 'error', message: value.message } : null;
   }
-  if ((value.type === 'start' || value.type === 'command' || value.type === 'chat') && typeof value.from === 'string' && typeof value.at === 'number') {
+  if (
+    (value.type === 'start' || value.type === 'command' || value.type === 'stateCheck' || value.type === 'chat') &&
+    typeof value.from === 'string' &&
+    typeof value.at === 'number'
+  ) {
     return value as ServerRoomMessageEnvelope;
   }
   return null;

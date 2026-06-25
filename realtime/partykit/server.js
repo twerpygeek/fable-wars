@@ -61,7 +61,7 @@ export default class FableWarsRoom {
       return;
     }
 
-    if (msg.type === 'start' || msg.type === 'command' || msg.type === 'chat') {
+    if (msg.type === 'start' || msg.type === 'command' || msg.type === 'stateCheck' || msg.type === 'chat') {
       this.room.broadcast(JSON.stringify({ ...msg, v: PROTOCOL_VERSION, from: sender.id, at: Date.now() }));
     }
   }

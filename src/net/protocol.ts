@@ -37,6 +37,13 @@ export type ClientCommandFrameMessage = {
   commands: Command[];
 };
 
+export type ClientStateCheckMessage = {
+  v: typeof PROTOCOL_VERSION;
+  type: 'stateCheck';
+  tick: number;
+  hash: string;
+};
+
 export type ClientChatMessage = {
   v: typeof PROTOCOL_VERSION;
   type: 'chat';
@@ -48,6 +55,7 @@ export type ClientRoomMessage =
   | ClientReadyMessage
   | ClientStartMessage
   | ClientCommandFrameMessage
+  | ClientStateCheckMessage
   | ClientChatMessage;
 
 export type ServerWelcomeMessage = {
@@ -70,7 +78,7 @@ export type ServerErrorMessage = {
   message: string;
 };
 
-export type ServerRelayedMessage = (ClientStartMessage | ClientCommandFrameMessage | ClientChatMessage) & {
+export type ServerRelayedMessage = (ClientStartMessage | ClientCommandFrameMessage | ClientStateCheckMessage | ClientChatMessage) & {
   from: string;
   at: number;
 };
@@ -99,6 +107,10 @@ export function createCommandFrame(tick: number, commands: Command[]): ClientCom
   return { v: PROTOCOL_VERSION, type: 'command', tick, commands };
 }
 
+export function createStateCheckMessage(tick: number, hash: string): ClientStateCheckMessage {
+  return { v: PROTOCOL_VERSION, type: 'stateCheck', tick, hash };
+}
+
 export function createChatMessage(text: string): ClientChatMessage {
   return { v: PROTOCOL_VERSION, type: 'chat', text: sanitizeChatText(text) };
 }
@@ -121,6 +133,10 @@ export function isClientRoomMessage(value: unknown): value is ClientRoomMessage 
   if (value.type === 'command') {
     const tick = value.tick;
     return typeof tick === 'number' && Number.isInteger(tick) && tick >= 0 && Array.isArray(value.commands);
+  }
+  if (value.type === 'stateCheck') {
+    const tick = value.tick;
+    return typeof tick === 'number' && Number.isInteger(tick) && tick >= 0 && typeof value.hash === 'string' && value.hash.trim().length > 0;
   }
   if (value.type === 'chat') return typeof value.text === 'string' && sanitizeChatText(value.text).length > 0;
   return false;

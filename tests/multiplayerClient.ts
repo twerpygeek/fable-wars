@@ -40,6 +40,7 @@ client.hello({ name: 'Ian', faction: 'verdant', colorIdx: 3 });
 client.ready(true);
 client.start('FW1-seed');
 client.commandFrame(180, [{ type: 'crystalRushDeployWave', player: 0 }]);
+client.stateCheck(240, 'deadbeef');
 client.chat(' push center ');
 
 assert.deepEqual(
@@ -49,17 +50,20 @@ assert.deepEqual(
     { v: 1, type: 'ready', ready: true },
     { v: 1, type: 'start', battleCode: 'FW1-seed' },
     { v: 1, type: 'command', tick: 180, commands: [{ type: 'crystalRushDeployWave', player: 0 }] },
+    { v: 1, type: 'stateCheck', tick: 240, hash: 'deadbeef' },
     { v: 1, type: 'chat', text: 'push center' },
   ],
 );
 
 activeSocket.onmessage?.({ data: JSON.stringify({ v: 1, type: 'welcome', clientId: 'abc', room: 'FW-TEST' }) });
 activeSocket.onmessage?.({ data: JSON.stringify({ v: 1, type: 'room', room: 'FW-TEST', players: [] }) });
+activeSocket.onmessage?.({ data: JSON.stringify({ v: 1, type: 'stateCheck', from: 'peer', at: 1234, tick: 240, hash: 'deadbeef' }) });
 activeSocket.onmessage?.({ data: JSON.stringify({ v: 2, type: 'room', room: 'FW-TEST', players: [] }) });
 activeSocket.onmessage?.({ data: 'not-json' });
 
-assert.equal(received.length, 2);
+assert.equal(received.length, 3);
 assert.deepEqual(received[0], { v: 1, type: 'welcome', clientId: 'abc', room: 'FW-TEST' });
+assert.deepEqual(received[2], { v: 1, type: 'stateCheck', from: 'peer', at: 1234, tick: 240, hash: 'deadbeef' });
 assert.deepEqual(errors, ['Ignored unsupported room message.', 'Invalid room message JSON.']);
 
 client.close();
